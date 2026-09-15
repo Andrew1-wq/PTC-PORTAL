@@ -2433,3 +2433,265 @@
     flex-wrap: wrap;
   }
 }
+
+/* =========================================================
+   CURRICULUM YEAR ACCORDION - UI FIX
+   Keeps each Year header full-width and aligned with the
+   existing PTC green design.
+   ========================================================= */
+
+.student-progress-year {
+  border-color: #cfe4d5;
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 2px 8px rgba(15, 61, 36, 0.025);
+  transition:
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.student-progress-year:hover {
+  border-color: #b9d8c2;
+}
+
+.student-progress-year-header {
+  width: 100% !important;
+  min-height: 68px;
+
+  box-sizing: border-box;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+
+  gap: 18px;
+
+  margin: 0;
+  padding: 13px 16px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid transparent !important;
+  border-radius: 0;
+
+  appearance: none;
+  -webkit-appearance: none;
+
+  background: linear-gradient(
+    90deg,
+    #f0fdf4 0%,
+    #f7fcf8 52%,
+    #ffffff 100%
+  ) !important;
+
+  color: inherit;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.student-progress-year-header:hover {
+  background: linear-gradient(
+    90deg,
+    #e9fbed 0%,
+    #f4fbf6 52%,
+    #ffffff 100%
+  ) !important;
+}
+
+.student-progress-year-header:focus-visible {
+  position: relative;
+  z-index: 2;
+
+  outline: 3px solid rgba(34, 197, 94, 0.16);
+  outline-offset: -3px;
+}
+
+.student-progress-year-header[aria-expanded="true"] {
+  border-bottom-color: var(--ptc-green-border) !important;
+
+  background: linear-gradient(
+    90deg,
+    #eafbf0 0%,
+    #f4fbf6 56%,
+    #ffffff 100%
+  ) !important;
+}
+
+/* Left side: Curriculum Year / Year 1 */
+.student-progress-year-header > div:first-child {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.student-progress-year-header > div:first-child > span {
+  display: block !important;
+
+  margin: 0 0 3px !important;
+
+  color: var(--ptc-green) !important;
+
+  font-size: 9px !important;
+  font-weight: 900 !important;
+
+  letter-spacing: 0.7px !important;
+  line-height: 1.2;
+
+  text-transform: uppercase !important;
+}
+
+.student-progress-year-header > div:first-child > h4 {
+  margin: 0;
+
+  color: var(--ptc-green-deep);
+
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1.2;
+}
+
+/* Right side: subject count + arrow */
+.student-progress-year-header-actions,
+.student-progress-year-header > div:last-child {
+  min-width: 0;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+
+  gap: 10px !important;
+
+  margin-left: auto;
+}
+
+.student-progress-year-header-actions > strong,
+.student-progress-year-header > div:last-child > strong {
+  color: var(--text-primary) !important;
+
+  font-size: 11px !important;
+  font-weight: 850 !important;
+
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Green square dropdown indicator */
+.student-progress-year-toggle,
+.student-progress-year-header > div:last-child > span:last-child {
+  width: 31px !important;
+  height: 31px !important;
+
+  min-width: 31px !important;
+  min-height: 31px !important;
+
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  flex: 0 0 31px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 1px solid #8ac99c !important;
+  border-radius: 8px !important;
+
+  background: #ffffff !important;
+
+  color: var(--ptc-green) !important;
+
+  font-size: 16px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+
+  box-shadow: 0 2px 5px rgba(15, 61, 36, 0.06);
+
+  transform: rotate(-90deg) !important;
+  transform-origin: center;
+
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.student-progress-year-header[aria-expanded="true"]
+  .student-progress-year-toggle,
+.student-progress-year-header[aria-expanded="true"]
+  > div:last-child
+  > span:last-child {
+  border-color: #63c77c !important;
+
+  background: var(--ptc-green-light) !important;
+
+  color: var(--ptc-green-dark) !important;
+
+  transform: rotate(0deg) !important;
+}
+
+/* Open content stays clean and full-width */
+.student-progress-year-content,
+.student-progress-year > div[id^="curriculum-year-"] {
+  width: 100%;
+  box-sizing: border-box;
+  background: #ffffff;
+}
+
+/* Prevent the older responsive rule from stacking the Year button */
+@media (max-width: 850px) {
+  .student-progress-year-header {
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .student-progress-year-header {
+    min-height: 62px;
+    gap: 10px;
+    padding: 11px 12px !important;
+  }
+
+  .student-progress-year-header > div:first-child > h4 {
+    font-size: 14px;
+  }
+
+  .student-progress-year-header-actions,
+  .student-progress-year-header > div:last-child {
+    gap: 7px !important;
+  }
+
+  .student-progress-year-header-actions > strong,
+  .student-progress-year-header > div:last-child > strong {
+    font-size: 10px !important;
+  }
+
+  .student-progress-year-toggle,
+  .student-progress-year-header > div:last-child > span:last-child {
+    width: 28px !important;
+    height: 28px !important;
+
+    min-width: 28px !important;
+    min-height: 28px !important;
+
+    flex-basis: 28px !important;
+
+    font-size: 14px !important;
+  }
+}
+
