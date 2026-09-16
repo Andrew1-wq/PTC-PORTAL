@@ -688,6 +688,12 @@ export default function StudentRecord() {
 
   const [curriculumStatusFilter, setCurriculumStatusFilter] = useState("All");
 
+  // Only one curriculum year can be expanded at a time.
+  // The current academic year is opened automatically after data loads.
+  const [expandedCurriculumYear, setExpandedCurriculumYear] = useState<
+    number | null
+  >(null);
+
   useEffect(() => {
     if (!authenticated) {
       authService.logout();
@@ -799,6 +805,18 @@ export default function StudentRecord() {
         } else {
           setCurriculumProgress(progressData);
           setProgressError("");
+
+          setExpandedCurriculumYear((currentYear) => {
+            if (currentYear !== null) {
+              return currentYear;
+            }
+
+            return (
+              progressData.current_academic_context?.year_level ??
+              progressData.subjects?.[0]?.year_level ??
+              null
+            );
+          });
         }
       } catch (requestError) {
         if (
@@ -1089,6 +1107,12 @@ export default function StudentRecord() {
 
     return groups;
   }, [filteredCurriculumSubjects]);
+
+  const toggleCurriculumYear = (yearLevel: number) => {
+    setExpandedCurriculumYear((currentYear) =>
+      currentYear === yearLevel ? null : yearLevel,
+    );
+  };
 
   const clearCurriculumFilters = () => {
     setCurriculumSearch("");
@@ -1517,183 +1541,211 @@ export default function StudentRecord() {
                   </div>
                 ) : (
                   <div className="student-progress-years">
-                    {curriculumProgressGroups.map((year) => (
-                      <article
-                        className="student-progress-year"
-                        key={`progress-year-${year.yearLevel}`}
-                      >
-                        <div className="student-progress-year-header">
-                          <div>
-                            <span>Curriculum Year</span>
-                            <h4>Year {year.yearLevel}</h4>
-                          </div>
+                    {curriculumProgressGroups.map((year) => {
+                      const subjectCount = year.semesters.reduce(
+                        (total, semester) =>
+                          total + semester.subjects.length,
+                        0,
+                      );
 
-                          <strong>
-                            {year.semesters.reduce(
-                              (total, semester) =>
-                                total + semester.subjects.length,
-                              0,
-                            )}{" "}
-                            subject
-                            {year.semesters.reduce(
-                              (total, semester) =>
-                                total + semester.subjects.length,
-                              0,
-                            ) === 1
-                              ? ""
-                              : "s"}
-                          </strong>
-                        </div>
+                      const isExpanded =
+                        expandedCurriculumYear === year.yearLevel;
 
-                        {year.semesters.map((semester) => (
-                          <section
-                            className="student-progress-semester"
-                            key={semester.key}
+                      return (
+                        <article
+                          className={`student-progress-year ${
+                            isExpanded ? "is-expanded" : "is-collapsed"
+                          }`}
+                          key={`progress-year-${year.yearLevel}`}
+                        >
+                          <button
+                            type="button"
+                            className={`student-progress-year-header ${
+                              isExpanded ? "is-expanded" : ""
+                            }`}
+                            onClick={() =>
+                              toggleCurriculumYear(year.yearLevel)
+                            }
+                            aria-expanded={isExpanded}
+                            aria-controls={`curriculum-year-${year.yearLevel}-content`}
                           >
-                            <div className="student-progress-semester-header">
-                              <div>
-                                <h5>{semester.semesterName}</h5>
-                                <span>
-                                  {semester.subjects.length} subject
-                                  {semester.subjects.length === 1 ? "" : "s"}
-                                </span>
-                              </div>
-
-                              <div>
-                                <span>
-                                  Completed{" "}
-                                  <strong>
-                                    {
-                                      semester.subjects.filter(
-                                        (subject) => subject.completed,
-                                      ).length
-                                    }
-                                  </strong>
-                                </span>
-                                <span>
-                                  Units{" "}
-                                  <strong>
-                                    {semester.subjects.reduce(
-                                      (total, subject) =>
-                                        total + Number(subject.units || 0),
-                                      0,
-                                    )}
-                                  </strong>
-                                </span>
-                              </div>
+                            <div>
+                              <span>Curriculum Year</span>
+                              <h4>Year {year.yearLevel}</h4>
                             </div>
 
-                            <div className="student-progress-table-wrapper">
-                              <table className="student-progress-table">
-                                <thead>
-                                  <tr>
-                                    <th>Subject</th>
-                                    <th>Units</th>
-                                    <th>Status</th>
-                                    <th>Prerequisite</th>
-                                    <th>Academic Detail</th>
-                                  </tr>
-                                </thead>
+                            <div className="student-progress-year-header-actions">
+                              <strong>
+                                {subjectCount} subject
+                                {subjectCount === 1 ? "" : "s"}
+                              </strong>
 
-                                <tbody>
-                                  {semester.subjects.map((subject) => (
-                                    <tr key={subject.curriculum_subject_id}>
-                                      <td>
-                                        <div className="student-progress-subject-name">
-                                          <strong>
-                                            {subject.subject_code}
-                                          </strong>
-                                          <span>{subject.subject_name}</span>
-                                          <small>
-                                            {subject.is_required
-                                              ? "Required subject"
-                                              : "Non-required subject"}
-                                          </small>
-                                        </div>
-                                      </td>
+                              <span
+                                className="student-progress-year-toggle"
+                                aria-hidden="true"
+                              >
+                                ⌄
+                              </span>
+                            </div>
+                          </button>
 
-                                      <td>
-                                        <strong className="student-progress-units">
-                                          {subject.units}
-                                        </strong>
-                                      </td>
+                          {isExpanded && (
+                            <div
+                              id={`curriculum-year-${year.yearLevel}-content`}
+                              className="student-progress-year-content"
+                            >
+                          {year.semesters.map((semester) => (
+                            <section
+                              className="student-progress-semester"
+                              key={semester.key}
+                            >
+                              <div className="student-progress-semester-header">
+                                <div>
+                                  <h5>{semester.semesterName}</h5>
+                                  <span>
+                                    {semester.subjects.length} subject
+                                    {semester.subjects.length === 1 ? "" : "s"}
+                                  </span>
+                                </div>
 
-                                      <td>
-                                        <span
-                                          className={`student-progress-status ${getProgressStatusClass(
-                                            subject.progress_status,
-                                          )}`}
-                                        >
-                                          {getProgressStatusLabel(
-                                            subject.progress_status,
-                                          )}
-                                        </span>
-                                      </td>
+                                <div>
+                                  <span>
+                                    Completed{" "}
+                                    <strong>
+                                      {
+                                        semester.subjects.filter(
+                                          (subject) => subject.completed,
+                                        ).length
+                                      }
+                                    </strong>
+                                  </span>
+                                  <span>
+                                    Units{" "}
+                                    <strong>
+                                      {semester.subjects.reduce(
+                                        (total, subject) =>
+                                          total + Number(subject.units || 0),
+                                        0,
+                                      )}
+                                    </strong>
+                                  </span>
+                                </div>
+                              </div>
 
-                                      <td>
-                                        {subject.prerequisites.length === 0 ? (
-                                          <span className="student-progress-no-prereq">
-                                            None
-                                          </span>
-                                        ) : (
-                                          <div className="student-progress-prerequisites">
-                                            {subject.prerequisites.map(
-                                              (prerequisite) => (
-                                                <span
-                                                  className={
-                                                    prerequisite.is_satisfied
-                                                      ? "satisfied"
-                                                      : "missing"
-                                                  }
-                                                  key={
-                                                    prerequisite.prerequisite_id
-                                                  }
-                                                >
-                                                  {
-                                                    prerequisite.prerequisite_subject_code
-                                                  }
-                                                  {prerequisite.is_satisfied
-                                                    ? " ✓"
-                                                    : " • Required"}
-                                                </span>
-                                              ),
-                                            )}
-                                          </div>
-                                        )}
-                                      </td>
-
-                                      <td>
-                                        <div className="student-progress-detail">
-                                          <strong>
-                                            {getProgressAcademicDetail(subject)}
-                                          </strong>
-
-                                          {subject.progress_status ===
-                                            "COMPLETED_TRANSFER" &&
-                                            subject.transfer_credit && (
-                                              <small>
-                                                {subject.transfer_credit
-                                                  .source_school ||
-                                                  "Previous School"}
-                                                {subject.transfer_credit
-                                                  .official_record_count &&
-                                                subject.transfer_credit
-                                                  .official_record_count > 1
-                                                  ? ` • ${subject.transfer_credit.official_record_count} official records, counted once`
-                                                  : ""}
-                                              </small>
-                                            )}
-                                        </div>
-                                      </td>
+                              <div className="student-progress-table-wrapper">
+                                <table className="student-progress-table">
+                                  <thead>
+                                    <tr>
+                                      <th>Subject</th>
+                                      <th>Units</th>
+                                      <th>Status</th>
+                                      <th>Prerequisite</th>
+                                      <th>Academic Detail</th>
                                     </tr>
-                                  ))}
-                                </tbody>
-                              </table>
+                                  </thead>
+
+                                  <tbody>
+                                    {semester.subjects.map((subject) => (
+                                      <tr key={subject.curriculum_subject_id}>
+                                        <td>
+                                          <div className="student-progress-subject-name">
+                                            <strong>
+                                              {subject.subject_code}
+                                            </strong>
+                                            <span>{subject.subject_name}</span>
+                                            <small>
+                                              {subject.is_required
+                                                ? "Required subject"
+                                                : "Non-required subject"}
+                                            </small>
+                                          </div>
+                                        </td>
+
+                                        <td>
+                                          <strong className="student-progress-units">
+                                            {subject.units}
+                                          </strong>
+                                        </td>
+
+                                        <td>
+                                          <span
+                                            className={`student-progress-status ${getProgressStatusClass(
+                                              subject.progress_status,
+                                            )}`}
+                                          >
+                                            {getProgressStatusLabel(
+                                              subject.progress_status,
+                                            )}
+                                          </span>
+                                        </td>
+
+                                        <td>
+                                          {subject.prerequisites.length === 0 ? (
+                                            <span className="student-progress-no-prereq">
+                                              None
+                                            </span>
+                                          ) : (
+                                            <div className="student-progress-prerequisites">
+                                              {subject.prerequisites.map(
+                                                (prerequisite) => (
+                                                  <span
+                                                    className={
+                                                      prerequisite.is_satisfied
+                                                        ? "satisfied"
+                                                        : "missing"
+                                                    }
+                                                    key={
+                                                      prerequisite.prerequisite_id
+                                                    }
+                                                  >
+                                                    {
+                                                      prerequisite.prerequisite_subject_code
+                                                    }
+                                                    {prerequisite.is_satisfied
+                                                      ? " ✓"
+                                                      : " • Required"}
+                                                  </span>
+                                                ),
+                                              )}
+                                            </div>
+                                          )}
+                                        </td>
+
+                                        <td>
+                                          <div className="student-progress-detail">
+                                            <strong>
+                                              {getProgressAcademicDetail(subject)}
+                                            </strong>
+
+                                            {subject.progress_status ===
+                                              "COMPLETED_TRANSFER" &&
+                                              subject.transfer_credit && (
+                                                <small>
+                                                  {subject.transfer_credit
+                                                    .source_school ||
+                                                    "Previous School"}
+                                                  {subject.transfer_credit
+                                                    .official_record_count &&
+                                                  subject.transfer_credit
+                                                    .official_record_count > 1
+                                                    ? ` • ${subject.transfer_credit.official_record_count} official records, counted once`
+                                                    : ""}
+                                                </small>
+                                              )}
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    ))}
+                                  </tbody>
+                                </table>
+                              </div>
+                            </section>
+                          ))}
                             </div>
-                          </section>
-                        ))}
-                      </article>
-                    ))}
+                          )}
+                        </article>
+                      );
+                    })}
                   </div>
                 )}
               </div>
