@@ -84,6 +84,8 @@ async function readJsonResponse<T>(response: Response): Promise<T> {
 interface FacultyOption {
   faculty_id: number;
 
+  user_id?: number;
+
   employee_number?: string;
 
   faculty_name?: string;
@@ -95,6 +97,20 @@ interface FacultyOption {
   last_name?: string;
 
   department_id?: number | null;
+
+  department_name?: string;
+
+  employment_status?: string;
+
+  username?: string;
+
+  role_id?: number;
+
+  role_name?: string;
+
+  is_active?: boolean;
+
+  is_verified?: boolean;
 }
 
 interface RoomOption {
@@ -853,6 +869,50 @@ export default function ClassOfferingManagementR() {
   const selectedSection = sections.find(
     (item) => String(item.section_id) === sectionId,
   );
+
+  // =====================================================
+  // ENRICH CURRICULUM OFFERINGS WITH INSTRUCTOR ROLE
+  //
+  // Readiness contains the assigned faculty ID, while
+  // setup-data contains the authenticated user's actual
+  // teaching role. Match them here so the table can show
+  // Faculty vs Program Head without changing the backend
+  // readiness response shape.
+  // =====================================================
+
+  const normalizedCurriculumSubjects = useMemo<OfferingTableSubject[]>(() => {
+    const subjects = readiness?.subjects || [];
+
+    return subjects.map((item) => {
+      if (!item.offering?.faculty) {
+        return item;
+      }
+
+      const assignedFacultyId = Number(item.offering.faculty.faculty_id);
+
+      const instructor = faculty.find(
+        (candidate) => Number(candidate.faculty_id) === assignedFacultyId,
+      );
+
+      if (!instructor) {
+        return item;
+      }
+
+      return {
+        ...item,
+
+        offering: {
+          ...item.offering,
+
+          faculty: {
+            ...item.offering.faculty,
+            employee_number: instructor.employee_number,
+            role_name: instructor.role_name,
+          },
+        },
+      };
+    });
+  }, [readiness?.subjects, faculty]);
 
   // =====================================================
   // NORMALIZE SPECIAL / RETAKE SUBJECTS
@@ -1903,7 +1963,7 @@ export default function ClassOfferingManagementR() {
             )}
 
             <OfferingTable
-              subjects={readiness.subjects}
+              subjects={normalizedCurriculumSubjects}
               onCreateOffering={openAddOffering}
               onEditOffering={openEditOffering}
               onOfferingStatus={openOfferingStatus}
@@ -2002,7 +2062,6 @@ export default function ClassOfferingManagementR() {
           open={showAddOffering}
           subject={selectedSubject}
           faculty={faculty}
-          rooms={rooms}
           onClose={closeAddOfferingModal}
           onSuccess={handleAddOfferingSuccess}
           onUnauthorized={handleUnauthorized}
@@ -2012,7 +2071,6 @@ export default function ClassOfferingManagementR() {
           open={showEditOffering}
           subject={selectedSubject}
           faculty={faculty}
-          rooms={rooms}
           onClose={closeEditOfferingModal}
           onSuccess={handleEditOfferingSuccess}
           onUnauthorized={handleUnauthorized}

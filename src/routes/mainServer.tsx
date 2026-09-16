@@ -137,6 +137,9 @@ import EnrollmentPeriodMR from "../pages/registrar/Enrollment/EnrollmentPeriodMR
 import ClassOfferingManagementR from "../pages/registrar/ClassOffering.tsx/ClassOfferingManagementR";
 import ClassPROG from "../pages/programhead/Classmanagement/ClassPROG";
 import TransferEvaluationR from "../pages/registrar/StudentRecord/TransferEvaluationR";
+import ScheduleList from "../pages/programhead/ScheduleVerification/ScheduleList";
+import FacultySchedules from "../pages/programhead/ScheduleVerification/FacultySchedules";
+import FacultySchedulesR from "../pages/registrar/Schedules/FacultySchedulesR";
 
 // ─── Role guard ───────────────────────────────────────────────
 function ProtectedRoute({
@@ -520,6 +523,15 @@ export default function AppRoutes() {
           element={<ProgramHeadRoute element={<ClassPROG />} />}
         />
 
+        <Route
+          path="/programhead/class/schedule"
+          element={<ProgramHeadRoute element={<ScheduleList />} />}
+        />
+        <Route
+          path="/programhead/class/faculty-schedules"
+          element={<ProgramHeadRoute element={<FacultySchedules />} />}
+        />
+
         {/* ── Registrar ── */}
         <Route
           path="/registrar/dashboard"
@@ -604,6 +616,10 @@ export default function AppRoutes() {
           element={<RegistrarRoute element={<ClassOfferingManagementR />} />}
         />
 
+        <Route
+          path="/registrar/schedules/faculty"
+          element={<RegistrarRoute element={<FacultySchedulesR />} />}
+        />
         {/* ── Registrar Announcements ── */}
         <Route
           path="/registrar/announcement/listR"

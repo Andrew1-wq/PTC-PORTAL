@@ -5,16 +5,16 @@ import {
   BookOpenCheck,
   Building2,
   CalendarDays,
-  ChevronRight,
   Clock3,
   Filter,
   GraduationCap,
   MapPin,
   PencilLine,
   RefreshCw,
-  Save,
   RotateCcw,
+  Save,
   Search,
+  UserRound,
   UsersRound,
   X,
 } from "lucide-react";
@@ -134,6 +134,14 @@ interface UpdateScheduleResponse {
   conflicts?: ScheduleConflict[];
 }
 
+interface FacultyOption {
+  faculty_id: number;
+  employee_number: string;
+  faculty_name: string;
+  email?: string | null;
+  total_classes: number;
+}
+
 const DAY_ALIASES: Record<string, WeekDay> = {
   monday: "Monday",
   mon: "Monday",
@@ -218,7 +226,7 @@ function parseClockValue(value: string) {
     return hours * 60 + minutes;
   }
 
-  const twentyFourHourMatch = text.match(/^(\d{1,2}):(\d{2})$/);
+  const twentyFourHourMatch = text.match(/^(\d{1,2}):(\d{2})(?::\d{2})?$/);
 
   if (twentyFourHourMatch) {
     const hours = Number(twentyFourHourMatch[1]);
@@ -232,21 +240,6 @@ function parseClockValue(value: string) {
   }
 
   return null;
-}
-
-function getScheduleStartMinutes(value: string | null) {
-  if (!value) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  const normalized = value.trim().replace(/[–—]/g, "-");
-  const firstPart = normalized.split("-")[0]?.trim();
-
-  if (!firstPart) {
-    return Number.MAX_SAFE_INTEGER;
-  }
-
-  return parseClockValue(firstPart) ?? Number.MAX_SAFE_INTEGER;
 }
 
 function minutesToInputValue(totalMinutes: number | null) {
@@ -280,6 +273,21 @@ function parseScheduleRange(value: string | null) {
   };
 }
 
+function getScheduleStartMinutes(value: string | null) {
+  if (!value) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  const normalized = value.trim().replace(/[–—]/g, "-");
+  const firstPart = normalized.split("-")[0]?.trim();
+
+  if (!firstPart) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return parseClockValue(firstPart) ?? Number.MAX_SAFE_INTEGER;
+}
+
 function getRoomLabel(room: ProgramHeadClass["room"]) {
   if (!room) {
     return "Not assigned";
@@ -292,7 +300,7 @@ function getRoomLabel(room: ProgramHeadClass["room"]) {
   return room.room_code || room.room_name || "Not assigned";
 }
 
-export default function ScheduleList() {
+export default function FacultySchedules() {
   const navigate = useNavigate();
   const session = authService.getSession();
   const token = authService.getToken();
@@ -305,6 +313,7 @@ export default function ScheduleList() {
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
 
+  const [selectedFacultyId, setSelectedFacultyId] = useState("");
   const [search, setSearch] = useState("");
   const [academicYear, setAcademicYear] = useState("All");
   const [semester, setSemester] = useState("All");
@@ -343,7 +352,7 @@ export default function ScheduleList() {
 
     const controller = new AbortController();
 
-    const loadSchedule = async () => {
+    const loadFacultySchedules = async () => {
       try {
         setLoading(true);
         setError("");
@@ -369,32 +378,30 @@ export default function ScheduleList() {
           throw new Error(
             data.message ||
               data.error ||
-              "You do not have permission to access the Program Head teaching schedule.",
+              "You do not have permission to view Faculty schedules.",
           );
         }
 
         if (!response.ok || !data.success) {
           throw new Error(
-            data.message ||
-              data.error ||
-              "Unable to load your Program Head teaching schedule.",
+            data.message || data.error || "Unable to load Faculty schedules.",
           );
         }
 
-        setProgramHead(data.program_head || null);
+        const loadedProgramHead = data.program_head || null;
+        const ownFacultyId = loadedProgramHead?.faculty_id ?? null;
 
-        const ownFacultyId = data.program_head?.faculty_id ?? null;
+        const departmentFacultyClasses = Array.isArray(data.classes)
+          ? data.classes.filter(
+              (item) =>
+                item.offering_status !== "Cancelled" &&
+                item.faculty !== null &&
+                item.faculty.faculty_id !== ownFacultyId,
+            )
+          : [];
 
-        const loadedClasses =
-          Array.isArray(data.classes) && ownFacultyId !== null
-            ? data.classes.filter(
-                (item) =>
-                  item.offering_status !== "Cancelled" &&
-                  item.faculty?.faculty_id === ownFacultyId,
-              )
-            : [];
-
-        setClasses(loadedClasses);
+        setProgramHead(loadedProgramHead);
+        setClasses(departmentFacultyClasses);
       } catch (requestError) {
         if (
           requestError instanceof DOMException &&
@@ -403,10 +410,7 @@ export default function ScheduleList() {
           return;
         }
 
-        console.error(
-          "LOAD PROGRAM HEAD TEACHING SCHEDULE ERROR:",
-          requestError,
-        );
+        console.error("LOAD FACULTY SCHEDULES ERROR:", requestError);
 
         setClasses([]);
         setProgramHead(null);
@@ -414,7 +418,7 @@ export default function ScheduleList() {
         setError(
           requestError instanceof Error
             ? requestError.message
-            : "Unable to load your Program Head teaching schedule.",
+            : "Unable to load Faculty schedules.",
         );
       } finally {
         if (!controller.signal.aborted) {
@@ -423,15 +427,77 @@ export default function ScheduleList() {
       }
     };
 
-    void loadSchedule();
+    void loadFacultySchedules();
 
     return () => controller.abort();
   }, [authenticated, userRole, navigate, refreshKey]);
 
+  const facultyOptions = useMemo<FacultyOption[]>(() => {
+    const values = new Map<number, FacultyOption>();
+
+    classes.forEach((item) => {
+      if (!item.faculty) {
+        return;
+      }
+
+      const current = values.get(item.faculty.faculty_id);
+
+      if (current) {
+        current.total_classes += 1;
+        return;
+      }
+
+      values.set(item.faculty.faculty_id, {
+        faculty_id: item.faculty.faculty_id,
+        employee_number: item.faculty.employee_number,
+        faculty_name: item.faculty.faculty_name,
+        email: item.faculty.email,
+        total_classes: 1,
+      });
+    });
+
+    return Array.from(values.values()).sort((a, b) =>
+      a.faculty_name.localeCompare(b.faculty_name),
+    );
+  }, [classes]);
+
+  useEffect(() => {
+    if (facultyOptions.length === 0) {
+      setSelectedFacultyId("");
+      return;
+    }
+
+    const stillExists = facultyOptions.some(
+      (item) => String(item.faculty_id) === selectedFacultyId,
+    );
+
+    if (!stillExists) {
+      setSelectedFacultyId(String(facultyOptions[0].faculty_id));
+    }
+  }, [facultyOptions, selectedFacultyId]);
+
+  const selectedFaculty = useMemo(() => {
+    return (
+      facultyOptions.find(
+        (item) => String(item.faculty_id) === selectedFacultyId,
+      ) || null
+    );
+  }, [facultyOptions, selectedFacultyId]);
+
+  const selectedFacultyClasses = useMemo(() => {
+    if (!selectedFacultyId) {
+      return [];
+    }
+
+    return classes.filter(
+      (item) => String(item.faculty?.faculty_id || "") === selectedFacultyId,
+    );
+  }, [classes, selectedFacultyId]);
+
   const academicYears = useMemo(() => {
     const values = new Map<number, string>();
 
-    classes.forEach((item) => {
+    selectedFacultyClasses.forEach((item) => {
       values.set(
         item.academic_period.academic_year_id,
         item.academic_period.academic_year,
@@ -439,12 +505,12 @@ export default function ScheduleList() {
     });
 
     return Array.from(values.entries()).sort((a, b) => b[0] - a[0]);
-  }, [classes]);
+  }, [selectedFacultyClasses]);
 
   const semesters = useMemo(() => {
     const values = new Map<number, string>();
 
-    classes.forEach((item) => {
+    selectedFacultyClasses.forEach((item) => {
       values.set(
         item.academic_period.semester_id,
         item.academic_period.semester_name,
@@ -452,18 +518,25 @@ export default function ScheduleList() {
     });
 
     return Array.from(values.entries()).sort((a, b) => a[0] - b[0]);
-  }, [classes]);
+  }, [selectedFacultyClasses]);
 
   const sections = useMemo(() => {
     return Array.from(
-      new Set(classes.map((item) => item.section.section_name)),
+      new Set(selectedFacultyClasses.map((item) => item.section.section_name)),
     ).sort();
-  }, [classes]);
+  }, [selectedFacultyClasses]);
+
+  useEffect(() => {
+    setAcademicYear("All");
+    setSemester("All");
+    setSection("All");
+    setSearch("");
+  }, [selectedFacultyId]);
 
   const filteredClasses = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
 
-    return classes.filter((item) => {
+    return selectedFacultyClasses.filter((item) => {
       const matchesSearch =
         !normalizedSearch ||
         item.subject.subject_code.toLowerCase().includes(normalizedSearch) ||
@@ -492,7 +565,7 @@ export default function ScheduleList() {
         matchesSection
       );
     });
-  }, [classes, search, academicYear, semester, section]);
+  }, [selectedFacultyClasses, search, academicYear, semester, section]);
 
   const scheduledClasses = useMemo(() => {
     return filteredClasses.filter(
@@ -550,7 +623,7 @@ export default function ScheduleList() {
 
   const officialStudents = useMemo(() => {
     return filteredClasses.reduce(
-      (total, item) => total + Number(item.capacity.official_students || 0),
+      (total, item) => total + Number(item.capacity?.official_students || 0),
       0,
     );
   }, [filteredClasses]);
@@ -566,10 +639,6 @@ export default function ScheduleList() {
     setAcademicYear("All");
     setSemester("All");
     setSection("All");
-  };
-
-  const openClass = () => {
-    navigate("/programhead/class/management");
   };
 
   const openScheduleEditor = (item: ProgramHeadClass) => {
@@ -638,7 +707,7 @@ export default function ScheduleList() {
       setScheduleConflicts([]);
 
       const response = await authService.authFetch(
-        `${API_BASE_URL}/${scheduleClass.offering_id}/schedule`,
+        `${API_BASE_URL}/${scheduleClass.offering_id}/faculty-schedule`,
         {
           method: "PUT",
           headers: {
@@ -667,19 +736,27 @@ export default function ScheduleList() {
 
       if (!response.ok || !data.success) {
         throw new Error(
-          data.message || data.error || "Unable to save the class schedule.",
+          data.message ||
+            data.error ||
+            "Unable to save the Faculty class schedule.",
         );
       }
 
-      closeScheduleEditor();
+      setScheduleClass(null);
+      setScheduleDays([]);
+      setScheduleStartTime("");
+      setScheduleEndTime("");
+      setScheduleError("");
+      setScheduleConflicts([]);
+
       setRefreshKey((current) => current + 1);
     } catch (requestError) {
-      console.error("SAVE PROGRAM HEAD CLASS SCHEDULE ERROR:", requestError);
+      console.error("SAVE FACULTY CLASS SCHEDULE ERROR:", requestError);
 
       setScheduleError(
         requestError instanceof Error
           ? requestError.message
-          : "Unable to save the class schedule.",
+          : "Unable to save the Faculty class schedule.",
       );
     } finally {
       setScheduleSaving(false);
@@ -699,14 +776,14 @@ export default function ScheduleList() {
               <span>
                 <CalendarDays size={16} strokeWidth={2.2} />
               </span>
-              Program Head · Teaching Schedule
+              Program Head · Faculty Monitoring
             </div>
 
-            <h1>My Teaching Schedule</h1>
+            <h1>Faculty Schedules</h1>
 
             <p>
-              Review the classes assigned to you as a teaching Program Head and
-              set or update your own teaching day and time.
+              Review Faculty teaching schedules in your department and set or
+              update class days and times when needed.
             </p>
           </div>
 
@@ -721,34 +798,47 @@ export default function ScheduleList() {
           </button>
         </section>
 
-        {programHead && (
-          <section className="faculty-schedule-page__faculty">
-            <div className="faculty-schedule-page__faculty-main">
-              <span className="faculty-schedule-page__faculty-icon">
-                <GraduationCap size={20} />
-              </span>
-
-              <div>
-                <small>Program Head · Teaching User</small>
-                <strong>{programHead.program_head_name}</strong>
-              </div>
-            </div>
+        <section className="faculty-schedule-page__faculty">
+          <div className="faculty-schedule-page__faculty-main">
+            <span className="faculty-schedule-page__faculty-icon">
+              <UserRound size={20} />
+            </span>
 
             <div>
-              <small>Employee Number</small>
-              <strong>{programHead.employee_number}</strong>
-            </div>
+              <small>Faculty Member</small>
 
-            <div>
-              <small>Department</small>
-              <strong>{programHead.department.department_name}</strong>
+              {facultyOptions.length > 0 ? (
+                <select
+                  value={selectedFacultyId}
+                  onChange={(event) => setSelectedFacultyId(event.target.value)}
+                  aria-label="Select Faculty member"
+                >
+                  {facultyOptions.map((item) => (
+                    <option key={item.faculty_id} value={item.faculty_id}>
+                      {item.faculty_name}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <strong>No Faculty assignments</strong>
+              )}
             </div>
-          </section>
-        )}
+          </div>
+
+          <div>
+            <small>Employee Number</small>
+            <strong>{selectedFaculty?.employee_number || "—"}</strong>
+          </div>
+
+          <div>
+            <small>Department</small>
+            <strong>{programHead?.department.department_name || "—"}</strong>
+          </div>
+        </section>
 
         <section
           className="faculty-schedule-page__summary"
-          aria-label="Schedule summary"
+          aria-label="Faculty schedule summary"
         >
           <article>
             <span className="faculty-schedule-page__summary-icon">
@@ -758,7 +848,7 @@ export default function ScheduleList() {
             <div>
               <small>Scheduled Classes</small>
               <strong>{loading ? "…" : scheduledClasses.length}</strong>
-              <span>Unique assigned offerings</span>
+              <span>For the selected Faculty member</span>
             </div>
           </article>
 
@@ -809,8 +899,8 @@ export default function ScheduleList() {
               <div>
                 <strong>Filter Schedule</strong>
                 <p>
-                  Narrow your timetable by subject, academic year, semester, or
-                  section.
+                  Narrow the selected Faculty timetable by subject, academic
+                  year, semester, or section.
                 </p>
               </div>
             </div>
@@ -899,7 +989,7 @@ export default function ScheduleList() {
             </span>
 
             <div>
-              <strong>Schedule could not be loaded</strong>
+              <strong>Faculty schedules could not be loaded</strong>
               <p>{error}</p>
             </div>
 
@@ -917,34 +1007,52 @@ export default function ScheduleList() {
             <div className="faculty-schedule-page__spinner" />
 
             <div>
-              <strong>Loading your class schedule</strong>
-              <span>Retrieving your official teaching assignments...</span>
+              <strong>Loading Faculty schedules</strong>
+              <span>Retrieving department teaching assignments...</span>
             </div>
           </section>
         )}
 
-        {!loading && !error && filteredClasses.length === 0 && (
+        {!loading && !error && facultyOptions.length === 0 && (
           <section className="faculty-schedule-page__empty">
             <span>
-              <CalendarDays size={25} />
+              <UserRound size={25} />
             </span>
 
-            <strong>No scheduled classes found</strong>
+            <strong>No Faculty assignments found</strong>
 
             <p>
-              {classes.length === 0
-                ? "No teaching assignments are currently connected to your Program Head account."
-                : "No classes match the current schedule filters."}
+              There are currently no Faculty teaching assignments available in
+              your department.
             </p>
-
-            {hasActiveFilters && (
-              <button type="button" onClick={clearFilters}>
-                <RotateCcw size={14} />
-                Clear Filters
-              </button>
-            )}
           </section>
         )}
+
+        {!loading &&
+          !error &&
+          facultyOptions.length > 0 &&
+          filteredClasses.length === 0 && (
+            <section className="faculty-schedule-page__empty">
+              <span>
+                <CalendarDays size={25} />
+              </span>
+
+              <strong>No classes found</strong>
+
+              <p>
+                {selectedFacultyClasses.length === 0
+                  ? "The selected Faculty member has no assigned classes."
+                  : "No classes match the current schedule filters."}
+              </p>
+
+              {hasActiveFilters && (
+                <button type="button" onClick={clearFilters}>
+                  <RotateCcw size={14} />
+                  Clear Filters
+                </button>
+              )}
+            </section>
+          )}
 
         {!loading && !error && filteredClasses.length > 0 && (
           <>
@@ -952,10 +1060,10 @@ export default function ScheduleList() {
               <header className="faculty-schedule-page__section-header">
                 <div>
                   <span>Weekly Timetable</span>
-                  <h2>My Teaching Schedule</h2>
+                  <h2>{selectedFaculty?.faculty_name || "Faculty"} Schedule</h2>
                   <p>
-                    Classes are grouped by your saved teaching days and sorted
-                    by starting time.
+                    Classes are grouped by saved teaching days and sorted by
+                    starting time.
                   </p>
                 </div>
 
@@ -1028,7 +1136,8 @@ export default function ScheduleList() {
 
                                   <span>
                                     <UsersRound size={13} />
-                                    {item.capacity.official_students} official
+                                    {item.capacity?.official_students || 0}{" "}
+                                    official
                                   </span>
                                 </div>
                               </div>
@@ -1046,11 +1155,6 @@ export default function ScheduleList() {
                                 >
                                   <PencilLine size={14} />
                                   Edit Schedule
-                                </button>
-
-                                <button type="button" onClick={openClass}>
-                                  View Class
-                                  <ChevronRight size={14} />
                                 </button>
                               </div>
                             </div>
@@ -1070,8 +1174,8 @@ export default function ScheduleList() {
                     <span>Needs Scheduling</span>
                     <h2>Unscheduled Classes</h2>
                     <p>
-                      These Registrar-assigned classes are waiting for you to
-                      enter a teaching day and time.
+                      These classes are assigned to the selected Faculty member
+                      but still have no complete teaching schedule.
                     </p>
                   </div>
 
@@ -1104,11 +1208,6 @@ export default function ScheduleList() {
                           <CalendarDays size={14} />
                           Set Schedule
                         </button>
-
-                        <button type="button" onClick={openClass}>
-                          View Class
-                          <ChevronRight size={14} />
-                        </button>
                       </div>
                     </article>
                   ))}
@@ -1117,7 +1216,6 @@ export default function ScheduleList() {
             )}
           </>
         )}
-
         {scheduleClass && (
           <div
             className="faculty-schedule-modal-backdrop"
@@ -1132,17 +1230,18 @@ export default function ScheduleList() {
               className="faculty-schedule-modal"
               role="dialog"
               aria-modal="true"
-              aria-labelledby="program-head-schedule-modal-title"
+              aria-labelledby="faculty-schedule-management-modal-title"
             >
               <header className="faculty-schedule-modal__header">
                 <div>
-                  <span>Teaching Schedule</span>
-                  <h2 id="program-head-schedule-modal-title">
+                  <span>Faculty Teaching Schedule</span>
+                  <h2 id="faculty-schedule-management-modal-title">
                     {scheduleClass.schedule.days && scheduleClass.schedule.time
-                      ? "Edit Class Schedule"
-                      : "Set Class Schedule"}
+                      ? "Edit Faculty Schedule"
+                      : "Set Faculty Schedule"}
                   </h2>
                   <p>
+                    {scheduleClass.faculty?.faculty_name || "Faculty"} ·{" "}
                     {scheduleClass.subject.subject_code} ·{" "}
                     {scheduleClass.section.section_name}
                   </p>
@@ -1187,6 +1286,7 @@ export default function ScheduleList() {
                             ? ` · ${conflict.section_name}`
                             : ""}
                         </span>
+
                         <small>
                           {[
                             conflict.schedule_days,
@@ -1250,9 +1350,9 @@ export default function ScheduleList() {
                 </div>
 
                 <p className="faculty-schedule-modal__note">
-                  The system checks instructor and section conflicts before
-                  saving. If the schedule passes validation, the offering
-                  becomes Open.
+                  The system checks Faculty and section schedule conflicts
+                  before saving. When the schedule passes validation, the
+                  offering becomes Open.
                 </p>
               </div>
 

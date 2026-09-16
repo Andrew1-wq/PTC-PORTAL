@@ -38,6 +38,14 @@ export const programHeadNavGroups = [
         label: "Classes",
         path: "/programhead/class/management",
       },
+      {
+        label: "Faculty Schedules",
+        path: "/programhead/class/faculty-schedules",
+      },
+      {
+        label: "My Teaching Schedule",
+        path: "/programhead/class/schedule",
+      },
     ],
   },
 ];
