@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -181,7 +181,8 @@ export default function DepartmentManagementR() {
       const latestTime = new Date(latest.created_at).getTime();
 
       if (Number.isNaN(currentTime)) return latest;
-      if (Number.isNaN(latestTime) || currentTime > latestTime) return department;
+      if (Number.isNaN(latestTime) || currentTime > latestTime)
+        return department;
       return latest;
     }, null);
   }, [departments]);
@@ -278,7 +279,9 @@ export default function DepartmentManagementR() {
             <div>
               <span>Showing</span>
               <strong>{loading ? "—" : filteredDepartments.length}</strong>
-              <small>{search.trim() ? "Matching your search" : "All records visible"}</small>
+              <small>
+                {search.trim() ? "Matching your search" : "All records visible"}
+              </small>
             </div>
           </article>
 
@@ -481,7 +484,9 @@ export default function DepartmentManagementR() {
 
                       <td>
                         <div className="registrar-department-management__name-cell">
-                          <strong>{department.department_name || "Unnamed department"}</strong>
+                          <strong>
+                            {department.department_name || "Unnamed department"}
+                          </strong>
                           <span>Academic department</span>
                         </div>
                       </td>

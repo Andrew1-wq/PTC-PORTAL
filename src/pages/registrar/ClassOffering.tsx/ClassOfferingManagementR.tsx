@@ -1707,8 +1707,12 @@ export default function ClassOfferingManagementR() {
             </span>
             <div>
               <span>Academic Period</span>
-              <strong>{selectedAcademicYear?.academic_year || "Select year"}</strong>
-              <small>{selectedSemester?.semester_name || "Semester not selected"}</small>
+              <strong>
+                {selectedAcademicYear?.academic_year || "Select year"}
+              </strong>
+              <small>
+                {selectedSemester?.semester_name || "Semester not selected"}
+              </small>
             </div>
           </article>
 
@@ -1733,7 +1737,9 @@ export default function ClassOfferingManagementR() {
             </span>
             <div>
               <span>Section</span>
-              <strong>{selectedSection?.section_name || "Select section"}</strong>
+              <strong>
+                {selectedSection?.section_name || "Select section"}
+              </strong>
               <small>
                 {selectedSection?.max_students
                   ? `Capacity ${selectedSection.max_students}`
@@ -1874,13 +1880,15 @@ export default function ClassOfferingManagementR() {
 
                     <p>
                       <strong>{readiness.section.section_name}</strong> has{" "}
-                      <strong>{readiness.summary.missing_section_subjects}</strong>{" "}
+                      <strong>
+                        {readiness.summary.missing_section_subjects}
+                      </strong>{" "}
                       curriculum subject
                       {readiness.summary.missing_section_subjects !== 1
                         ? "s"
                         : ""}{" "}
-                      that still need to be prepared before their class offerings
-                      can be configured.
+                      that still need to be prepared before their class
+                      offerings can be configured.
                     </p>
                   </div>
                 </div>
@@ -1914,8 +1922,8 @@ export default function ClassOfferingManagementR() {
                   <p>
                     Manage exception and retake classes outside the normal
                     curriculum subjects for this term. New special offerings
-                    start Closed and remain incomplete until faculty and schedule
-                    are configured.
+                    start Closed and remain incomplete until faculty and
+                    schedule are configured.
                   </p>
                 </div>
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   AlertTriangle,
@@ -507,7 +507,11 @@ export default function CoursemanagementR() {
             <div>
               <span>{hasActiveFilters ? "Matching Courses" : "Courses"}</span>
               <strong>{loading ? "—" : courses.length}</strong>
-              <small>{hasActiveFilters ? "Current filtered result" : "Programs currently listed"}</small>
+              <small>
+                {hasActiveFilters
+                  ? "Current filtered result"
+                  : "Programs currently listed"}
+              </small>
             </div>
           </article>
 
@@ -568,7 +572,9 @@ export default function CoursemanagementR() {
 
             <div className="registrar-course-management__result-count">
               <strong>{loading ? "—" : courses.length}</strong>
-              <span>{courses.length === 1 ? "course shown" : "courses shown"}</span>
+              <span>
+                {courses.length === 1 ? "course shown" : "courses shown"}
+              </span>
             </div>
           </div>
 
@@ -632,7 +638,9 @@ export default function CoursemanagementR() {
             <div className="registrar-course-management__active-filters">
               <span>Viewing:</span>
               {search && <strong>Search “{search}”</strong>}
-              {department !== "All" && <strong>{selectedDepartmentName}</strong>}
+              {department !== "All" && (
+                <strong>{selectedDepartmentName}</strong>
+              )}
             </div>
           )}
 
@@ -773,7 +781,9 @@ export default function CoursemanagementR() {
                                 {course.department_code || "—"}
                               </span>
                               <div>
-                                <strong>{course.department_name || "Not assigned"}</strong>
+                                <strong>
+                                  {course.department_name || "Not assigned"}
+                                </strong>
                               </div>
                             </div>
                           </td>
@@ -875,14 +885,15 @@ export default function CoursemanagementR() {
 
               <h2 id="delete-course-title">Delete this course?</h2>
               <p>
-                You are about to remove <strong>{deleteTarget.course_code}</strong>
+                You are about to remove{" "}
+                <strong>{deleteTarget.course_code}</strong>
                 {" — "}
                 {deleteTarget.course_name}.
               </p>
 
               <div className="registrar-course-management__delete-warning">
-                Courses already referenced by a curriculum cannot be deleted.
-                If this course is in use, the server will keep it and explain why.
+                Courses already referenced by a curriculum cannot be deleted. If
+                this course is in use, the server will keep it and explain why.
               </div>
 
               {deleteError && (

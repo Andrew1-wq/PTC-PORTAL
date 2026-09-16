@@ -2,16 +2,20 @@ import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/student-dashboard.css";
 import {
-  CheckCircle,
-  Clock,
-  BookOpen,
-  Megaphone,
-  Calendar,
+  ArrowRight,
+  BookOpenCheck,
+  CalendarDays,
+  CheckCircle2,
+  CircleAlert,
+  Clock3,
   FileText,
-  User,
-  Award,
+  GraduationCap,
+  History,
+  IdCard,
+  Megaphone,
+  RefreshCw,
+  UserRound,
 } from "lucide-react";
 
 const SCHEDULE_API_URL =
@@ -384,113 +388,144 @@ export default function StudentDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="student-dashboard">
-        <div className="dashboard-header">
-          <div className="header-content">
+      <main className="student-dashboard">
+        <section className="student-dashboard__hero">
+          <div className="student-dashboard__hero-copy">
+            <div className="student-dashboard__eyebrow">
+              <span>
+                <GraduationCap size={16} strokeWidth={2.2} />
+              </span>
+              Student · Dashboard
+            </div>
+
+            <h1>Welcome back, {displayName}</h1>
+
+            <p>
+              Review your enrollment, class schedule, academic records, and
+              Student announcements from one organized workspace.
+            </p>
+
+            <div className="student-dashboard__identity-line">
+              <span>{studentNumber}</span>
+              {academicIdentity.length > 0 && <i />}
+              {academicIdentity.length > 0 && (
+                <span>{academicIdentity.join(" · ")}</span>
+              )}
+            </div>
+          </div>
+
+          <button
+            type="button"
+            className="student-dashboard__refresh"
+            onClick={() => setRefreshKey((current) => current + 1)}
+            disabled={loading || refreshing}
+          >
+            <RefreshCw
+              size={16}
+              className={refreshing ? "is-spinning" : ""}
+            />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
+        </section>
+
+        {hasPartialError && !loading && (
+          <section className="student-dashboard__notice" role="status">
+            <CircleAlert size={18} />
             <div>
-              <h1>Welcome, {user.email}!</h1>
+              <strong>Some dashboard information is unavailable</strong>
               <p>
-                Student Portal - View your schedule, grades, announcements, and
-                admission status
+                The rest of your Student dashboard is still available. Use the
+                Refresh button to try loading the missing information again.
               </p>
             </div>
-            <div className="header-stats">
-              <div className="header-stat">
-                <Award size={20} />
-                <span>GPA: 3.85</span>
-              </div>
-              <div className="header-stat">
-                <BookOpen size={20} />
-                <span>45 Credits</span>
-              </div>
+          </section>
+        )}
+
+        <section className="student-dashboard__overview" aria-label="Student overview">
+          <article className="student-dashboard__stat student-dashboard__stat--primary">
+            <span className="student-dashboard__stat-icon">
+              <CheckCircle2 size={19} />
+            </span>
+            <div>
+              <small>Enrollment Status</small>
+              <strong className={`student-dashboard__status ${getStatusClass(enrollmentStatus)}`}>
+                {loading ? "…" : enrollmentStatus}
+              </strong>
+              <span>Your current enrollment state</span>
             </div>
+          </article>
+
+          <article className="student-dashboard__stat">
+            <span className="student-dashboard__stat-icon">
+              <CalendarDays size={19} />
+            </span>
+            <div>
+              <small>Current Period</small>
+              <strong className="student-dashboard__stat-text">
+                {loading ? "…" : currentPeriod}
+              </strong>
+              <span>Academic year and semester</span>
+            </div>
+          </article>
+
+          <article className="student-dashboard__stat">
+            <span className="student-dashboard__stat-icon">
+              <Clock3 size={19} />
+            </span>
+            <div>
+              <small>Today's Classes</small>
+              <strong>{loading ? "…" : todayClasses.length}</strong>
+              <span>{formatToday()}</span>
+            </div>
+          </article>
+
+          <article className="student-dashboard__stat">
+            <span className="student-dashboard__stat-icon">
+              <Megaphone size={19} />
+            </span>
+            <div>
+              <small>Announcements</small>
+              <strong>{loading ? "…" : announcements.length}</strong>
+              <span>Active notices for Students</span>
+            </div>
+          </article>
+        </section>
+
+        <section className="student-dashboard__quick-access">
+          <header className="student-dashboard__section-heading">
+            <div>
+              <span>Student Services</span>
+              <h2>Quick Access</h2>
+              <p>Open the Student tools you use most often.</p>
+            </div>
+          </header>
+
+          <div className="student-dashboard__quick-grid">
+            {quickActions.map((action) => {
+              const Icon = action.icon;
+
+              return (
+                <button
+                  key={action.path}
+                  type="button"
+                  className="student-dashboard__quick-card"
+                  onClick={() => navigate(action.path)}
+                >
+                  <span className="student-dashboard__quick-icon">
+                    <Icon size={20} strokeWidth={2.05} />
+                  </span>
+
+                  <span className="student-dashboard__quick-copy">
+                    <strong>{action.title}</strong>
+                    <small>{action.description}</small>
+                  </span>
+
+                  <ArrowRight size={16} className="student-dashboard__quick-arrow" />
+                </button>
+              );
+            })}
           </div>
-        </div>
-
-        {/* Quick Info Cards */}
-        <div className="info-grid">
-          <div className="info-card success">
-            <div className="info-icon">
-              <CheckCircle size={28} />
-            </div>
-            <div className="info-content">
-              <h3>Admission Status</h3>
-              <p className="info-status">Approved</p>
-              <small>Confirmed on March 15, 2026</small>
-            </div>
-          </div>
-
-          <div className="info-card warning">
-            <div className="info-icon">
-              <Clock size={28} />
-            </div>
-            <div className="info-content">
-              <h3>Entrance Exam</h3>
-              <p className="info-status">Scheduled</p>
-              <small>March 25, 2026 at 10:00 AM</small>
-            </div>
-          </div>
-
-          <div className="info-card info">
-            <div className="info-icon">
-              <Award size={28} />
-            </div>
-            <div className="info-content">
-              <h3>GPA</h3>
-              <p className="info-status">3.85</p>
-              <small>Current Semester</small>
-            </div>
-          </div>
-
-          <div className="info-card primary">
-            <div className="info-icon">
-              <Megaphone size={28} />
-            </div>
-            <div className="info-content">
-              <h3>New Announcements</h3>
-              <p className="info-status">5</p>
-              <small>Unread messages</small>
-            </div>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="dashboard-section">
-          <h2>Quick Access</h2>
-          <div className="action-grid">
-            <button
-              className="quick-action primary"
-              onClick={() => navigate("/student/schedule")}
-            >
-              <Calendar size={24} />
-              <span className="action-label">View Schedule</span>
-            </button>
-
-            <button
-              className="quick-action secondary"
-              onClick={() => navigate("/student/records")}
-            >
-              <FileText size={24} />
-              <span className="action-label">View Grades</span>
-            </button>
-
-            <button
-              className="quick-action accent"
-              onClick={() => navigate("/student/announcements")}
-            >
-              <Megaphone size={24} />
-              <span className="action-label">Announcements</span>
-            </button>
-
-            <button
-              className="quick-action info"
-              onClick={() => navigate("/student/profile")}
-            >
-              <User size={24} />
-              <span className="action-label">My Profile</span>
-            </button>
-          </div>
-        </div>
+        </section>
 
         {/* Today's Schedule */}
         <div className="dashboard-section">
@@ -562,68 +597,64 @@ export default function StudentDashboard() {
           </div>
         </div>
 
-        {/* Recent Announcements */}
-        <div className="dashboard-section">
-          <h2>Recent Announcements</h2>
-          <div className="announcements-list">
-            <div className="announcement-item">
-              <div className="announcement-date">Mar 21</div>
-              <div className="announcement-content">
-                <h4>Midterm Examination Schedule Released</h4>
-                <p>
-                  Check the academic portal for the complete midterm exam
-                  schedule for this semester.
-                </p>
-              </div>
+        <section className="student-dashboard__academic">
+          <header className="student-dashboard__section-heading">
+            <div>
+              <span>Student Record</span>
+              <h2>Academic Information</h2>
+              <p>Quick reference information from your Student profile.</p>
+            </div>
+          </header>
+
+          <div className="student-dashboard__academic-grid">
+            <div>
+              <small>Program</small>
+              <strong>
+                {loading
+                  ? "…"
+                  : profile?.course?.course_code ||
+                    profile?.course?.course_name ||
+                    "Not recorded"}
+              </strong>
             </div>
 
-            <div className="announcement-item">
-              <div className="announcement-date">Mar 19</div>
-              <div className="announcement-content">
-                <h4>Library Extended Hours</h4>
-                <p>
-                  The library will be open until 10:00 PM on weekdays during
-                  exam season.
-                </p>
-              </div>
+            <div>
+              <small>Year Level</small>
+              <strong>{loading ? "…" : formatYearLevel(profile?.year_level)}</strong>
             </div>
 
-            <div className="announcement-item">
-              <div className="announcement-date">Mar 17</div>
-              <div className="announcement-content">
-                <h4>Student Services Office Closed</h4>
-                <p>
-                  The Student Services office will be closed on March 24 for
-                  maintenance.
-                </p>
-              </div>
+            <div>
+              <small>Section</small>
+              <strong>{loading ? "…" : profile?.section?.section_name || "Not recorded"}</strong>
+            </div>
+
+            <div>
+              <small>Student Status</small>
+              <strong>{loading ? "…" : profile?.student_status || "Not recorded"}</strong>
             </div>
           </div>
-        </div>
 
-        {/* Academic Information */}
-        <div className="dashboard-section">
-          <h2>Academic Information</h2>
-          <div className="info-boxes">
-            <div className="info-box">
-              <h3>Current Semester</h3>
-              <p className="value">2nd Semester, 2025-2026</p>
-            </div>
-            <div className="info-box">
-              <h3>Total Credits</h3>
-              <p className="value">45 Units</p>
-            </div>
-            <div className="info-box">
-              <h3>Status</h3>
-              <p className="value active">Active</p>
-            </div>
-            <div className="info-box">
-              <h3>Tuition Fee</h3>
-              <p className="value success">Paid</p>
-            </div>
+          <div className="student-dashboard__secondary-actions">
+            {secondaryActions.map((action) => {
+              const Icon = action.icon;
+
+              return (
+                <button
+                  key={action.path}
+                  type="button"
+                  onClick={() => navigate(action.path)}
+                >
+                  <span>
+                    <Icon size={16} />
+                  </span>
+                  <strong>{action.title}</strong>
+                  <ArrowRight size={14} />
+                </button>
+              );
+            })}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
     </DashboardLayout>
   );
 }
