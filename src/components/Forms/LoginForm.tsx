@@ -678,6 +678,27 @@ export default function LoginForm() {
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div
+          className={styles.loginLoadingOverlay}
+          role="status"
+          aria-live="polite"
+          aria-label="Signing you in"
+        >
+          <div className={styles.loginLoadingPanel}>
+            <span
+              className={styles.loginLoadingSpinner}
+              aria-hidden="true"
+            />
+
+            <div className={styles.loginLoadingText}>
+              <strong>Signing you in</strong>
+              <span>Sending your OTP. Please wait...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1012,3 +1012,127 @@ body {
   }
 }
 
+/* =========================================================
+   LOGIN LOADING OVERLAY
+   ========================================================= */
+
+.loginLoadingOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  width: 100vw;
+  height: 100dvh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 24px;
+
+  background: rgba(4, 55, 28, 0.92);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  animation: ptcLoginOverlayFade 0.16s ease-out;
+}
+
+.loginLoadingPanel {
+  width: min(370px, calc(100vw - 40px));
+  min-height: 78px;
+
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  padding: 18px 22px;
+
+  border: 1px solid rgba(187, 247, 208, 0.85);
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 24px 60px rgba(0, 0, 0, 0.32),
+    0 6px 18px rgba(15, 61, 36, 0.18);
+}
+
+.loginLoadingSpinner {
+  width: 38px;
+  height: 38px;
+
+  flex: 0 0 38px;
+
+  border: 4px solid #dcfce7;
+  border-top-color: #15803d;
+  border-right-color: #22c55e;
+
+  border-radius: 50%;
+
+  animation: ptcLoginSpinner 0.75s linear infinite;
+}
+
+.loginLoadingText {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.loginLoadingText strong {
+  color: #0f3d24;
+
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+.loginLoadingText span {
+  color: #66756b;
+
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   LOGIN LOADING ANIMATIONS
+   ========================================================= */
+
+@keyframes ptcLoginSpinner {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ptcLoginOverlayFade {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 480px) {
+  .loginLoadingOverlay {
+    padding: 16px;
+  }
+
+  .loginLoadingPanel {
+    width: 100%;
+    padding: 16px 18px;
+  }
+
+  .loginLoadingSpinner {
+    width: 34px;
+    height: 34px;
+
+    flex-basis: 34px;
+  }
+}
+
