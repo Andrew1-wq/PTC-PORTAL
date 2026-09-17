@@ -6,4 +6,9 @@ export const financeSoloLinks = [
     path: "/finance/dashboard",
     icon: "",
   },
+  {
+    label: "Requests",
+    path: "/finance/tickets",
+    icon: "",
+  },
 ];

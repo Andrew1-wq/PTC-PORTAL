@@ -1,7 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-
-import type { CSSProperties, FormEvent } from "react";
-
+import type { FormEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -19,17 +17,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
-
-// ============================================================
-// API
-// ============================================================
+import "../../../styles/registrar-document-request.css";
 
 const REGISTRAR_DOCUMENT_REQUESTS_API =
   "http://localhost:3000/api/registrar/document-requests";
-
-// ============================================================
-// TYPES
-// ============================================================
 
 type RegistrarStatus =
   | "Pending"
@@ -59,6 +50,14 @@ interface RegistrarDocumentRequest {
     request_id: number;
     request_number: string;
     document_type: string;
+    enrollment_id: number | null;
+    academic_period: {
+      academic_year_id: number | null;
+      academic_year: string | null;
+      semester_id: number | null;
+      semester_name: string | null;
+      enrollment_status: string | null;
+    } | null;
     purpose: string | null;
     copies: number;
     requested_at: string | null;
@@ -112,10 +111,6 @@ interface ActionResponse {
 
 type FilterStatus = "All" | "Ready for Processing" | "Processing" | "Done";
 
-// ============================================================
-// HELPERS
-// ============================================================
-
 function formatDate(value: string | null | undefined) {
   if (!value) {
     return "—";
@@ -155,108 +150,61 @@ function formatMoney(value: number | string | null | undefined) {
   }).format(amount);
 }
 
-function registrarStatusStyle(status: string): CSSProperties {
+function statusClass(status: string) {
   if (status === "Ready for Processing") {
-    return {
-      color: "#6d28d9",
-      background: "#ede9fe",
-      border: "1px solid #ddd6fe",
-    };
+    return "registrar-doc-request__status--ready";
   }
 
   if (status === "Processing") {
-    return {
-      color: "#1d4ed8",
-      background: "#dbeafe",
-      border: "1px solid #bfdbfe",
-    };
+    return "registrar-doc-request__status--processing";
   }
 
   if (status === "Done") {
-    return {
-      color: "#166534",
-      background: "#dcfce7",
-      border: "1px solid #bbf7d0",
-    };
+    return "registrar-doc-request__status--done";
   }
 
   if (status === "Rejected" || status === "Cancelled") {
-    return {
-      color: "#991b1b",
-      background: "#fee2e2",
-      border: "1px solid #fecaca",
-    };
+    return "registrar-doc-request__status--danger";
   }
 
-  return {
-    color: "#475569",
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-  };
+  return "registrar-doc-request__status--default";
 }
 
-// ============================================================
-// MAIN COMPONENT
-// ============================================================
+function formatAcademicPeriod(request: RegistrarDocumentRequest) {
+  const period = request.document_request.academic_period;
+
+  if (!period) {
+    return "Legacy request — not recorded";
+  }
+
+  return `${period.academic_year ?? "—"} — ${period.semester_name ?? "—"}`;
+}
 
 export default function DocumentRequest() {
   const navigate = useNavigate();
 
-  /*
-   * Keep authentication dependencies primitive.
-   *
-   * Do not put the entire session object in useEffect
-   * dependencies because getSession() may return a new
-   * object every render.
-   */
   const session = authService.getSession();
   const token = authService.getToken();
 
   const role = session?.role ?? null;
-
   const isRegistrar = role === "Registrar" && Boolean(token);
 
-  // ==========================================================
-  // DATA
-  // ==========================================================
-
   const [requests, setRequests] = useState<RegistrarDocumentRequest[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [refreshing, setRefreshing] = useState(false);
 
-  // ==========================================================
-  // FILTERS
-  // ==========================================================
-
   const [searchText, setSearchText] = useState("");
-
   const [statusFilter, setStatusFilter] = useState<FilterStatus>("All");
-
-  // ==========================================================
-  // SELECTED REQUEST
-  // ==========================================================
 
   const [selectedTicketNumber, setSelectedTicketNumber] = useState<
     string | null
   >(null);
 
   const [remarks, setRemarks] = useState("");
-
   const [actionLoading, setActionLoading] = useState(false);
 
-  // ==========================================================
-  // MESSAGES
-  // ==========================================================
-
   const [errorMessage, setErrorMessage] = useState("");
-
   const [successMessage, setSuccessMessage] = useState("");
-
-  // ==========================================================
-  // AUTH
-  // ==========================================================
 
   useEffect(() => {
     if (!isRegistrar) {
@@ -265,10 +213,6 @@ export default function DocumentRequest() {
       });
     }
   }, [isRegistrar, navigate]);
-
-  // ==========================================================
-  // LOAD QUEUE
-  // ==========================================================
 
   const loadRequests = useCallback(
     async (showRefreshLoader = false) => {
@@ -289,7 +233,6 @@ export default function DocumentRequest() {
           REGISTRAR_DOCUMENT_REQUESTS_API,
           {
             method: "GET",
-
             headers: {
               Accept: "application/json",
             },
@@ -347,10 +290,6 @@ export default function DocumentRequest() {
     void loadRequests();
   }, [isRegistrar, loadRequests]);
 
-  // ==========================================================
-  // SUMMARY
-  // ==========================================================
-
   const summary = useMemo(() => {
     let ready = 0;
     let processing = 0;
@@ -378,10 +317,6 @@ export default function DocumentRequest() {
     };
   }, [requests]);
 
-  // ==========================================================
-  // FILTERED REQUESTS
-  // ==========================================================
-
   const filteredRequests = useMemo(() => {
     const search = searchText.trim().toLowerCase();
 
@@ -400,6 +335,8 @@ export default function DocumentRequest() {
         request.student.student_name,
         request.document_request.request_number,
         request.document_request.document_type,
+        request.document_request.academic_period?.academic_year ?? "",
+        request.document_request.academic_period?.semester_name ?? "",
         request.transaction.transaction_name,
         request.payment.receipt_number ?? "",
       ]
@@ -409,10 +346,6 @@ export default function DocumentRequest() {
       return searchable.includes(search);
     });
   }, [requests, searchText, statusFilter]);
-
-  // ==========================================================
-  // SELECTED REQUEST
-  // ==========================================================
 
   const selectedRequest = useMemo(() => {
     if (!selectedTicketNumber) {
@@ -428,16 +361,54 @@ export default function DocumentRequest() {
 
   const selectRequest = (request: RegistrarDocumentRequest) => {
     setSelectedTicketNumber(request.ticket_number);
-
     setRemarks(request.registrar.remarks ?? "");
-
     setErrorMessage("");
     setSuccessMessage("");
   };
 
-  // ==========================================================
-  // START PROCESSING
-  // ==========================================================
+  const handleViewCOR = () => {
+    if (!selectedRequest) {
+      return;
+    }
+
+    if (selectedRequest.document_request.document_type !== "COR") {
+      return;
+    }
+
+    if (selectedRequest.payment.payment_status !== "Paid") {
+      setErrorMessage(
+        "The COR cannot be opened until payment has been completed.",
+      );
+      return;
+    }
+
+    if (
+      selectedRequest.registrar.status !== "Processing" &&
+      selectedRequest.registrar.status !== "Done"
+    ) {
+      setErrorMessage(
+        "Start Registrar processing before opening the official COR.",
+      );
+      return;
+    }
+
+    const enrollmentId = selectedRequest.document_request.enrollment_id;
+
+    if (!enrollmentId) {
+      setErrorMessage(
+        "This COR request does not have a recorded academic period. It is a legacy request and cannot be opened as an exact requested COR.",
+      );
+      return;
+    }
+
+    setErrorMessage("");
+
+    navigate(
+      `/registrar/student/${selectedRequest.student.student_id}/CORR?enrollment_id=${encodeURIComponent(
+        String(enrollmentId),
+      )}&ticket_number=${encodeURIComponent(selectedRequest.ticket_number)}`,
+    );
+  };
 
   const handleStartProcessing = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -450,7 +421,6 @@ export default function DocumentRequest() {
       setErrorMessage(
         "This request cannot be processed because payment is not complete.",
       );
-
       return;
     }
 
@@ -458,8 +428,18 @@ export default function DocumentRequest() {
       setErrorMessage(
         "Only requests that are Ready for Processing can be started.",
       );
-
       return;
+    }
+
+    if (selectedRequest.document_request.document_type === "COR") {
+      const enrollmentId = selectedRequest.document_request.enrollment_id;
+
+      if (!enrollmentId) {
+        setErrorMessage(
+          "This COR request does not have a recorded academic period. The exact COR cannot be opened for this legacy request.",
+        );
+        return;
+      }
     }
 
     setActionLoading(true);
@@ -473,13 +453,10 @@ export default function DocumentRequest() {
         )}/start`,
         {
           method: "PATCH",
-
           headers: {
             "Content-Type": "application/json",
-
             Accept: "application/json",
           },
-
           body: JSON.stringify({
             remarks: remarks.trim(),
           }),
@@ -504,6 +481,20 @@ export default function DocumentRequest() {
         );
       }
 
+      if (selectedRequest.document_request.document_type === "COR") {
+        const enrollmentId = selectedRequest.document_request.enrollment_id;
+
+        navigate(
+          `/registrar/student/${selectedRequest.student.student_id}/CORR?enrollment_id=${encodeURIComponent(
+            String(enrollmentId),
+          )}&ticket_number=${encodeURIComponent(
+            selectedRequest.ticket_number,
+          )}`,
+        );
+
+        return;
+      }
+
       setSuccessMessage(data.message || "Registrar processing has started.");
 
       await loadRequests(true);
@@ -520,10 +511,6 @@ export default function DocumentRequest() {
     }
   };
 
-  // ==========================================================
-  // COMPLETE REQUEST
-  // ==========================================================
-
   const handleComplete = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -535,7 +522,6 @@ export default function DocumentRequest() {
       setErrorMessage(
         "This request cannot be completed because payment is not complete.",
       );
-
       return;
     }
 
@@ -543,7 +529,6 @@ export default function DocumentRequest() {
       setErrorMessage(
         "The request must be Processing before it can be marked Done.",
       );
-
       return;
     }
 
@@ -558,13 +543,10 @@ export default function DocumentRequest() {
         )}/complete`,
         {
           method: "PATCH",
-
           headers: {
             "Content-Type": "application/json",
-
             Accept: "application/json",
           },
-
           body: JSON.stringify({
             remarks: remarks.trim(),
           }),
@@ -605,101 +587,38 @@ export default function DocumentRequest() {
     }
   };
 
-  // ==========================================================
-  // AUTHORIZED RENDER ONLY
-  // ==========================================================
-
   if (!isRegistrar) {
     return null;
   }
 
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-          gap: "22px",
-          padding: "4px",
-        }}
-      >
-        {/* ===================================================
-            HEADER
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "26px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
-          >
+      <main className="registrar-doc-request">
+        <section className="registrar-doc-request__hero">
+          <div className="registrar-doc-request__hero-inner">
             <div>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  marginBottom: "8px",
-                  color: "#15803d",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
+              <div className="registrar-doc-request__eyebrow">
                 <FileCheck2 size={16} />
                 Registrar Office
               </div>
 
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "28px",
-                }}
-              >
-                Document Requests
-              </h1>
+              <h1>Document Requests</h1>
 
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  maxWidth: "760px",
-                  color: "#64748b",
-                  lineHeight: 1.6,
-                }}
-              >
+              <p>
                 Process paid COR and COG requests forwarded by the Finance
                 Office.
               </p>
             </div>
 
-            <FileText size={42} color="#15803d" />
+            <FileText
+              className="registrar-doc-request__hero-icon"
+              size={42}
+              aria-hidden="true"
+            />
           </div>
         </section>
 
-        {/* ===================================================
-            SUMMARY
-        =================================================== */}
-
-        <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-            gap: "14px",
-          }}
-        >
+        <section className="registrar-doc-request__summary-grid">
           <SummaryCard
             icon={<FileText size={23} />}
             label="Total Requests"
@@ -725,51 +644,17 @@ export default function DocumentRequest() {
           />
         </section>
 
-        {/* ===================================================
-            SEARCH + FILTER
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "20px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "16px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns:
-                "minmax(240px, 1fr) minmax(190px, 260px) auto",
-              gap: "10px",
-            }}
-          >
-            <div
-              style={{
-                position: "relative",
-              }}
-            >
-              <Search
-                size={17}
-                style={{
-                  position: "absolute",
-                  left: "12px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  color: "#94a3b8",
-                }}
-              />
+        <section className="registrar-doc-request__toolbar-panel">
+          <div className="registrar-doc-request__toolbar">
+            <div className="registrar-doc-request__search">
+              <Search size={17} aria-hidden="true" />
 
               <input
                 type="text"
                 value={searchText}
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder="Search ticket, student, request number..."
-                style={{
-                  ...inputStyle,
-                  paddingLeft: "38px",
-                }}
+                className="registrar-doc-request__input registrar-doc-request__search-input"
               />
             </div>
 
@@ -778,14 +663,11 @@ export default function DocumentRequest() {
               onChange={(event) =>
                 setStatusFilter(event.target.value as FilterStatus)
               }
-              style={inputStyle}
+              className="registrar-doc-request__input"
             >
               <option value="All">All Statuses</option>
-
               <option value="Ready for Processing">Ready for Processing</option>
-
               <option value="Processing">Processing</option>
-
               <option value="Done">Done</option>
             </select>
 
@@ -793,143 +675,51 @@ export default function DocumentRequest() {
               type="button"
               onClick={() => void loadRequests(true)}
               disabled={refreshing}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "7px",
-                padding: "10px 14px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                background: "#ffffff",
-                color: "#334155",
-                fontWeight: 700,
-                cursor: refreshing ? "wait" : "pointer",
-              }}
+              className="registrar-doc-request__refresh-button"
             >
-              {refreshing ? <Loader2 size={16} /> : <RefreshCcw size={16} />}
+              {refreshing ? (
+                <Loader2 className="registrar-doc-request__spinner" size={16} />
+              ) : (
+                <RefreshCcw size={16} />
+              )}
               Refresh
             </button>
           </div>
         </section>
 
-        {/* ===================================================
-            MESSAGES
-        =================================================== */}
-
         {errorMessage && (
-          <div
-            style={{
-              padding: "12px 14px",
-              border: "1px solid #fecaca",
-              borderRadius: "10px",
-              background: "#fef2f2",
-              color: "#991b1b",
-              fontSize: "13px",
-              fontWeight: 650,
-            }}
-          >
+          <div className="registrar-doc-request__message registrar-doc-request__message--error">
             {errorMessage}
           </div>
         )}
 
         {successMessage && (
-          <div
-            style={{
-              padding: "12px 14px",
-              border: "1px solid #bbf7d0",
-              borderRadius: "10px",
-              background: "#f0fdf4",
-              color: "#166534",
-              fontSize: "13px",
-              fontWeight: 650,
-            }}
-          >
+          <div className="registrar-doc-request__message registrar-doc-request__message--success">
             {successMessage}
           </div>
         )}
 
-        {/* ===================================================
-            REQUEST LIST
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "22px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              marginBottom: "18px",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                color: "#0f172a",
-                fontSize: "19px",
-              }}
-            >
-              Registrar Queue
-            </h2>
-
-            <p
-              style={{
-                margin: "5px 0 0",
-                color: "#64748b",
-                fontSize: "13px",
-              }}
-            >
+        <section className="registrar-doc-request__panel">
+          <div className="registrar-doc-request__panel-heading">
+            <h2>Registrar Queue</h2>
+            <p>
               {filteredRequests.length} request
               {filteredRequests.length === 1 ? "" : "s"} shown
             </p>
           </div>
 
           {loading ? (
-            <div
-              style={{
-                minHeight: "180px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-                color: "#64748b",
-              }}
-            >
-              <Loader2 size={20} />
+            <div className="registrar-doc-request__loading-state">
+              <Loader2 className="registrar-doc-request__spinner" size={20} />
               Loading Registrar requests...
             </div>
           ) : filteredRequests.length === 0 ? (
-            <div
-              style={{
-                padding: "40px",
-                textAlign: "center",
-                border: "1px dashed #cbd5e1",
-                borderRadius: "14px",
-                color: "#64748b",
-              }}
-            >
+            <div className="registrar-doc-request__empty-state">
               <FileText size={34} />
-
-              <p
-                style={{
-                  margin: "10px 0 0",
-                  fontWeight: 700,
-                }}
-              >
-                No document requests found.
-              </p>
+              <p>No document requests found.</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gap: "12px",
-              }}
-            >
+            <div className="registrar-doc-request__request-list">
               {filteredRequests.map((request) => {
                 const isSelected =
                   selectedTicketNumber === request.ticket_number;
@@ -938,50 +728,20 @@ export default function DocumentRequest() {
                   <article
                     key={request.ticket_id}
                     onClick={() => selectRequest(request)}
-                    style={{
-                      padding: "17px",
-
-                      border: isSelected
-                        ? "2px solid #15803d"
-                        : "1px solid #e2e8f0",
-
-                      borderRadius: "13px",
-
-                      background: isSelected ? "#f8fff9" : "#ffffff",
-
-                      cursor: "pointer",
-                    }}
+                    className={`registrar-doc-request__request-card${
+                      isSelected
+                        ? " registrar-doc-request__request-card--selected"
+                        : ""
+                    }`}
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        gap: "14px",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div className="registrar-doc-request__request-top">
                       <div>
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "8px",
-                            color: "#0f172a",
-                            fontWeight: 800,
-                          }}
-                        >
-                          <FileText size={17} color="#15803d" />
-
+                        <div className="registrar-doc-request__request-title">
+                          <FileText size={17} />
                           {request.transaction.transaction_name}
                         </div>
 
-                        <div
-                          style={{
-                            marginTop: "5px",
-                            color: "#64748b",
-                            fontSize: "12px",
-                          }}
-                        >
+                        <div className="registrar-doc-request__request-meta">
                           {request.ticket_number} •{" "}
                           {request.document_request.request_number}
                         </div>
@@ -989,19 +749,11 @@ export default function DocumentRequest() {
 
                       <StatusBadge
                         label={request.registrar.status}
-                        style={registrarStatusStyle(request.registrar.status)}
+                        className={statusClass(request.registrar.status)}
                       />
                     </div>
 
-                    <div
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns:
-                          "repeat(auto-fit, minmax(160px, 1fr))",
-                        gap: "10px",
-                        marginTop: "14px",
-                      }}
-                    >
+                    <div className="registrar-doc-request__info-grid">
                       <InfoBox
                         label="Student"
                         value={request.student.student_name}
@@ -1010,6 +762,11 @@ export default function DocumentRequest() {
                       <InfoBox
                         label="Student Number"
                         value={request.student.student_number}
+                      />
+
+                      <InfoBox
+                        label="Academic Period"
+                        value={formatAcademicPeriod(request)}
                       />
 
                       <InfoBox
@@ -1034,117 +791,35 @@ export default function DocumentRequest() {
           )}
         </section>
 
-        {/* ===================================================
-            SELECTED REQUEST DETAILS
-        =================================================== */}
-
         {selectedRequest && (
-          <section
-            style={{
-              padding: "24px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "18px",
-              background: "#ffffff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "flex-start",
-                gap: "16px",
-                flexWrap: "wrap",
-                marginBottom: "20px",
-              }}
-            >
+          <section className="registrar-doc-request__panel registrar-doc-request__details">
+            <div className="registrar-doc-request__details-header">
               <div>
-                <p
-                  style={{
-                    margin: 0,
-                    color: "#15803d",
-                    fontSize: "11px",
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                  }}
-                >
+                <p className="registrar-doc-request__section-label">
                   Selected Request
                 </p>
 
-                <h2
-                  style={{
-                    margin: "5px 0 0",
-                    color: "#0f172a",
-                  }}
-                >
-                  {selectedRequest.ticket_number}
-                </h2>
+                <h2>{selectedRequest.ticket_number}</h2>
               </div>
 
               <StatusBadge
                 label={selectedRequest.registrar.status}
-                style={registrarStatusStyle(selectedRequest.registrar.status)}
+                className={statusClass(selectedRequest.registrar.status)}
               />
             </div>
 
-            {/* STUDENT */}
-
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "15px",
-                border: "1px solid #e2e8f0",
-                borderRadius: "12px",
-                background: "#f8fafc",
-                marginBottom: "16px",
-              }}
-            >
-              <div
-                style={{
-                  width: "42px",
-                  height: "42px",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: "50%",
-                  background: "#dcfce7",
-                  color: "#15803d",
-                }}
-              >
+            <div className="registrar-doc-request__student-card">
+              <div className="registrar-doc-request__student-icon">
                 <UserRound size={21} />
               </div>
 
               <div>
-                <strong
-                  style={{
-                    color: "#0f172a",
-                  }}
-                >
-                  {selectedRequest.student.student_name}
-                </strong>
-
-                <div
-                  style={{
-                    marginTop: "3px",
-                    color: "#64748b",
-                    fontSize: "12px",
-                  }}
-                >
-                  {selectedRequest.student.student_number}
-                </div>
+                <strong>{selectedRequest.student.student_name}</strong>
+                <span>{selectedRequest.student.student_number}</span>
               </div>
             </div>
 
-            {/* DETAILS */}
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                gap: "12px",
-              }}
-            >
+            <div className="registrar-doc-request__info-grid registrar-doc-request__info-grid--details">
               <InfoBox
                 label="Document"
                 value={selectedRequest.transaction.transaction_name}
@@ -1153,6 +828,11 @@ export default function DocumentRequest() {
               <InfoBox
                 label="Request Number"
                 value={selectedRequest.document_request.request_number}
+              />
+
+              <InfoBox
+                label="Academic Period"
+                value={formatAcademicPeriod(selectedRequest)}
               />
 
               <InfoBox
@@ -1197,140 +877,65 @@ export default function DocumentRequest() {
             </div>
 
             {selectedRequest.document_request.purpose && (
-              <div
-                style={{
-                  marginTop: "14px",
-                  padding: "12px 14px",
-                  borderRadius: "10px",
-                  background: "#f8fafc",
-                }}
-              >
-                <div
-                  style={{
-                    marginBottom: "4px",
-                    color: "#64748b",
-                    fontSize: "10px",
-                    fontWeight: 800,
-                    textTransform: "uppercase",
-                  }}
-                >
-                  Purpose
-                </div>
-
-                <div
-                  style={{
-                    color: "#334155",
-                    fontSize: "13px",
-                  }}
-                >
-                  {selectedRequest.document_request.purpose}
-                </div>
+              <div className="registrar-doc-request__purpose">
+                <div>Purpose</div>
+                <p>{selectedRequest.document_request.purpose}</p>
               </div>
             )}
-
-            {/* ===============================================
-                READY → PROCESSING
-            =============================================== */}
 
             {selectedRequest.registrar.status === "Ready for Processing" && (
               <form
                 onSubmit={handleStartProcessing}
-                style={{
-                  marginTop: "20px",
-                  padding: "18px",
-                  border: "1px solid #ddd6fe",
-                  borderRadius: "12px",
-                  background: "#faf5ff",
-                }}
+                className="registrar-doc-request__workflow-card registrar-doc-request__workflow-card--ready"
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "9px",
-                    marginBottom: "14px",
-                  }}
-                >
-                  <PlayCircle size={21} color="#6d28d9" />
-
-                  <strong
-                    style={{
-                      color: "#4c1d95",
-                    }}
-                  >
-                    Start Registrar Processing
-                  </strong>
+                <div className="registrar-doc-request__workflow-heading registrar-doc-request__workflow-heading--ready">
+                  <PlayCircle size={21} />
+                  <strong>Start Registrar Processing</strong>
                 </div>
 
-                <label style={fieldLabelStyle}>
+                <label className="registrar-doc-request__field-label">
                   Registrar Remarks
                   <textarea
                     value={remarks}
                     onChange={(event) => setRemarks(event.target.value)}
                     rows={3}
                     maxLength={500}
-                    placeholder="Example: Started preparing COR."
+                    placeholder="Optional processing remarks."
                     disabled={actionLoading}
-                    style={{
-                      ...inputStyle,
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
+                    className="registrar-doc-request__input registrar-doc-request__textarea"
                   />
                 </label>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "14px",
-                  }}
-                >
+                <div className="registrar-doc-request__workflow-actions">
                   <ActionButton
                     loading={actionLoading}
-                    label="Start Processing"
-                    loadingLabel="Starting..."
+                    label={
+                      selectedRequest.document_request.document_type === "COR"
+                        ? "Process & View COR"
+                        : "Start Processing"
+                    }
+                    loadingLabel={
+                      selectedRequest.document_request.document_type === "COR"
+                        ? "Opening COR..."
+                        : "Starting..."
+                    }
                     icon={<PlayCircle size={17} />}
                   />
                 </div>
               </form>
             )}
 
-            {/* ===============================================
-                PROCESSING → DONE
-            =============================================== */}
-
             {selectedRequest.registrar.status === "Processing" && (
               <form
                 onSubmit={handleComplete}
-                style={{
-                  marginTop: "20px",
-                  padding: "18px",
-                  border: "1px solid #bfdbfe",
-                  borderRadius: "12px",
-                  background: "#eff6ff",
-                }}
+                className="registrar-doc-request__workflow-card registrar-doc-request__workflow-card--processing"
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "9px",
-                    marginBottom: "14px",
-                  }}
-                >
-                  <FileCheck2 size={21} color="#1d4ed8" />
-
-                  <strong
-                    style={{
-                      color: "#1e3a8a",
-                    }}
-                  >
-                    Complete Document Request
-                  </strong>
+                <div className="registrar-doc-request__workflow-heading registrar-doc-request__workflow-heading--processing">
+                  <FileCheck2 size={21} />
+                  <strong>Complete Document Request</strong>
                 </div>
 
-                <label style={fieldLabelStyle}>
+                <label className="registrar-doc-request__field-label">
                   Completion Remarks
                   <textarea
                     value={remarks}
@@ -1339,21 +944,23 @@ export default function DocumentRequest() {
                     maxLength={500}
                     placeholder="Example: COR prepared and released to student."
                     disabled={actionLoading}
-                    style={{
-                      ...inputStyle,
-                      resize: "vertical",
-                      fontFamily: "inherit",
-                    }}
+                    className="registrar-doc-request__input registrar-doc-request__textarea"
                   />
                 </label>
 
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "flex-end",
-                    marginTop: "14px",
-                  }}
-                >
+                <div className="registrar-doc-request__workflow-actions registrar-doc-request__workflow-actions--multiple">
+                  {selectedRequest.document_request.document_type === "COR" && (
+                    <button
+                      type="button"
+                      onClick={handleViewCOR}
+                      disabled={actionLoading}
+                      className="registrar-doc-request__secondary-button"
+                    >
+                      <FileText size={17} />
+                      View / Print COR
+                    </button>
+                  )}
+
                   <ActionButton
                     loading={actionLoading}
                     label="Mark as Done"
@@ -1364,104 +971,51 @@ export default function DocumentRequest() {
               </form>
             )}
 
-            {/* ===============================================
-                DONE
-            =============================================== */}
-
             {selectedRequest.registrar.status === "Done" && (
-              <div
-                style={{
-                  marginTop: "20px",
-                  padding: "17px",
-                  border: "1px solid #bbf7d0",
-                  borderRadius: "12px",
-                  background: "#f0fdf4",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "9px",
-                    color: "#166534",
-                  }}
-                >
+              <div className="registrar-doc-request__completed-card">
+                <div className="registrar-doc-request__completed-heading">
                   <CheckCircle2 size={21} />
-
                   <strong>Request Completed</strong>
                 </div>
 
-                <p
-                  style={{
-                    margin: "8px 0 0",
-                    color: "#166534",
-                    fontSize: "13px",
-                  }}
-                >
+                <p>
                   This document request has already been completed by the
                   Registrar.
                 </p>
 
                 {selectedRequest.registrar.remarks && (
-                  <p
-                    style={{
-                      margin: "8px 0 0",
-                      color: "#166534",
-                      fontSize: "13px",
-                    }}
-                  >
-                    Remarks: {selectedRequest.registrar.remarks}
-                  </p>
+                  <p>Remarks: {selectedRequest.registrar.remarks}</p>
+                )}
+
+                {selectedRequest.document_request.document_type === "COR" && (
+                  <div className="registrar-doc-request__completed-actions">
+                    <button
+                      type="button"
+                      onClick={handleViewCOR}
+                      className="registrar-doc-request__secondary-button registrar-doc-request__secondary-button--compact"
+                    >
+                      <FileText size={17} />
+                      View / Print COR
+                    </button>
+                  </div>
                 )}
               </div>
             )}
           </section>
         )}
 
-        {/* ===================================================
-            WORKFLOW INFO
-        =================================================== */}
+        <section className="registrar-doc-request__workflow-info">
+          <WalletCards size={21} />
 
-        <section
-          style={{
-            padding: "20px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "16px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              alignItems: "flex-start",
-            }}
-          >
-            <WalletCards size={21} color="#15803d" />
+          <div>
+            <strong>Registrar Workflow</strong>
 
-            <div>
-              <strong
-                style={{
-                  color: "#0f172a",
-                }}
-              >
-                Registrar Workflow
-              </strong>
-
-              <p
-                style={{
-                  margin: "5px 0 0",
-                  color: "#64748b",
-                  fontSize: "13px",
-                  lineHeight: 1.6,
-                }}
-              >
-                Only Finance-paid requests appear in this queue. Registrar can
-                move a request from Ready for Processing to Processing, then
-                from Processing to Done. Registrar does not change the student's
-                payment status.
-              </p>
-            </div>
+            <p>
+              Only Finance-paid requests appear in this queue. Registrar can
+              move a request from Ready for Processing to Processing, then from
+              Processing to Done. Registrar does not change the student's
+              payment status.
+            </p>
           </div>
         </section>
       </main>
@@ -1469,145 +1023,49 @@ export default function DocumentRequest() {
   );
 }
 
-// ============================================================
-// SUMMARY CARD
-// ============================================================
-
 function SummaryCard({
   icon,
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  icon: ReactNode;
   label: string;
   value: number;
 }) {
   return (
-    <article
-      style={{
-        display: "flex",
-        alignItems: "center",
-        gap: "13px",
-        padding: "18px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "14px",
-        background: "#ffffff",
-      }}
-    >
-      <div
-        style={{
-          width: "44px",
-          height: "44px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          borderRadius: "11px",
-          background: "#f0fdf4",
-          color: "#15803d",
-        }}
-      >
-        {icon}
-      </div>
+    <article className="registrar-doc-request__summary-card">
+      <div className="registrar-doc-request__summary-icon">{icon}</div>
 
       <div>
-        <span
-          style={{
-            display: "block",
-            color: "#64748b",
-            fontSize: "12px",
-            fontWeight: 650,
-          }}
-        >
-          {label}
-        </span>
-
-        <strong
-          style={{
-            display: "block",
-            marginTop: "2px",
-            color: "#0f172a",
-            fontSize: "23px",
-          }}
-        >
-          {value}
-        </strong>
+        <span>{label}</span>
+        <strong>{value}</strong>
       </div>
     </article>
   );
 }
 
-// ============================================================
-// INFO BOX
-// ============================================================
-
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        padding: "11px 13px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "10px",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          marginBottom: "4px",
-          color: "#64748b",
-          fontSize: "10px",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: ".04em",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          color: "#0f172a",
-          fontSize: "13px",
-          fontWeight: 750,
-          overflowWrap: "anywhere",
-        }}
-      >
-        {value}
-      </div>
+    <div className="registrar-doc-request__info-box">
+      <div className="registrar-doc-request__info-label">{label}</div>
+      <div className="registrar-doc-request__info-value">{value}</div>
     </div>
   );
 }
 
-// ============================================================
-// STATUS BADGE
-// ============================================================
-
 function StatusBadge({
   label,
-  style,
+  className,
 }: {
   label: string;
-  style: CSSProperties;
+  className: string;
 }) {
   return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "5px 9px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: 800,
-        ...style,
-      }}
-    >
+    <span className={`registrar-doc-request__status ${className}`}>
       {label}
     </span>
   );
 }
-
-// ============================================================
-// ACTION BUTTON
-// ============================================================
 
 function ActionButton({
   loading,
@@ -1618,63 +1076,25 @@ function ActionButton({
   loading: boolean;
   label: string;
   loadingLabel: string;
-  icon: React.ReactNode;
+  icon: ReactNode;
 }) {
   return (
     <button
       type="submit"
       disabled={loading}
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "8px",
-        minWidth: "170px",
-        padding: "11px 17px",
-        border: 0,
-        borderRadius: "10px",
-        background: loading ? "#86a993" : "#15803d",
-        color: "#ffffff",
-        fontWeight: 800,
-        cursor: loading ? "wait" : "pointer",
-      }}
+      className="registrar-doc-request__primary-button"
     >
       {loading ? (
         <>
-          <Loader2 size={17} />
-
+          <Loader2 className="registrar-doc-request__spinner" size={17} />
           {loadingLabel}
         </>
       ) : (
         <>
           {icon}
-
           {label}
         </>
       )}
     </button>
   );
 }
-
-// ============================================================
-// STYLES
-// ============================================================
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "11px 12px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#0f172a",
-  outline: "none",
-};
-
-const fieldLabelStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  color: "#334155",
-  fontSize: "13px",
-  fontWeight: 700,
-};
