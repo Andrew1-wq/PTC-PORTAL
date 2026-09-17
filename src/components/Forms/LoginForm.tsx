@@ -216,24 +216,28 @@ export default function LoginForm() {
         replace: true,
       });
     } catch (err) {
-      console.error("LOGIN ERROR:", err);
+  console.error("LOGIN ERROR:", err);
 
-      const remaining =
-        authService.getLoginCooldownRemaining();
+  // Clear the incorrect password after a failed login.
+  setPassword("");
+  setShowPassword(false);
 
-      if (remaining > 0) {
-        setCooldownSeconds(remaining);
-        setError("");
-      } else {
-        setError(
-          err instanceof Error
-            ? err.message
-            : "Login failed.",
-        );
-      }
-    } finally {
-      setLoading(false);
-    }
+  const remaining =
+    authService.getLoginCooldownRemaining();
+
+  if (remaining > 0) {
+    setCooldownSeconds(remaining);
+    setError("");
+  } else {
+    setError(
+      err instanceof Error
+        ? err.message
+        : "Login failed.",
+    );
+  }
+} finally {
+  setLoading(false);
+}
   }
 
   // =====================================================
