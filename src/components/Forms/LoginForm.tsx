@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 
@@ -20,6 +20,49 @@ export default function LoginForm() {
   const [error, setError] = useState("");
 
   const [loading, setLoading] = useState(false);
+
+  const [cooldownSeconds, setCooldownSeconds] = useState(() => {
+    return authService.getLoginCooldownRemaining();
+  });
+
+  // =====================================================
+  // LIVE LOGIN COOLDOWN COUNTDOWN
+  // =====================================================
+
+  useEffect(() => {
+    const syncCountdown = () => {
+      setCooldownSeconds(
+        authService.getLoginCooldownRemaining(),
+      );
+    };
+
+    syncCountdown();
+
+    const intervalId = window.setInterval(
+      syncCountdown,
+      1000,
+    );
+
+    return () => {
+      window.clearInterval(intervalId);
+    };
+  }, []);
+
+  function formatLoginCooldown(totalSeconds: number) {
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+  }
+
+  const cooldownMessage =
+    cooldownSeconds > 0
+      ? `Too many failed login attempts. Try again in ${formatLoginCooldown(
+          cooldownSeconds,
+        )}.`
+      : "";
+
+  const displayError = cooldownMessage || error;
 
   // =====================================================
   // ROUTER
@@ -65,6 +108,15 @@ export default function LoginForm() {
     // =====================================================
 
     const cleanUsername = username.trim();
+
+    const remainingCooldown =
+      authService.getLoginCooldownRemaining();
+
+    if (remainingCooldown > 0) {
+      setCooldownSeconds(remainingCooldown);
+      setError("");
+      return;
+    }
 
     // =====================================================
     // FRONTEND VALIDATION
@@ -166,7 +218,19 @@ export default function LoginForm() {
     } catch (err) {
       console.error("LOGIN ERROR:", err);
 
-      setError(err instanceof Error ? err.message : "Login failed.");
+      const remaining =
+        authService.getLoginCooldownRemaining();
+
+      if (remaining > 0) {
+        setCooldownSeconds(remaining);
+        setError("");
+      } else {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Login failed.",
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -343,8 +407,13 @@ export default function LoginForm() {
     // Let the backend/database determine the username.
     // =====================================================
 
-    setUsername(e.target.value);
+    const nextUsername = e.target.value;
 
+    setUsername(nextUsername);
+
+    // IMPORTANT:
+    // Changing the username does NOT remove or alter
+    // the active login cooldown.
     if (error) {
       setError("");
     }
@@ -487,9 +556,13 @@ export default function LoginForm() {
                 ERROR
             ====================================== */}
 
-            {error && (
-              <p key={error} className={styles.errorMsg}>
-                {error}
+            {displayError && (
+              <p
+                key={displayError}
+                className={styles.errorMsg}
+                aria-live="polite"
+              >
+                {displayError}
               </p>
             )}
 
@@ -499,10 +572,21 @@ export default function LoginForm() {
 
             <button
               type="submit"
-              disabled={loading || !username.trim() || !password}
+              disabled={
+                loading ||
+                cooldownSeconds > 0 ||
+                !username.trim() ||
+                !password
+              }
               className={`${styles.submitBtn} ${loading ? styles.loading : ""}`}
             >
-              {loading ? "Sending OTP..." : "Login"}
+              {loading
+                ? "Sending OTP..."
+                : cooldownSeconds > 0
+                  ? `Try again in ${formatLoginCooldown(
+                      cooldownSeconds,
+                    )}`
+                  : "Login"}
             </button>
           </form>
 
@@ -594,24 +678,6 @@ export default function LoginForm() {
           </div>
         </div>
       </div>
-
-      {loading && (
-        <div
-          className={styles.loginLoadingOverlay}
-          role="status"
-          aria-live="polite"
-          aria-label="Sending OTP"
-        >
-          <div className={styles.loginLoadingPanel}>
-            <span className={styles.loginLoadingSpinner} aria-hidden="true" />
-
-            <div className={styles.loginLoadingText}>
-              <strong>Signing you in</strong>
-              <span>Sending your OTP. Please wait...</span>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
