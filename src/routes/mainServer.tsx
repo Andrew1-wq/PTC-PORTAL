@@ -144,6 +144,8 @@ import ScheduleList from "../pages/programhead/ScheduleVerification/ScheduleList
 import FacultySchedules from "../pages/programhead/ScheduleVerification/FacultySchedules";
 import FacultySchedulesR from "../pages/registrar/Schedules/FacultySchedulesR";
 import DocumentRequest from "../pages/registrar/Documents/DocumentRequests";
+import StudentCORR from "../pages/registrar/StudentRecord/StudentCORR";
+import FinanceTicketProcessing from "../pages/finance/FinanceTicketProcessing";
 
 // ─── Role guard ───────────────────────────────────────────────
 function ProtectedRoute({
@@ -571,6 +573,11 @@ export default function AppRoutes() {
         />
 
         <Route
+          path="/registrar/student/:id/CORR"
+          element={<RegistrarRoute element={<StudentCORR />} />}
+        />
+
+        <Route
           path="/registrar/student/:id/TransferEvaluationR"
           element={<RegistrarRoute element={<TransferEvaluationR />} />}
         />
@@ -658,6 +665,11 @@ export default function AppRoutes() {
         <Route
           path="/finance/dashboard"
           element={<FinanceRoute element={<FinanceDashboard />} />}
+        />
+
+        <Route
+          path="/finance/tickets"
+          element={<FinanceRoute element={<FinanceTicketProcessing />} />}
         />
 
         {/* Catch-all */}

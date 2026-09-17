@@ -23,9 +23,39 @@ const DOCUMENT_REQUEST_API =
 
 type DocumentType = "COR" | "COG";
 
+interface AcademicPeriod {
+  academic_year_id: number | null;
+  academic_year: string | null;
+  semester_id: number | null;
+  semester_name: string | null;
+  enrollment_status: string | null;
+}
+
+interface AvailableEnrollment {
+  enrollment_id: number;
+  academic_year_id: number;
+  academic_year: string;
+  semester_id: number;
+  semester_name: string;
+  enrollment_status: string;
+  approved_at: string | null;
+}
+
+interface StudentSummary {
+  student_id: number;
+  student_number: string;
+  student_name: string;
+}
+
 interface DocumentRequest {
   request_id: number;
   request_number: string;
+
+  student_id: number;
+
+  enrollment_id: number | null;
+  academic_period: AcademicPeriod | null;
+
   document_type: DocumentType;
 
   purpose: string | null;
@@ -60,6 +90,11 @@ interface RequestsResponse {
   success?: boolean;
   code?: string;
   message?: string;
+
+  student?: StudentSummary;
+
+  available_enrollments?: AvailableEnrollment[];
+
   requests?: DocumentRequest[];
 }
 
@@ -72,6 +107,17 @@ interface CreateRequestResponse {
     request_id: number;
     request_number: string;
     document_type: DocumentType;
+
+    enrollment_id: number;
+
+    academic_period: {
+      academic_year_id: number;
+      academic_year: string;
+      semester_id: number;
+      semester_name: string;
+      enrollment_status: string;
+    };
+
     purpose: string | null;
     copies: number;
   };
@@ -86,11 +132,7 @@ interface CreateRequestResponse {
     registrar_status: string;
   };
 
-  student?: {
-    student_id: number;
-    student_number: string;
-    student_name: string;
-  };
+  student?: StudentSummary;
 }
 
 // ============================================================
@@ -138,6 +180,24 @@ function formatMoney(value: number | string | null | undefined) {
     currency: "PHP",
     minimumFractionDigits: 2,
   }).format(amount);
+}
+
+// ============================================================
+// FORMAT ACADEMIC PERIOD
+// ============================================================
+
+function formatAcademicPeriod(
+  period:
+    | Pick<AvailableEnrollment, "academic_year" | "semester_name">
+    | AcademicPeriod
+    | null
+    | undefined,
+) {
+  if (!period?.academic_year || !period?.semester_name) {
+    return "Not recorded (legacy request)";
+  }
+
+  return `${period.academic_year} — ${period.semester_name}`;
 }
 
 // ============================================================
@@ -244,6 +304,14 @@ export default function RequestDocument() {
 
   const [documentType, setDocumentType] = useState<DocumentType>("COR");
 
+  const [availableEnrollments, setAvailableEnrollments] = useState<
+    AvailableEnrollment[]
+  >([]);
+
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<
+    number | null
+  >(null);
+
   const [purpose, setPurpose] = useState("");
 
   const [copies, setCopies] = useState(1);
@@ -332,6 +400,26 @@ export default function RequestDocument() {
         throw new Error(data.message || "Unable to load document requests.");
       }
 
+      const loadedEnrollments = Array.isArray(data.available_enrollments)
+        ? data.available_enrollments
+        : [];
+
+      setAvailableEnrollments(loadedEnrollments);
+
+      setSelectedEnrollmentId((currentEnrollmentId) => {
+        if (
+          currentEnrollmentId &&
+          loadedEnrollments.some(
+            (enrollment) =>
+              Number(enrollment.enrollment_id) === Number(currentEnrollmentId),
+          )
+        ) {
+          return currentEnrollmentId;
+        }
+
+        return null;
+      });
+
       setRequests(Array.isArray(data.requests) ? data.requests : []);
     } catch (error) {
       console.error("LOAD DOCUMENT REQUESTS ERROR:", error);
@@ -377,6 +465,31 @@ export default function RequestDocument() {
     setCreatedRequest(null);
 
     // ================================================
+    // VALIDATE ACADEMIC PERIOD
+    // ================================================
+
+    if (!selectedEnrollmentId) {
+      setErrorMessage(
+        "Please select the academic year and semester for this document request.",
+      );
+
+      return;
+    }
+
+    const selectedEnrollmentExists = availableEnrollments.some(
+      (enrollment) =>
+        Number(enrollment.enrollment_id) === Number(selectedEnrollmentId),
+    );
+
+    if (!selectedEnrollmentExists) {
+      setErrorMessage(
+        "The selected academic period is no longer available. Refresh the page and choose again.",
+      );
+
+      return;
+    }
+
+    // ================================================
     // VALIDATE COPIES
     // ================================================
 
@@ -400,6 +513,8 @@ export default function RequestDocument() {
 
         body: JSON.stringify({
           document_type: documentType,
+
+          enrollment_id: selectedEnrollmentId,
 
           purpose: purpose.trim(),
 
@@ -460,6 +575,7 @@ export default function RequestDocument() {
         data.message || `${documentType} request created successfully.`,
       );
 
+      setSelectedEnrollmentId(null);
       setPurpose("");
       setCopies(1);
 
@@ -645,6 +761,25 @@ export default function RequestDocument() {
             </div>
           )}
 
+          {!loading && availableEnrollments.length === 0 && (
+            <div
+              style={{
+                marginBottom: "18px",
+                padding: "12px 14px",
+                border: "1px solid #fde68a",
+                borderRadius: "10px",
+                background: "#fffbeb",
+                color: "#92400e",
+                fontSize: "13px",
+                lineHeight: 1.5,
+              }}
+            >
+              No approved enrollment period is available for document requests.
+              A COR or COG request can only be created from an approved
+              enrollment.
+            </div>
+          )}
+
           <form
             onSubmit={handleSubmit}
             style={{
@@ -687,6 +822,73 @@ export default function RequestDocument() {
 
                 <option value="COG">Certificate of Grades (COG)</option>
               </select>
+            </label>
+
+            {/* ACADEMIC PERIOD */}
+
+            <label
+              style={{
+                display: "grid",
+                gap: "7px",
+                color: "#334155",
+                fontSize: "13px",
+                fontWeight: 700,
+              }}
+            >
+              Academic Period
+              <select
+                value={selectedEnrollmentId ?? ""}
+                onChange={(event) => {
+                  const value = Number(event.target.value);
+
+                  setSelectedEnrollmentId(
+                    Number.isInteger(value) && value > 0 ? value : null,
+                  );
+
+                  setErrorMessage("");
+                }}
+                disabled={
+                  submitting || loading || availableEnrollments.length === 0
+                }
+                required
+                style={{
+                  width: "100%",
+                  padding: "11px 12px",
+                  border: "1px solid #cbd5e1",
+                  borderRadius: "10px",
+                  background: "#ffffff",
+                  color: "#0f172a",
+                  outline: "none",
+                }}
+              >
+                <option value="">
+                  {loading
+                    ? "Loading approved academic periods..."
+                    : availableEnrollments.length === 0
+                      ? "No approved academic periods available"
+                      : "Select academic year and semester"}
+                </option>
+
+                {availableEnrollments.map((enrollment) => (
+                  <option
+                    key={enrollment.enrollment_id}
+                    value={enrollment.enrollment_id}
+                  >
+                    {enrollment.academic_year} — {enrollment.semester_name}
+                  </option>
+                ))}
+              </select>
+              <span
+                style={{
+                  color: "#64748b",
+                  fontSize: "11px",
+                  fontWeight: 500,
+                  lineHeight: 1.45,
+                }}
+              >
+                The selected period will be locked to this request and used by
+                the Registrar when generating your COR or COG.
+              </span>
             </label>
 
             {/* COPIES */}
@@ -771,7 +973,12 @@ export default function RequestDocument() {
             >
               <button
                 type="submit"
-                disabled={submitting}
+                disabled={
+                  submitting ||
+                  loading ||
+                  availableEnrollments.length === 0 ||
+                  !selectedEnrollmentId
+                }
                 style={{
                   display: "inline-flex",
                   alignItems: "center",
@@ -781,10 +988,22 @@ export default function RequestDocument() {
                   padding: "11px 18px",
                   border: 0,
                   borderRadius: "10px",
-                  background: submitting ? "#86a993" : "#15803d",
+                  background:
+                    submitting ||
+                    loading ||
+                    availableEnrollments.length === 0 ||
+                    !selectedEnrollmentId
+                      ? "#86a993"
+                      : "#15803d",
                   color: "#ffffff",
                   fontWeight: 800,
-                  cursor: submitting ? "wait" : "pointer",
+                  cursor: submitting
+                    ? "wait"
+                    : loading ||
+                        availableEnrollments.length === 0 ||
+                        !selectedEnrollmentId
+                      ? "not-allowed"
+                      : "pointer",
                 }}
               >
                 {submitting ? (
@@ -861,6 +1080,13 @@ export default function RequestDocument() {
               <InfoBox
                 label="Request Number"
                 value={createdRequest.request.request_number}
+              />
+
+              <InfoBox
+                label="Academic Period"
+                value={formatAcademicPeriod(
+                  createdRequest.request.academic_period,
+                )}
               />
 
               <InfoBox
@@ -1105,6 +1331,11 @@ export default function RequestDocument() {
                     <InfoBox
                       label="Finance Ticket"
                       value={request.ticket_number || "Not generated"}
+                    />
+
+                    <InfoBox
+                      label="Academic Period"
+                      value={formatAcademicPeriod(request.academic_period)}
                     />
 
                     <InfoBox label="Copies" value={String(request.copies)} />
