@@ -480,9 +480,8 @@ export default function StudentDashboard() {
   const userRole = user?.role;
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
-  const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(
-    null,
-  );
+  const [scheduleData, setScheduleData] =
+    useState<ScheduleResponse | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -554,11 +553,14 @@ export default function StudentDashboard() {
 
     const loadSchedule = async () => {
       try {
-        const response = await authService.authFetch(SCHEDULE_API_URL, {
-          method: "GET",
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
+        const response = await authService.authFetch(
+          SCHEDULE_API_URL,
+          {
+            method: "GET",
+            signal: controller.signal,
+            headers: { Accept: "application/json" },
+          },
+        );
 
         if (response.status === 401) {
           handleUnauthorized();
@@ -580,9 +582,7 @@ export default function StudentDashboard() {
         if (controller.signal.aborted) return;
         console.error("LOAD STUDENT DASHBOARD SCHEDULE ERROR:", error);
         setScheduleError(
-          error instanceof Error
-            ? error.message
-            : "Unable to load official Student schedule information.",
+          error instanceof Error ? error.message : "Unable to load official Student schedule information.",
         );
       }
     };

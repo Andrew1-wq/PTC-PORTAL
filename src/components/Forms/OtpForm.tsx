@@ -352,7 +352,8 @@ export default function OtpForm() {
   // =====================================================
 
   return (
-    <div className={styles.authcard}>
+    <div className={styles.authPage}>
+      <div className={styles.authcard}>
       {/* ========================================
           LEFT SIDE
       ======================================== */}
@@ -424,6 +425,7 @@ export default function OtpForm() {
           <button type="button" onClick={handleBackToLogin} disabled={loading}>
             Back to Login
           </button>
+        </div>
         </div>
       </div>
     </div>

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 
 import { authService } from "../../services/auth.service";
 
@@ -13,6 +14,8 @@ export default function LoginForm() {
   const [username, setUsername] = useState("");
 
   const [password, setPassword] = useState("");
+
+  const [showPassword, setShowPassword] = useState(false);
 
   const [error, setError] = useState("");
 
@@ -438,16 +441,46 @@ export default function LoginForm() {
 
             <div className={styles.inputgroup}>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 placeholder=" "
                 value={password}
                 onChange={handlePasswordChange}
                 disabled={loading}
                 required
                 autoComplete="current-password"
+                style={{ paddingRight: "52px" }}
               />
 
               <label>Password</label>
+
+              <button
+                type="button"
+                onClick={() => setShowPassword((current) => !current)}
+                disabled={loading}
+                aria-label={showPassword ? "Hide password" : "Show password"}
+                title={showPassword ? "Hide password" : "Show password"}
+                style={{
+                  position: "absolute",
+                  top: "50%",
+                  right: "12px",
+                  transform: "translateY(-50%)",
+                  width: "34px",
+                  height: "34px",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: 0,
+                  border: 0,
+                  borderRadius: "7px",
+                  background: "transparent",
+                  color: "#52645a",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  opacity: loading ? 0.55 : 1,
+                  zIndex: 2,
+                }}
+              >
+                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+              </button>
             </div>
 
             {/* ======================================
@@ -570,6 +603,24 @@ export default function LoginForm() {
           </div>
         </div>
       </div>
+
+      {loading && (
+        <div
+          className={styles.loginLoadingOverlay}
+          role="status"
+          aria-live="polite"
+          aria-label="Sending OTP"
+        >
+          <div className={styles.loginLoadingPanel}>
+            <span className={styles.loginLoadingSpinner} aria-hidden="true" />
+
+            <div className={styles.loginLoadingText}>
+              <strong>Signing you in</strong>
+              <span>Sending your OTP. Please wait...</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
