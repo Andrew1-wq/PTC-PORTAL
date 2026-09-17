@@ -526,37 +526,13 @@ export default function OtpForm() {
             RESEND OTP
         ====================================== */}
 
-        <div
-          style={{
-            width: "100%",
-            marginTop: "18px",
-            padding: "14px 16px",
-            border: "1px solid #d7e6dc",
-            borderRadius: "10px",
-            background: "#f8fcf9",
-            textAlign: "center",
-          }}
-        >
-          <p
-            style={{
-              margin: 0,
-              color: "#24352a",
-              fontSize: "13px",
-              fontWeight: 600,
-            }}
-          >
+        <div className={styles.otpResendBox}>
+          <p className={styles.otpResendPrompt}>
             Didn't receive the code?
           </p>
 
           {resendSeconds > 0 ? (
-            <p
-              style={{
-                margin: "7px 0 0",
-                color: "#718078",
-                fontSize: "13px",
-                fontWeight: 600,
-              }}
-            >
+            <p className={styles.otpResendCountdown}>
               Resend OTP in {formatCountdown(resendSeconds)}
             </p>
           ) : (
@@ -564,34 +540,14 @@ export default function OtpForm() {
               type="button"
               onClick={handleResendOtp}
               disabled={loading || resendLoading}
-              style={{
-                marginTop: "8px",
-                padding: 0,
-                border: 0,
-                background: "transparent",
-                color: "#15803d",
-                fontSize: "13px",
-                fontWeight: 800,
-                cursor:
-                  loading || resendLoading ? "not-allowed" : "pointer",
-                textDecoration: "underline",
-                textUnderlineOffset: "3px",
-                opacity: loading || resendLoading ? 0.6 : 1,
-              }}
+              className={styles.otpResendButton}
             >
               {resendLoading ? "Sending new OTP..." : "Resend OTP"}
             </button>
           )}
 
           {resendMessage && (
-            <p
-              style={{
-                margin: "7px 0 0",
-                color: "#15803d",
-                fontSize: "12px",
-                fontWeight: 700,
-              }}
-            >
+            <p className={styles.otpResendSuccess}>
               {resendMessage}
             </p>
           )}
