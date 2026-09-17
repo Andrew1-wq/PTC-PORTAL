@@ -552,7 +552,7 @@ export default function LoginForm() {
                   zIndex: 2,
                 }}
               >
-                {showPassword ? <EyeOff size={19} /> : <Eye size={19} />}
+                {showPassword ? <Eye size={18} /> : <EyeOff size={18} />}
               </button>
             </div>
 
