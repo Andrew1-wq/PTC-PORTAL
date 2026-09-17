@@ -22,7 +22,7 @@ import "../styles/student-dashboard.css";
 
 const API_BASE_URL = "http://localhost:3000";
 const PROFILE_API_URL = `${API_BASE_URL}/api/student/profile`;
-const CURRENT_ENROLLMENT_API_URL = `${API_BASE_URL}/api/student/enrollments/current`;
+const SCHEDULE_API_URL = `${API_BASE_URL}/api/student/enrollments/schedule`;
 const ANNOUNCEMENTS_API_URL = `${API_BASE_URL}/api/announcements`;
 
 interface StudentProfileData {
@@ -62,35 +62,43 @@ interface StudentProfileResponse {
   error?: string;
 }
 
-interface CurrentEnrollmentSubject {
+interface ScheduleSubject {
   enrollment_subject_id: number;
-  enrollment_id?: number;
+  enrollment_id: number;
   subject_id: number;
   subject_code: string;
   subject_name: string;
-  units?: number;
-  subject_status: string | null;
-  section_id: number | null;
-  section_name: string | null;
-  section_year_level?: number | null;
-  section_subject_id?: number | null;
-  section_subject_status?: string | null;
-  offering_id: number | null;
-  offering_status: string | null;
-  faculty_id: number | null;
-  faculty_name: string | null;
-  room_id?: number | null;
-  room_name?: string | null;
-  schedule_days: string | null;
-  schedule_time: string | null;
-  max_students?: number | null;
-  placement_complete?: boolean;
+  units: number;
+  enrollment_type: string;
+  status: string;
+
+  section: {
+    section_id: number | null;
+    section_name: string | null;
+  };
+
+  section_subject_id: number | null;
+
+  offering: {
+    offering_id: number | null;
+    status: string | null;
+    schedule_days: string | null;
+    schedule_time: string | null;
+  };
+
+  faculty: {
+    faculty_id: number | null;
+    faculty_name: string | null;
+  };
+
+  schedule_ready: boolean;
 }
 
-interface CurrentEnrollmentResponse {
+interface ScheduleResponse {
   success: boolean;
   message?: string;
   error?: string;
+
   enrollment: {
     enrollment_id: number;
     academic_year_id: number;
@@ -100,7 +108,14 @@ interface CurrentEnrollmentResponse {
     enrollment_status: string;
     approved_at: string | null;
   } | null;
-  subjects: CurrentEnrollmentSubject[];
+
+  subjects: ScheduleSubject[];
+
+  summary?: {
+    total_enrolled_subjects: number;
+    scheduled_subjects: number;
+    unscheduled_subjects: number;
+  };
 }
 
 interface AnnouncementRecipient {
@@ -464,7 +479,7 @@ export default function StudentDashboard() {
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
   const [scheduleData, setScheduleData] =
-    useState<CurrentEnrollmentResponse | null>(null);
+    useState<ScheduleResponse | null>(null);
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -533,7 +548,7 @@ export default function StudentDashboard() {
     const loadSchedule = async () => {
       try {
         const response = await authService.authFetch(
-          CURRENT_ENROLLMENT_API_URL,
+          SCHEDULE_API_URL,
           {
             method: "GET",
             signal: controller.signal,
@@ -546,13 +561,13 @@ export default function StudentDashboard() {
           return;
         }
 
-        const data = await readJsonResponse<CurrentEnrollmentResponse>(response);
+        const data = await readJsonResponse<ScheduleResponse>(response);
 
         if (!response.ok || !data.success || !Array.isArray(data.subjects)) {
           throw new Error(
             data.message ||
               data.error ||
-              "Unable to load your current enrollment schedule.",
+              "Unable to load your official Student schedule.",
           );
         }
 
@@ -561,7 +576,7 @@ export default function StudentDashboard() {
         if (controller.signal.aborted) return;
         console.error("LOAD STUDENT DASHBOARD SCHEDULE ERROR:", error);
         setScheduleError(
-          error instanceof Error ? error.message : "Unable to load current enrollment schedule information.",
+          error instanceof Error ? error.message : "Unable to load official Student schedule information.",
         );
       }
     };
@@ -663,12 +678,13 @@ export default function StudentDashboard() {
     return scheduleData.subjects
       .filter(
         (subject) =>
-          subject.subject_status === "Enrolled" &&
-          subject.offering_status !== "Cancelled" &&
-          isScheduledToday(subject.schedule_days, todayName),
+          subject.status === "Enrolled" &&
+          subject.schedule_ready &&
+          subject.offering.status !== "Cancelled" &&
+          isScheduledToday(subject.offering.schedule_days, todayName),
       )
       .map((subject) => {
-        const range = parseScheduleTimeRange(subject.schedule_time);
+        const range = parseScheduleTimeRange(subject.offering.schedule_time);
 
         if (!range) {
           return null;
@@ -678,8 +694,8 @@ export default function StudentDashboard() {
           enrollment_subject_id: subject.enrollment_subject_id,
           subject_code: subject.subject_code,
           subject_name: subject.subject_name,
-          section_name: subject.section_name,
-          faculty_name: subject.faculty_name,
+          section_name: subject.section.section_name,
+          faculty_name: subject.faculty.faculty_name,
           start_minutes: range.start,
           start_label: formatTime(range.start),
           end_label: formatTime(range.end),
