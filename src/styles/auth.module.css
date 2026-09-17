@@ -893,126 +893,6 @@ body {
 }
 
 /* =========================================================
-   LOGIN FULL-SCREEN LOADING COVER
-   Completely covers the login details while OTP is sending.
-   ========================================================= */
-
-.loginLoadingOverlay {
-  position: fixed;
-  inset: 0;
-  z-index: 20000;
-
-  width: 100vw;
-  height: 100dvh;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  padding: 24px;
-
-  background: rgba(8, 48, 24, 0.88);
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  animation: loginOverlayFadeIn 0.18s ease-out;
-}
-
-.loginLoadingPanel {
-  width: min(390px, calc(100vw - 40px));
-
-  display: flex;
-  align-items: center;
-  gap: 16px;
-
-  padding: 20px 22px;
-
-  border: 1px solid rgba(187, 247, 208, 0.8);
-  border-radius: 16px;
-
-  background: #ffffff;
-
-  box-shadow:
-    0 24px 60px rgba(0, 0, 0, 0.3),
-    0 6px 18px rgba(15, 61, 36, 0.18);
-}
-
-.loginLoadingSpinner {
-  width: 38px;
-  height: 38px;
-
-  flex: 0 0 38px;
-
-  border: 4px solid #dcfce7;
-  border-top-color: #15803d;
-  border-right-color: #22c55e;
-
-  border-radius: 50%;
-
-  animation: loginSpinnerRotate 0.75s linear infinite;
-}
-
-.loginLoadingText {
-  min-width: 0;
-
-  display: flex;
-  flex-direction: column;
-
-  gap: 4px;
-}
-
-.loginLoadingText strong {
-  color: #0f3d24;
-
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1.25;
-}
-
-.loginLoadingText span {
-  color: #66756b;
-
-  font-size: 12px;
-  font-weight: 500;
-  line-height: 1.45;
-}
-
-@keyframes loginSpinnerRotate {
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@keyframes loginOverlayFadeIn {
-  from {
-    opacity: 0;
-  }
-
-  to {
-    opacity: 1;
-  }
-}
-
-@media (max-width: 480px) {
-  .loginLoadingOverlay {
-    padding: 16px;
-  }
-
-  .loginLoadingPanel {
-    width: 100%;
-    padding: 18px;
-    border-radius: 14px;
-  }
-
-  .loginLoadingSpinner {
-    width: 34px;
-    height: 34px;
-    flex-basis: 34px;
-  }
-}
-
-/* =========================================================
    LOGIN LOADING OVERLAY
    ========================================================= */
 
@@ -1133,6 +1013,104 @@ body {
     height: 34px;
 
     flex-basis: 34px;
+  }
+}
+
+/* =========================================================
+   OTP RESEND AREA
+   Used by OtpForm.tsx
+   ========================================================= */
+
+.otpResendBox {
+  width: 100%;
+  max-width: 560px;
+
+  margin-top: 18px;
+  padding: 14px 16px;
+
+  border: 1px solid #d7e6dc;
+  border-radius: 10px;
+
+  background: #f8fcf9;
+
+  text-align: center;
+}
+
+.otpResendPrompt {
+  margin: 0;
+
+  color: #24352a;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.otpResendCountdown {
+  margin: 7px 0 0;
+
+  color: #718078;
+
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.otpResendButton {
+  margin-top: 8px;
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
+  color: var(--primary-green);
+
+  font-family: "Poppins", sans-serif;
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+
+  text-decoration: underline;
+  text-underline-offset: 3px;
+
+  transition:
+    color 0.18s ease,
+    opacity 0.18s ease,
+    transform 0.18s ease;
+}
+
+.otpResendButton:hover:not(:disabled) {
+  color: var(--primary-green-dark);
+  transform: translateY(-1px);
+}
+
+.otpResendButton:focus-visible {
+  outline: 2px solid var(--primary-green-bright);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+.otpResendButton:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.otpResendSuccess {
+  margin: 7px 0 0;
+
+  color: var(--primary-green);
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+@media (max-width: 700px) {
+  .otpResendBox {
+    max-width: none;
   }
 }
 
