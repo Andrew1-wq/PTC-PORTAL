@@ -480,14 +480,8 @@ export default function StudentDashboard() {
   const userRole = user?.role;
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
-<<<<<<< HEAD
   const [scheduleData, setScheduleData] =
     useState<ScheduleResponse | null>(null);
-=======
-  const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(
-    null,
-  );
->>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -559,7 +553,6 @@ export default function StudentDashboard() {
 
     const loadSchedule = async () => {
       try {
-<<<<<<< HEAD
         const response = await authService.authFetch(
           SCHEDULE_API_URL,
           {
@@ -568,13 +561,6 @@ export default function StudentDashboard() {
             headers: { Accept: "application/json" },
           },
         );
-=======
-        const response = await authService.authFetch(SCHEDULE_API_URL, {
-          method: "GET",
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
->>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
 
         if (response.status === 401) {
           handleUnauthorized();
@@ -596,13 +582,7 @@ export default function StudentDashboard() {
         if (controller.signal.aborted) return;
         console.error("LOAD STUDENT DASHBOARD SCHEDULE ERROR:", error);
         setScheduleError(
-<<<<<<< HEAD
           error instanceof Error ? error.message : "Unable to load official Student schedule information.",
-=======
-          error instanceof Error
-            ? error.message
-            : "Unable to load official Student schedule information.",
->>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
         );
       }
     };
