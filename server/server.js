@@ -23,7 +23,7 @@ import programHeadRouter from "./routes/programhead/index.js";
 
 import authenticate from "./middleware/authenticate.js";
 import requireRole from "./middleware/requireRole.js";
-import financeRouter from "routes/finance/index.js";
+import financeRouter from "./routes/finance/index.js";
 
 const app = express();
 
