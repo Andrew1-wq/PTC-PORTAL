@@ -7,6 +7,8 @@ import OfferingTableRow from "./OfferingTableRow";
 interface OfferingFaculty {
   faculty_id: number;
   faculty_name: string;
+  employee_number?: string | null;
+  role_name?: string | null;
 }
 
 interface OfferingRoom {
@@ -202,9 +204,9 @@ export default function OfferingTable({
           <tr>
             <th>Subject</th>
 
-            <th>Faculty</th>
+            <th>Instructor</th>
 
-            <th>Schedule &amp; Room</th>
+            <th>Schedule</th>
 
             <th>Capacity</th>
 

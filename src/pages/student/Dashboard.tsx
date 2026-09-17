@@ -417,9 +417,11 @@ function isStudentAudience(recipients: Announcement["recipients"]) {
         return recipient.trim().toLowerCase() === "student";
       }
 
-      return String(recipient.role_name || "")
-        .trim()
-        .toLowerCase() === "student";
+      return (
+        String(recipient.role_name || "")
+          .trim()
+          .toLowerCase() === "student"
+      );
     });
   }
 
@@ -478,8 +480,14 @@ export default function StudentDashboard() {
   const userRole = user?.role;
 
   const [profile, setProfile] = useState<StudentProfileData | null>(null);
+<<<<<<< HEAD
   const [scheduleData, setScheduleData] =
     useState<ScheduleResponse | null>(null);
+=======
+  const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(
+    null,
+  );
+>>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
   const [announcements, setAnnouncements] = useState<Announcement[]>([]);
 
   const [loading, setLoading] = useState(true);
@@ -531,7 +539,9 @@ export default function StudentDashboard() {
 
         if (!response.ok || !data.success || !data.profile) {
           throw new Error(
-            data.message || data.error || "Unable to load your Student profile.",
+            data.message ||
+              data.error ||
+              "Unable to load your Student profile.",
           );
         }
 
@@ -540,13 +550,16 @@ export default function StudentDashboard() {
         if (controller.signal.aborted) return;
         console.error("LOAD STUDENT DASHBOARD PROFILE ERROR:", error);
         setProfileError(
-          error instanceof Error ? error.message : "Unable to load profile information.",
+          error instanceof Error
+            ? error.message
+            : "Unable to load profile information.",
         );
       }
     };
 
     const loadSchedule = async () => {
       try {
+<<<<<<< HEAD
         const response = await authService.authFetch(
           SCHEDULE_API_URL,
           {
@@ -555,6 +568,13 @@ export default function StudentDashboard() {
             headers: { Accept: "application/json" },
           },
         );
+=======
+        const response = await authService.authFetch(SCHEDULE_API_URL, {
+          method: "GET",
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+>>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
 
         if (response.status === 401) {
           handleUnauthorized();
@@ -576,7 +596,13 @@ export default function StudentDashboard() {
         if (controller.signal.aborted) return;
         console.error("LOAD STUDENT DASHBOARD SCHEDULE ERROR:", error);
         setScheduleError(
+<<<<<<< HEAD
           error instanceof Error ? error.message : "Unable to load official Student schedule information.",
+=======
+          error instanceof Error
+            ? error.message
+            : "Unable to load official Student schedule information.",
+>>>>>>> 7866c7f0f1ee4c30a956ff3b7d029a3a798df770
         );
       }
     };
@@ -715,8 +741,10 @@ export default function StudentDashboard() {
 
   const currentPeriod =
     [
-      profile?.academic_year?.academic_year || scheduleData?.enrollment?.academic_year,
-      profile?.semester?.semester_name || scheduleData?.enrollment?.semester_name,
+      profile?.academic_year?.academic_year ||
+        scheduleData?.enrollment?.academic_year,
+      profile?.semester?.semester_name ||
+        scheduleData?.enrollment?.semester_name,
     ]
       .filter(Boolean)
       .join(" · ") || "Not recorded";
@@ -728,7 +756,9 @@ export default function StudentDashboard() {
   ].filter((value) => value && value !== "Not recorded");
 
   const latestAnnouncements = announcements.slice(0, 3);
-  const hasPartialError = Boolean(profileError || scheduleError || announcementError);
+  const hasPartialError = Boolean(
+    profileError || scheduleError || announcementError,
+  );
 
   if (!authenticated || !user || userRole !== "Student") {
     return null;
@@ -768,10 +798,7 @@ export default function StudentDashboard() {
             onClick={() => setRefreshKey((current) => current + 1)}
             disabled={loading || refreshing}
           >
-            <RefreshCw
-              size={16}
-              className={refreshing ? "is-spinning" : ""}
-            />
+            <RefreshCw size={16} className={refreshing ? "is-spinning" : ""} />
             {refreshing ? "Refreshing..." : "Refresh"}
           </button>
         </section>
@@ -789,14 +816,19 @@ export default function StudentDashboard() {
           </section>
         )}
 
-        <section className="student-dashboard__overview" aria-label="Student overview">
+        <section
+          className="student-dashboard__overview"
+          aria-label="Student overview"
+        >
           <article className="student-dashboard__stat student-dashboard__stat--primary">
             <span className="student-dashboard__stat-icon">
               <CheckCircle2 size={19} />
             </span>
             <div>
               <small>Enrollment Status</small>
-              <strong className={`student-dashboard__status ${getStatusClass(enrollmentStatus)}`}>
+              <strong
+                className={`student-dashboard__status ${getStatusClass(enrollmentStatus)}`}
+              >
                 {loading ? "…" : enrollmentStatus}
               </strong>
               <span>Your current enrollment state</span>
@@ -868,7 +900,10 @@ export default function StudentDashboard() {
                     <small>{action.description}</small>
                   </span>
 
-                  <ArrowRight size={16} className="student-dashboard__quick-arrow" />
+                  <ArrowRight
+                    size={16}
+                    className="student-dashboard__quick-arrow"
+                  />
                 </button>
               );
             })}
@@ -884,7 +919,10 @@ export default function StudentDashboard() {
                 <p>{formatToday()}</p>
               </div>
 
-              <button type="button" onClick={() => navigate("/student/schedule")}>
+              <button
+                type="button"
+                onClick={() => navigate("/student/schedule")}
+              >
                 Full Schedule
                 <ArrowRight size={14} />
               </button>
@@ -893,7 +931,10 @@ export default function StudentDashboard() {
             <div className="student-dashboard__schedule-list">
               {loading ? (
                 [1, 2, 3].map((item) => (
-                  <div className="student-dashboard__schedule-skeleton" key={item}>
+                  <div
+                    className="student-dashboard__schedule-skeleton"
+                    key={item}
+                  >
                     <i />
                     <span>
                       <i />
@@ -962,7 +1003,10 @@ export default function StudentDashboard() {
                 <p>Active and published notices for your Student role.</p>
               </div>
 
-              <button type="button" onClick={() => navigate("/student/announcement")}>
+              <button
+                type="button"
+                onClick={() => navigate("/student/announcement")}
+              >
                 View All
                 <ArrowRight size={14} />
               </button>
@@ -971,7 +1015,10 @@ export default function StudentDashboard() {
             <div className="student-dashboard__announcement-list">
               {loading ? (
                 [1, 2, 3].map((item) => (
-                  <div className="student-dashboard__announcement-skeleton" key={item}>
+                  <div
+                    className="student-dashboard__announcement-skeleton"
+                    key={item}
+                  >
                     <i />
                     <span>
                       <i />
@@ -999,7 +1046,9 @@ export default function StudentDashboard() {
                     className="student-dashboard__announcement-item"
                     key={announcement.announcement_id}
                     onClick={() =>
-                      navigate(`/student/announcementD/${announcement.announcement_id}`)
+                      navigate(
+                        `/student/announcementD/${announcement.announcement_id}`,
+                      )
                     }
                   >
                     <span className="student-dashboard__announcement-icon">
@@ -1009,7 +1058,9 @@ export default function StudentDashboard() {
                     <span className="student-dashboard__announcement-copy">
                       <small>{formatDate(announcement.publish_date)}</small>
                       <strong>{announcement.title}</strong>
-                      <span>{getAnnouncementPreview(announcement.content)}</span>
+                      <span>
+                        {getAnnouncementPreview(announcement.content)}
+                      </span>
                     </span>
 
                     <ArrowRight size={15} />
@@ -1043,17 +1094,25 @@ export default function StudentDashboard() {
 
             <div>
               <small>Year Level</small>
-              <strong>{loading ? "…" : formatYearLevel(profile?.year_level)}</strong>
+              <strong>
+                {loading ? "…" : formatYearLevel(profile?.year_level)}
+              </strong>
             </div>
 
             <div>
               <small>Section</small>
-              <strong>{loading ? "…" : profile?.section?.section_name || "Not recorded"}</strong>
+              <strong>
+                {loading
+                  ? "…"
+                  : profile?.section?.section_name || "Not recorded"}
+              </strong>
             </div>
 
             <div>
               <small>Student Status</small>
-              <strong>{loading ? "…" : profile?.student_status || "Not recorded"}</strong>
+              <strong>
+                {loading ? "…" : profile?.student_status || "Not recorded"}
+              </strong>
             </div>
           </div>
 
