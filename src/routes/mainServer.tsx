@@ -143,6 +143,7 @@ import TransferEvaluationR from "../pages/registrar/StudentRecord/TransferEvalua
 import ScheduleList from "../pages/programhead/ScheduleVerification/ScheduleList";
 import FacultySchedules from "../pages/programhead/ScheduleVerification/FacultySchedules";
 import FacultySchedulesR from "../pages/registrar/Schedules/FacultySchedulesR";
+import DocumentRequest from "../pages/registrar/Documents/DocumentRequests";
 
 // ─── Role guard ───────────────────────────────────────────────
 function ProtectedRoute({
@@ -648,7 +649,11 @@ export default function AppRoutes() {
           path="/registrar/announcement/createR"
           element={<RegistrarRoute element={<AnnouncementCreateR />} />}
         />
-
+        {/* ── Registrar Documents── */}
+        <Route
+          path="/registrar/document-requests"
+          element={<RegistrarRoute element={<DocumentRequest />} />}
+        />
         {/* ── Finance ── */}
         <Route
           path="/finance/dashboard"
