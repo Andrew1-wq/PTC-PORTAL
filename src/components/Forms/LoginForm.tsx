@@ -557,6 +557,15 @@ export default function LoginForm() {
               >
                 Login as Student
               </button>
+
+              <button
+                type="button"
+                className={styles.devBtn}
+                disabled={loading}
+                onClick={() => handleDevLogin("FINANCE CASIER")}
+              >
+                Login as Finance
+              </button>
             </div>
           </div>
         </div>

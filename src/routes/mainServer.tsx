@@ -123,6 +123,9 @@ import AcademicRecordsR from "../pages/registrar/StudentRecord/AcademicRecordsR"
 import StudentDocumentsR from "../pages/registrar/StudentRecord/StudentCOGR";
 import TranscriptPreviewR from "../pages/registrar/StudentRecord/TranscriptPreviewR";
 
+//Finance
+import FinanceDashboard from "../pages/finance/Dashboard";
+
 //This is the last one
 
 import type { ReactElement } from "react";
@@ -161,6 +164,7 @@ function ProtectedRoute({
       Registrar: "/registrar/dashboard",
       Student: "/student/dashboard",
       Faculty: "/faculty/dashboard",
+      Finance: "/finance/dashboard",
       "Program Head": "/programhead/dashboard",
     };
 
@@ -189,6 +193,11 @@ function ProgramHeadRoute({ element }: { element: ReactElement }) {
 function RegistrarRoute({ element }: { element: ReactElement }) {
   return <ProtectedRoute allowedRole="Registrar">{element}</ProtectedRoute>;
 }
+
+function FinanceRoute({ element }: { element: ReactElement }) {
+  return <ProtectedRoute allowedRole="Finance">{element}</ProtectedRoute>;
+}
+
 // ─── Routes ───────────────────────────────────────────────────
 export default function AppRoutes() {
   return (
@@ -638,6 +647,12 @@ export default function AppRoutes() {
         <Route
           path="/registrar/announcement/createR"
           element={<RegistrarRoute element={<AnnouncementCreateR />} />}
+        />
+
+        {/* ── Finance ── */}
+        <Route
+          path="/finance/dashboard"
+          element={<FinanceRoute element={<FinanceDashboard />} />}
         />
 
         {/* Catch-all */}

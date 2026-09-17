@@ -49,6 +49,7 @@ const USER_ROLES = [
   "Registrar",
   "Faculty",
   "Program Head",
+  "Finance",
   "Student",
 ] as const;
 

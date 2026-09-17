@@ -9,6 +9,7 @@ export type UserRole =
   | "Registrar"
   | "Program Head"
   | "Faculty"
+  | "Finance"
   | "Student";
 
 // ======================
@@ -78,6 +79,7 @@ const VALID_ROLES: UserRole[] = [
   "Registrar",
   "Program Head",
   "Faculty",
+  "Finance",
   "Student",
 ];
 
@@ -665,6 +667,8 @@ export const authService = {
       "Program Head": "/programhead/dashboard",
 
       Faculty: "/faculty/dashboard",
+
+      Finance: "/finance/dashboard",
 
       Student: "/student/dashboard",
     };
