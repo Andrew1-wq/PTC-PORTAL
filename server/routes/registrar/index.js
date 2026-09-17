@@ -9,15 +9,31 @@ import departmentRoutes from "./departments.js";
 import offeringsRoutes from "./offerings.js";
 import transferevaluationRoutes from "./transferEvaluations.js";
 
+// Document Request Workflow
+import documentRequestsRoutes from "./documentRequests.js";
+
 const router = express.Router();
 
+// ============================================================
+// REGISTRAR ROUTES
+// ============================================================
+
 router.use("/students", studentRecordsRoutes);
+
 router.use("/enrollments", enrollmentRoutes);
+
 router.use("/curriculums", curriculumRoutes);
+
 router.use("/subjects", subjectRoutes);
+
 router.use("/courses", courseRoutes);
+
 router.use("/departments", departmentRoutes);
+
 router.use("/offerings", offeringsRoutes);
+
 router.use("/transfer-evaluations", transferevaluationRoutes);
+
+router.use("/document-requests", documentRequestsRoutes);
 
 export default router;

@@ -73,4 +73,16 @@ export const registrarNavGroups = [
       },
     ],
   },
+  {
+    id: "Document",
+    label: "Documents ",
+    icon: "",
+    children: [
+      {
+        label: "Request Verification",
+        path: "/registrar/document-requests",
+        icon: "",
+      },
+    ],
+  },
 ];
