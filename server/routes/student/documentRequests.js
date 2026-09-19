@@ -824,37 +824,39 @@ router.post("/", async (req, res) => {
 
     const [ticketResult] = await connection.execute(
       `
-          INSERT INTO finance_tickets
-          (
-            ticket_number,
-            student_id,
+         INSERT INTO finance_tickets
+(
+  ticket_number,
+  student_id,
 
-            transaction_type_id,
-            document_request_id,
+  transaction_type_id,
+  document_request_id,
 
-            grade_id,
+  grade_id,
+  source_type,
 
-            amount_due,
-            amount_paid,
+  amount_due,
+  amount_paid,
 
-            payment_status,
-            registrar_status,
+  payment_status,
+  registrar_status,
 
-            created_by
-          )
+  created_by
+)
 
-          VALUES (
-            ?,
-            ?,
-            ?,
-            ?,
-            NULL,
-            ?,
-            0.00,
-            'Pending Payment',
-            'Pending',
-            ?
-          )
+VALUES (
+  ?,
+  ?,
+  ?,
+  ?,
+  NULL,
+  'STUDENT_REQUEST',
+  ?,
+  0.00,
+  'Pending Payment',
+  'Pending',
+  ?
+)
         `,
       [
         ticketNumber,

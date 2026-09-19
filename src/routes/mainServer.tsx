@@ -146,6 +146,11 @@ import FacultySchedulesR from "../pages/registrar/Schedules/FacultySchedulesR";
 import DocumentRequest from "../pages/registrar/Documents/DocumentRequests";
 import StudentCORR from "../pages/registrar/StudentRecord/StudentCORR";
 import FinanceTicketProcessing from "../pages/finance/FinanceTicketProcessing";
+import FinancePaymentHistory from "../pages/finance/FinancePaymentHistory";
+import MyTransactions from "../pages/student/Financial/MyTransactions";
+import CreateStudentTransaction from "../pages/finance/CreateStudentTransaction";
+import FinanceTransactionTypes from "../pages/finance/FinanceTransactionTypes";
+import FinanceReports from "../pages/finance/FinanceReports";
 
 // ─── Role guard ───────────────────────────────────────────────
 function ProtectedRoute({
@@ -305,6 +310,11 @@ export default function AppRoutes() {
           element={<StudentRoute element={<DocumentRelease />} />}
         />
 
+        {/* ── Student: Financial ── */}
+        <Route
+          path="/student/transactions"
+          element={<StudentRoute element={<MyTransactions />} />}
+        />
         {/* ── Student: Settings ── */}
         <Route
           path="/student/setting/user"
@@ -668,8 +678,25 @@ export default function AppRoutes() {
         />
 
         <Route
+          path="/finance/transactions/create"
+          element={<FinanceRoute element={<CreateStudentTransaction />} />}
+        />
+        <Route
           path="/finance/tickets"
           element={<FinanceRoute element={<FinanceTicketProcessing />} />}
+        />
+        <Route
+          path="/finance/transaction-types"
+          element={<FinanceRoute element={<FinanceTransactionTypes />} />}
+        />
+        <Route
+          path="/finance/reports"
+          element={<FinanceRoute element={<FinanceReports />} />}
+        />
+
+        <Route
+          path="/finance/payment-history"
+          element={<FinanceRoute element={<FinancePaymentHistory />} />}
         />
 
         {/* Catch-all */}
