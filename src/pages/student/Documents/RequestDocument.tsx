@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-
-import type { CSSProperties, FormEvent } from "react";
-
+import type { FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-
 import {
   CheckCircle2,
   Clock3,
@@ -17,6 +14,7 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import "../../../styles/StudentRequestDocument.css";
 
 const DOCUMENT_REQUEST_API =
   "http://localhost:3000/api/student/document-requests";
@@ -50,39 +48,26 @@ interface StudentSummary {
 interface DocumentRequest {
   request_id: number;
   request_number: string;
-
   student_id: number;
-
   enrollment_id: number | null;
   academic_period: AcademicPeriod | null;
-
   document_type: DocumentType;
-
   purpose: string | null;
   copies: number;
-
   requested_at: string;
-
   cancelled_at: string | null;
   cancellation_reason: string | null;
-
   ticket_id: number | null;
   ticket_number: string | null;
-
   amount_due: number | string | null;
   amount_paid: number | string | null;
-
   payment_method: string | null;
   receipt_number: string | null;
-
   payment_status: string;
   registrar_status: string;
-
   paid_at: string | null;
-
   registrar_started_at: string | null;
   registrar_completed_at: string | null;
-
   ticket_created_at: string | null;
 }
 
@@ -90,11 +75,8 @@ interface RequestsResponse {
   success?: boolean;
   code?: string;
   message?: string;
-
   student?: StudentSummary;
-
   available_enrollments?: AvailableEnrollment[];
-
   requests?: DocumentRequest[];
 }
 
@@ -102,14 +84,11 @@ interface CreateRequestResponse {
   success?: boolean;
   code?: string;
   message?: string;
-
   request?: {
     request_id: number;
     request_number: string;
     document_type: DocumentType;
-
     enrollment_id: number;
-
     academic_period: {
       academic_year_id: number;
       academic_year: string;
@@ -117,11 +96,9 @@ interface CreateRequestResponse {
       semester_name: string;
       enrollment_status: string;
     };
-
     purpose: string | null;
     copies: number;
   };
-
   ticket?: {
     ticket_id: number;
     ticket_number: string;
@@ -131,13 +108,8 @@ interface CreateRequestResponse {
     payment_status: string;
     registrar_status: string;
   };
-
   student?: StudentSummary;
 }
-
-// ============================================================
-// FORMAT DATE
-// ============================================================
 
 function formatDate(value: string | null | undefined) {
   if (!value) {
@@ -160,10 +132,6 @@ function formatDate(value: string | null | undefined) {
   });
 }
 
-// ============================================================
-// FORMAT MONEY
-// ============================================================
-
 function formatMoney(value: number | string | null | undefined) {
   if (value === null || value === undefined || value === "") {
     return "Not assigned yet";
@@ -182,10 +150,6 @@ function formatMoney(value: number | string | null | undefined) {
   }).format(amount);
 }
 
-// ============================================================
-// FORMAT ACADEMIC PERIOD
-// ============================================================
-
 function formatAcademicPeriod(
   period:
     | Pick<AvailableEnrollment, "academic_year" | "semester_name">
@@ -200,140 +164,65 @@ function formatAcademicPeriod(
   return `${period.academic_year} — ${period.semester_name}`;
 }
 
-// ============================================================
-// PAYMENT STATUS STYLE
-// ============================================================
-
-function paymentStatusStyle(status: string): CSSProperties {
+function paymentStatusClass(status: string) {
   if (status === "Paid") {
-    return {
-      color: "#166534",
-      background: "#dcfce7",
-      border: "1px solid #bbf7d0",
-    };
+    return "document-status document-status--success";
   }
 
   if (status === "Pending Payment") {
-    return {
-      color: "#92400e",
-      background: "#fef3c7",
-      border: "1px solid #fde68a",
-    };
+    return "document-status document-status--warning";
   }
 
   if (status === "Cancelled" || status === "Refunded") {
-    return {
-      color: "#991b1b",
-      background: "#fee2e2",
-      border: "1px solid #fecaca",
-    };
+    return "document-status document-status--danger";
   }
 
-  return {
-    color: "#334155",
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-  };
+  return "document-status document-status--neutral";
 }
 
-// ============================================================
-// REGISTRAR STATUS STYLE
-// ============================================================
-
-function registrarStatusStyle(status: string): CSSProperties {
+function registrarStatusClass(status: string) {
   if (status === "Done") {
-    return {
-      color: "#166534",
-      background: "#dcfce7",
-      border: "1px solid #bbf7d0",
-    };
+    return "document-status document-status--success";
   }
 
   if (status === "Processing") {
-    return {
-      color: "#1d4ed8",
-      background: "#dbeafe",
-      border: "1px solid #bfdbfe",
-    };
+    return "document-status document-status--info";
   }
 
   if (status === "Ready for Processing") {
-    return {
-      color: "#6d28d9",
-      background: "#ede9fe",
-      border: "1px solid #ddd6fe",
-    };
+    return "document-status document-status--purple";
   }
 
   if (status === "Rejected" || status === "Cancelled") {
-    return {
-      color: "#991b1b",
-      background: "#fee2e2",
-      border: "1px solid #fecaca",
-    };
+    return "document-status document-status--danger";
   }
 
-  return {
-    color: "#475569",
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-  };
+  return "document-status document-status--neutral";
 }
-
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export default function RequestDocument() {
   const navigate = useNavigate();
-
-  /*
-   * IMPORTANT:
-   *
-   * Do NOT use the whole session object as a dependency.
-   *
-   * getSession() may create a new object every render.
-   * We only extract the primitive role value.
-   */
   const session = authService.getSession();
   const token = authService.getToken();
-
   const role = session?.role ?? null;
-
   const isStudent = role === "Student" && Boolean(token);
 
   const [documentType, setDocumentType] = useState<DocumentType>("COR");
-
   const [availableEnrollments, setAvailableEnrollments] = useState<
     AvailableEnrollment[]
   >([]);
-
   const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<
     number | null
   >(null);
-
   const [purpose, setPurpose] = useState("");
-
   const [copies, setCopies] = useState(1);
-
   const [requests, setRequests] = useState<DocumentRequest[]>([]);
-
   const [loading, setLoading] = useState(true);
-
   const [submitting, setSubmitting] = useState(false);
-
   const [errorMessage, setErrorMessage] = useState("");
-
   const [successMessage, setSuccessMessage] = useState("");
-
   const [createdRequest, setCreatedRequest] =
     useState<CreateRequestResponse | null>(null);
-
-  // ==========================================================
-  // AUTH GUARD
-  //
-  // Only stable primitive values are dependencies.
-  // ==========================================================
 
   useEffect(() => {
     if (!isStudent) {
@@ -342,14 +231,6 @@ export default function RequestDocument() {
       });
     }
   }, [isStudent, navigate]);
-
-  // ==========================================================
-  // LOAD DOCUMENT REQUESTS
-  //
-  // IMPORTANT:
-  //
-  // session object is NOT a dependency here.
-  // ==========================================================
 
   const loadRequests = useCallback(async () => {
     if (!isStudent) {
@@ -362,35 +243,23 @@ export default function RequestDocument() {
     try {
       const response = await authService.authFetch(DOCUMENT_REQUEST_API, {
         method: "GET",
-
         headers: {
           Accept: "application/json",
         },
       });
 
-      // ================================================
-      // SESSION EXPIRED
-      // ================================================
-
       if (response.status === 401) {
         authService.logout();
-
         navigate("/login", {
           replace: true,
         });
-
         return;
       }
-
-      // ================================================
-      // WRONG ROLE
-      // ================================================
 
       if (response.status === 403) {
         navigate("/login", {
           replace: true,
         });
-
         return;
       }
 
@@ -423,7 +292,6 @@ export default function RequestDocument() {
       setRequests(Array.isArray(data.requests) ? data.requests : []);
     } catch (error) {
       console.error("LOAD DOCUMENT REQUESTS ERROR:", error);
-
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -434,13 +302,6 @@ export default function RequestDocument() {
     }
   }, [isStudent, navigate]);
 
-  // ==========================================================
-  // INITIAL LOAD
-  //
-  // This will now run when the page opens,
-  // NOT continuously.
-  // ==========================================================
-
   useEffect(() => {
     if (!isStudent) {
       return;
@@ -448,10 +309,6 @@ export default function RequestDocument() {
 
     void loadRequests();
   }, [isStudent, loadRequests]);
-
-  // ==========================================================
-  // CREATE DOCUMENT REQUEST
-  // ==========================================================
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -464,15 +321,10 @@ export default function RequestDocument() {
     setSuccessMessage("");
     setCreatedRequest(null);
 
-    // ================================================
-    // VALIDATE ACADEMIC PERIOD
-    // ================================================
-
     if (!selectedEnrollmentId) {
       setErrorMessage(
         "Please select the academic year and semester for this document request.",
       );
-
       return;
     }
 
@@ -485,17 +337,11 @@ export default function RequestDocument() {
       setErrorMessage(
         "The selected academic period is no longer available. Refresh the page and choose again.",
       );
-
       return;
     }
 
-    // ================================================
-    // VALIDATE COPIES
-    // ================================================
-
     if (!Number.isInteger(copies) || copies < 1) {
       setErrorMessage("Copies must be at least 1.");
-
       return;
     }
 
@@ -504,55 +350,34 @@ export default function RequestDocument() {
 
       const response = await authService.authFetch(DOCUMENT_REQUEST_API, {
         method: "POST",
-
         headers: {
           "Content-Type": "application/json",
-
           Accept: "application/json",
         },
-
         body: JSON.stringify({
           document_type: documentType,
-
           enrollment_id: selectedEnrollmentId,
-
           purpose: purpose.trim(),
-
           copies,
         }),
       });
 
-      // ================================================
-      // SESSION EXPIRED
-      // ================================================
-
       if (response.status === 401) {
         authService.logout();
-
         navigate("/login", {
           replace: true,
         });
-
         return;
       }
-
-      // ================================================
-      // WRONG ROLE
-      // ================================================
 
       if (response.status === 403) {
         navigate("/login", {
           replace: true,
         });
-
         return;
       }
 
       const data = (await response.json()) as CreateRequestResponse;
-
-      // ================================================
-      // BACKEND ERROR
-      // ================================================
 
       if (!response.ok || !data.success) {
         if (data.code === "ACTIVE_DOCUMENT_REQUEST_EXISTS") {
@@ -565,30 +390,16 @@ export default function RequestDocument() {
         throw new Error(data.message || "Unable to create document request.");
       }
 
-      // ================================================
-      // SUCCESS
-      // ================================================
-
       setCreatedRequest(data);
-
       setSuccessMessage(
         data.message || `${documentType} request created successfully.`,
       );
-
       setSelectedEnrollmentId(null);
       setPurpose("");
       setCopies(1);
-
-      /*
-       * Reload history once.
-       *
-       * Because loadRequests is now stable,
-       * this will NOT trigger a render loop.
-       */
       await loadRequests();
     } catch (error) {
       console.error("CREATE DOCUMENT REQUEST ERROR:", error);
-
       setErrorMessage(
         error instanceof Error
           ? error.message
@@ -599,267 +410,100 @@ export default function RequestDocument() {
     }
   };
 
-  // ==========================================================
-  // DO NOT RENDER STUDENT PAGE IF NOT AUTHORIZED
-  // ==========================================================
-
   if (!isStudent) {
     return null;
   }
 
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-          gap: "22px",
-          padding: "4px",
-        }}
-      >
-        {/* ===================================================
-            HEADER
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "26px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  marginBottom: "8px",
-                  color: "#15803d",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
-                <FileText size={16} />
-                Student Documents
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "28px",
-                }}
-              >
-                Request a Document
-              </h1>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  maxWidth: "720px",
-                  color: "#64748b",
-                  lineHeight: 1.6,
-                }}
-              >
-                Request your Certificate of Registration or Certificate of
-                Grades and track the Finance and Registrar status from this
-                page.
-              </p>
+      <main className="request-document-page">
+        <section className="request-document-hero">
+          <div className="request-document-hero__content">
+            <div className="request-document-kicker">
+              <span className="request-document-kicker__icon">
+                <FileText size={17} aria-hidden="true" />
+              </span>
+              <span>Student Documents</span>
             </div>
 
-            <ReceiptText size={42} color="#15803d" aria-hidden="true" />
-          </div>
-        </section>
-
-        {/* ===================================================
-            NEW REQUEST
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "24px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              marginBottom: "20px",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                color: "#0f172a",
-                fontSize: "19px",
-              }}
-            >
-              New Document Request
-            </h2>
-
-            <p
-              style={{
-                margin: "6px 0 0",
-                color: "#64748b",
-                fontSize: "14px",
-              }}
-            >
-              A Finance ticket will automatically be generated after a
-              successful request.
+            <h1>Request a Document</h1>
+            <p>
+              Request your Certificate of Registration or Certificate of Grades
+              and track the Finance and Registrar status from this page.
             </p>
           </div>
 
-          {/* ERROR */}
+          <div className="request-document-hero__icon" aria-hidden="true">
+            <ReceiptText size={34} />
+          </div>
+        </section>
+
+        <section className="request-document-panel request-document-panel--form">
+          <header className="request-document-section-header">
+            <div>
+              <span className="request-document-section-eyebrow">
+                New Request
+              </span>
+              <h2>New Document Request</h2>
+              <p>
+                A Finance ticket will automatically be generated after a
+                successful request.
+              </p>
+            </div>
+          </header>
 
           {errorMessage && (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "12px 14px",
-                border: "1px solid #fecaca",
-                borderRadius: "10px",
-                background: "#fef2f2",
-                color: "#991b1b",
-                fontSize: "13px",
-                fontWeight: 600,
-              }}
-            >
+            <div className="request-document-alert request-document-alert--error">
               {errorMessage}
             </div>
           )}
 
-          {/* SUCCESS */}
-
           {successMessage && (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "12px 14px",
-                border: "1px solid #bbf7d0",
-                borderRadius: "10px",
-                background: "#f0fdf4",
-                color: "#166534",
-                fontSize: "13px",
-                fontWeight: 600,
-              }}
-            >
+            <div className="request-document-alert request-document-alert--success">
               {successMessage}
             </div>
           )}
 
           {!loading && availableEnrollments.length === 0 && (
-            <div
-              style={{
-                marginBottom: "18px",
-                padding: "12px 14px",
-                border: "1px solid #fde68a",
-                borderRadius: "10px",
-                background: "#fffbeb",
-                color: "#92400e",
-                fontSize: "13px",
-                lineHeight: 1.5,
-              }}
-            >
+            <div className="request-document-alert request-document-alert--warning">
               No approved enrollment period is available for document requests.
               A COR or COG request can only be created from an approved
               enrollment.
             </div>
           )}
 
-          <form
-            onSubmit={handleSubmit}
-            style={{
-              display: "grid",
-
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-
-              gap: "16px",
-            }}
-          >
-            {/* DOCUMENT TYPE */}
-
-            <label
-              style={{
-                display: "grid",
-                gap: "7px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Document Type
+          <form className="request-document-form" onSubmit={handleSubmit}>
+            <label className="request-document-field">
+              <span className="request-document-field__label">Document Type</span>
               <select
                 value={documentType}
                 onChange={(event) =>
                   setDocumentType(event.target.value as DocumentType)
                 }
                 disabled={submitting}
-                style={{
-                  width: "100%",
-                  padding: "11px 12px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  outline: "none",
-                }}
               >
                 <option value="COR">Certificate of Registration (COR)</option>
-
                 <option value="COG">Certificate of Grades (COG)</option>
               </select>
             </label>
 
-            {/* ACADEMIC PERIOD */}
-
-            <label
-              style={{
-                display: "grid",
-                gap: "7px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Academic Period
+            <label className="request-document-field">
+              <span className="request-document-field__label">
+                Academic Period
+              </span>
               <select
                 value={selectedEnrollmentId ?? ""}
                 onChange={(event) => {
                   const value = Number(event.target.value);
-
                   setSelectedEnrollmentId(
                     Number.isInteger(value) && value > 0 ? value : null,
                   );
-
                   setErrorMessage("");
                 }}
                 disabled={
                   submitting || loading || availableEnrollments.length === 0
                 }
                 required
-                style={{
-                  width: "100%",
-                  padding: "11px 12px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  outline: "none",
-                }}
               >
                 <option value="">
                   {loading
@@ -878,31 +522,16 @@ export default function RequestDocument() {
                   </option>
                 ))}
               </select>
-              <span
-                style={{
-                  color: "#64748b",
-                  fontSize: "11px",
-                  fontWeight: 500,
-                  lineHeight: 1.45,
-                }}
-              >
+              <span className="request-document-field__hint">
                 The selected period will be locked to this request and used by
                 the Registrar when generating your COR or COG.
               </span>
             </label>
 
-            {/* COPIES */}
-
-            <label
-              style={{
-                display: "grid",
-                gap: "7px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Number of Copies
+            <label className="request-document-field">
+              <span className="request-document-field__label">
+                Number of Copies
+              </span>
               <input
                 type="number"
                 min={1}
@@ -911,36 +540,15 @@ export default function RequestDocument() {
                 disabled={submitting}
                 onChange={(event) => {
                   const value = Number(event.target.value);
-
                   setCopies(
                     Number.isFinite(value) ? Math.max(1, Math.floor(value)) : 1,
                   );
                 }}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  padding: "11px 12px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  color: "#0f172a",
-                  outline: "none",
-                }}
               />
             </label>
 
-            {/* PURPOSE */}
-
-            <label
-              style={{
-                display: "grid",
-                gridColumn: "1 / -1",
-                gap: "7px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Purpose
+            <label className="request-document-field request-document-field--full">
+              <span className="request-document-field__label">Purpose</span>
               <textarea
                 value={purpose}
                 onChange={(event) => setPurpose(event.target.value)}
@@ -948,72 +556,35 @@ export default function RequestDocument() {
                 rows={4}
                 placeholder="Example: Scholarship requirement, employment, personal copy..."
                 disabled={submitting}
-                style={{
-                  width: "100%",
-                  boxSizing: "border-box",
-                  resize: "vertical",
-                  padding: "11px 12px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  color: "#0f172a",
-                  outline: "none",
-                  fontFamily: "inherit",
-                }}
               />
+              <span className="request-document-field__counter">
+                {purpose.length}/255
+              </span>
             </label>
 
-            {/* SUBMIT */}
-
-            <div
-              style={{
-                gridColumn: "1 / -1",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
+            <div className="request-document-form__actions">
               <button
                 type="submit"
+                className="request-document-submit"
                 disabled={
                   submitting ||
                   loading ||
                   availableEnrollments.length === 0 ||
                   !selectedEnrollmentId
                 }
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  gap: "8px",
-                  minWidth: "170px",
-                  padding: "11px 18px",
-                  border: 0,
-                  borderRadius: "10px",
-                  background:
-                    submitting ||
-                    loading ||
-                    availableEnrollments.length === 0 ||
-                    !selectedEnrollmentId
-                      ? "#86a993"
-                      : "#15803d",
-                  color: "#ffffff",
-                  fontWeight: 800,
-                  cursor: submitting
-                    ? "wait"
-                    : loading ||
-                        availableEnrollments.length === 0 ||
-                        !selectedEnrollmentId
-                      ? "not-allowed"
-                      : "pointer",
-                }}
               >
                 {submitting ? (
                   <>
-                    <Loader2 size={17} />
+                    <Loader2
+                      size={17}
+                      className="request-document-spin"
+                      aria-hidden="true"
+                    />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Send size={17} />
+                    <Send size={17} aria-hidden="true" />
                     Submit Request
                   </>
                 )}
@@ -1022,83 +593,37 @@ export default function RequestDocument() {
           </form>
         </section>
 
-        {/* ===================================================
-            CREATED REQUEST RESULT
-        =================================================== */}
-
         {createdRequest?.request && createdRequest.ticket && (
-          <section
-            style={{
-              padding: "24px",
-              border: "1px solid #bbf7d0",
-              borderRadius: "18px",
-              background: "#f0fdf4",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginBottom: "18px",
-              }}
-            >
-              <CheckCircle2 size={24} color="#15803d" />
-
+          <section className="request-document-created">
+            <div className="request-document-created__heading">
+              <span className="request-document-created__icon">
+                <CheckCircle2 size={22} aria-hidden="true" />
+              </span>
               <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#14532d",
-                    fontSize: "18px",
-                  }}
-                >
-                  Request Successfully Created
-                </h2>
-
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    color: "#166534",
-                    fontSize: "13px",
-                  }}
-                >
-                  Present the Finance ticket number to the Cashier.
-                </p>
+                <h2>Request Successfully Created</h2>
+                <p>Present the Finance ticket number to the Cashier.</p>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-
-                gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-
-                gap: "12px",
-              }}
-            >
+            <div className="request-document-info-grid">
               <InfoBox
                 label="Request Number"
                 value={createdRequest.request.request_number}
               />
-
               <InfoBox
                 label="Academic Period"
                 value={formatAcademicPeriod(
                   createdRequest.request.academic_period,
                 )}
               />
-
               <InfoBox
                 label="Finance Ticket"
                 value={createdRequest.ticket.ticket_number}
               />
-
               <InfoBox
                 label="Payment Status"
                 value={createdRequest.ticket.payment_status}
               />
-
               <InfoBox
                 label="Registrar Status"
                 value={createdRequest.ticket.registrar_status}
@@ -1107,249 +632,106 @@ export default function RequestDocument() {
           </section>
         )}
 
-        {/* ===================================================
-            REQUEST HISTORY
-        =================================================== */}
-
-        <section
-          style={{
-            padding: "24px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "14px",
-              marginBottom: "20px",
-              flexWrap: "wrap",
-            }}
-          >
+        <section className="request-document-panel request-document-panel--history">
+          <header className="request-document-history-header">
             <div>
-              <h2
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "19px",
-                }}
-              >
-                My Document Requests
-              </h2>
-
-              <p
-                style={{
-                  margin: "6px 0 0",
-                  color: "#64748b",
-                  fontSize: "13px",
-                }}
-              >
-                Track payment and Registrar processing here.
-              </p>
+              <span className="request-document-section-eyebrow">
+                Request History
+              </span>
+              <h2>My Document Requests</h2>
+              <p>Track payment and Registrar processing here.</p>
             </div>
 
             <button
               type="button"
+              className="request-document-refresh"
               onClick={() => void loadRequests()}
               disabled={loading}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "7px",
-                padding: "9px 12px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "9px",
-                background: "#ffffff",
-                color: "#334155",
-                fontWeight: 700,
-                cursor: loading ? "wait" : "pointer",
-              }}
             >
-              <RefreshCcw size={15} />
+              <RefreshCcw
+                size={15}
+                className={loading ? "request-document-spin" : undefined}
+                aria-hidden="true"
+              />
               Refresh
             </button>
-          </div>
-
-          {/* LOADING */}
+          </header>
 
           {loading ? (
-            <div
-              style={{
-                minHeight: "140px",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "10px",
-                color: "#64748b",
-              }}
-            >
-              <Loader2 size={20} />
-              Loading document requests...
+            <div className="request-document-loading">
+              <Loader2
+                size={22}
+                className="request-document-spin"
+                aria-hidden="true"
+              />
+              <span>Loading document requests...</span>
             </div>
           ) : requests.length === 0 ? (
-            <div
-              style={{
-                padding: "34px",
-                textAlign: "center",
-                border: "1px dashed #cbd5e1",
-                borderRadius: "14px",
-                color: "#64748b",
-              }}
-            >
-              <FileText
-                size={32}
-                style={{
-                  marginBottom: "8px",
-                }}
-              />
-
-              <div
-                style={{
-                  fontWeight: 700,
-                }}
-              >
-                No document requests yet.
-              </div>
-
-              <div
-                style={{
-                  marginTop: "4px",
-                  fontSize: "13px",
-                }}
-              >
-                Submit your first COR or COG request above.
-              </div>
+            <div className="request-document-empty">
+              <span className="request-document-empty__icon">
+                <FileText size={30} aria-hidden="true" />
+              </span>
+              <strong>No document requests yet.</strong>
+              <p>Submit your first COR or COG request above.</p>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gap: "14px",
-              }}
-            >
+            <div className="request-document-history-list">
               {requests.map((request) => (
                 <article
                   key={request.request_id}
-                  style={{
-                    padding: "18px",
-
-                    border: "1px solid #e2e8f0",
-
-                    borderRadius: "14px",
-
-                    background: "#ffffff",
-                  }}
+                  className="request-document-history-card"
                 >
-                  <div
-                    style={{
-                      display: "flex",
-
-                      justifyContent: "space-between",
-
-                      alignItems: "flex-start",
-
-                      gap: "14px",
-
-                      flexWrap: "wrap",
-                    }}
-                  >
-                    <div>
-                      <div
-                        style={{
-                          display: "flex",
-
-                          alignItems: "center",
-
-                          gap: "8px",
-
-                          color: "#0f172a",
-
-                          fontWeight: 800,
-                        }}
-                      >
-                        <FileText size={18} color="#15803d" />
-
-                        {request.document_type === "COR"
-                          ? "Certificate of Registration"
-                          : "Certificate of Grades"}
-                      </div>
-
-                      <div
-                        style={{
-                          marginTop: "5px",
-
-                          color: "#64748b",
-
-                          fontSize: "12px",
-                        }}
-                      >
-                        Requested {formatDate(request.requested_at)}
+                  <div className="request-document-history-card__header">
+                    <div className="request-document-history-card__title-wrap">
+                      <span className="request-document-history-card__icon">
+                        <FileText size={18} aria-hidden="true" />
+                      </span>
+                      <div>
+                        <h3>
+                          {request.document_type === "COR"
+                            ? "Certificate of Registration"
+                            : "Certificate of Grades"}
+                        </h3>
+                        <p>Requested {formatDate(request.requested_at)}</p>
                       </div>
                     </div>
 
-                    <div
-                      style={{
-                        display: "flex",
-
-                        gap: "7px",
-
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div className="request-document-statuses">
                       <StatusBadge
                         label={request.payment_status}
-                        style={paymentStatusStyle(request.payment_status)}
+                        className={paymentStatusClass(request.payment_status)}
                       />
-
                       <StatusBadge
                         label={request.registrar_status}
-                        style={registrarStatusStyle(request.registrar_status)}
+                        className={registrarStatusClass(
+                          request.registrar_status,
+                        )}
                       />
                     </div>
                   </div>
 
-                  <div
-                    style={{
-                      display: "grid",
-
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(180px, 1fr))",
-
-                      gap: "12px",
-
-                      marginTop: "16px",
-                    }}
-                  >
+                  <div className="request-document-info-grid request-document-info-grid--history">
                     <InfoBox
                       label="Request Number"
                       value={request.request_number}
                     />
-
                     <InfoBox
                       label="Finance Ticket"
                       value={request.ticket_number || "Not generated"}
                     />
-
                     <InfoBox
                       label="Academic Period"
                       value={formatAcademicPeriod(request.academic_period)}
                     />
-
                     <InfoBox label="Copies" value={String(request.copies)} />
-
                     <InfoBox
                       label="Amount Due"
                       value={formatMoney(request.amount_due)}
                     />
-
                     <InfoBox
                       label="Amount Paid"
                       value={formatMoney(request.amount_paid)}
                     />
-
                     <InfoBox
                       label="Payment Method"
                       value={request.payment_method || "—"}
@@ -1357,42 +739,9 @@ export default function RequestDocument() {
                   </div>
 
                   {request.purpose && (
-                    <div
-                      style={{
-                        marginTop: "14px",
-
-                        padding: "12px 14px",
-
-                        borderRadius: "10px",
-
-                        background: "#f8fafc",
-                      }}
-                    >
-                      <div
-                        style={{
-                          marginBottom: "4px",
-
-                          color: "#64748b",
-
-                          fontSize: "11px",
-
-                          fontWeight: 800,
-
-                          textTransform: "uppercase",
-                        }}
-                      >
-                        Purpose
-                      </div>
-
-                      <div
-                        style={{
-                          color: "#334155",
-
-                          fontSize: "13px",
-                        }}
-                      >
-                        {request.purpose}
-                      </div>
+                    <div className="request-document-purpose">
+                      <span>Purpose</span>
+                      <p>{request.purpose}</p>
                     </div>
                   )}
 
@@ -1410,79 +759,24 @@ export default function RequestDocument() {
   );
 }
 
-// ============================================================
-// INFO BOX
-// ============================================================
-
 function InfoBox({ label, value }: { label: string; value: string }) {
   return (
-    <div
-      style={{
-        padding: "11px 13px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "10px",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          marginBottom: "4px",
-          color: "#64748b",
-          fontSize: "10px",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: ".04em",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          color: "#0f172a",
-          fontSize: "13px",
-          fontWeight: 750,
-          overflowWrap: "anywhere",
-        }}
-      >
-        {value}
-      </div>
+    <div className="request-document-info-box">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
-// ============================================================
-// STATUS BADGE
-// ============================================================
-
 function StatusBadge({
   label,
-  style,
+  className,
 }: {
   label: string;
-  style: CSSProperties;
+  className: string;
 }) {
-  return (
-    <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        minHeight: "27px",
-        padding: "4px 9px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: 800,
-        ...style,
-      }}
-    >
-      {label}
-    </span>
-  );
+  return <span className={className}>{label}</span>;
 }
-
-// ============================================================
-// REQUEST PROGRESS
-// ============================================================
 
 function RequestProgress({
   paymentStatus,
@@ -1492,100 +786,58 @@ function RequestProgress({
   registrarStatus: string;
 }) {
   const paymentComplete = paymentStatus === "Paid";
-
   const ready =
     registrarStatus === "Ready for Processing" ||
     registrarStatus === "Processing" ||
     registrarStatus === "Done";
-
   const processing =
     registrarStatus === "Processing" || registrarStatus === "Done";
-
   const done = registrarStatus === "Done";
 
   const steps = [
     {
       title: "Request Submitted",
-
       complete: true,
-
       icon: FileText,
     },
-
     {
       title: "Payment Completed",
-
       complete: paymentComplete,
-
       icon: WalletCards,
     },
-
     {
       title: "Ready for Registrar",
-
       complete: ready,
-
       icon: ReceiptText,
     },
-
     {
       title: "Processing",
-
       complete: processing,
-
       icon: Clock3,
     },
-
     {
       title: "Done",
-
       complete: done,
-
       icon: CheckCircle2,
     },
   ];
 
   return (
-    <div
-      style={{
-        display: "grid",
-
-        gridTemplateColumns: "repeat(auto-fit, minmax(125px, 1fr))",
-
-        gap: "8px",
-
-        marginTop: "16px",
-      }}
-    >
+    <div className="request-document-progress">
       {steps.map((step) => {
         const Icon = step.icon;
 
         return (
           <div
             key={step.title}
-            style={{
-              display: "flex",
-
-              alignItems: "center",
-
-              gap: "7px",
-
-              padding: "8px 9px",
-
-              borderRadius: "9px",
-
-              background: step.complete ? "#f0fdf4" : "#f8fafc",
-
-              color: step.complete ? "#166534" : "#94a3b8",
-
-              fontSize: "10px",
-
-              fontWeight: 750,
-            }}
+            className={`request-document-progress__step ${
+              step.complete ? "request-document-progress__step--complete" : ""
+            }`}
           >
-            <Icon size={14} />
-
-            {step.title}
+            <span className="request-document-progress__icon">
+              <Icon size={14} aria-hidden="true" />
+            </span>
+            <span>{step.title}</span>
           </div>
         );
       })}
