@@ -385,7 +385,7 @@
 .student-record-summary {
   display: grid;
 
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
 
   gap: 12px;
 
@@ -1126,6 +1126,16 @@
   color: #991b1b;
 }
 
+/* UNOFFICIAL DROP */
+
+.student-record-result.unofficial-drop {
+  border-color: #d8b4fe;
+
+  background: #f3e8ff;
+
+  color: #7e22ce;
+}
+
 /* UNKNOWN */
 
 .student-record-result.unknown {
@@ -1134,6 +1144,27 @@
   background: var(--gray-soft);
 
   color: var(--gray);
+}
+
+.student-record-outcome {
+  display: flex;
+  min-width: 150px;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.student-record-outcome strong {
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.student-record-outcome small {
+  max-width: 230px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: normal;
 }
 
 .student-record-retake {
@@ -1339,6 +1370,14 @@
   background: #fee2e2;
 
   color: #991b1b;
+}
+
+.student-record-legend-rating.unofficial-drop {
+  border-color: #d8b4fe;
+
+  background: #f3e8ff;
+
+  color: #7e22ce;
 }
 
 .student-record-legend-items strong {
@@ -2694,4 +2733,3 @@
     font-size: 14px !important;
   }
 }
-

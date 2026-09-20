@@ -33,6 +33,7 @@ type AcademicClassification =
   | "Passed"
   | "Incomplete"
   | "Failed"
+  | "Unofficial Drop"
   | "Credited"
   | "Unknown";
 
@@ -139,7 +140,11 @@ interface AcademicRecord {
   faculty?: FacultyInfo | null;
   midterm_grade: number | null;
   final_grade: number | null;
+  overall_percentage: number | null;
   final_rating: number | null;
+  grading_policy?: string | null;
+  grading_outcome?: string | null;
+  outcome_reason?: string | null;
   source_grade: string | null;
   academic_result?: AcademicClassification | null;
   classification?: AcademicClassification | null;
@@ -177,6 +182,7 @@ interface AcademicSummary {
   passed_subjects?: number;
   incomplete_subjects?: number;
   failed_subjects?: number;
+  unofficial_drop_subjects?: number;
   retake_subjects?: number;
   official_transfer_credit_records?: number;
   unique_transfer_credit_subjects?: number;
@@ -278,6 +284,7 @@ function classifyFinalRating(
   if (rating >= 1 && rating <= 3) return "Passed";
   if (rating === 4) return "Incomplete";
   if (rating === 5) return "Failed";
+  if (rating === 6) return "Unofficial Drop";
 
   return "Unknown";
 }
@@ -289,6 +296,7 @@ function getClassification(record: AcademicRecord): AcademicClassification {
     record.academic_result === "Passed" ||
     record.academic_result === "Incomplete" ||
     record.academic_result === "Failed" ||
+    record.academic_result === "Unofficial Drop" ||
     record.academic_result === "Credited"
   ) {
     return record.academic_result;
@@ -298,6 +306,7 @@ function getClassification(record: AcademicRecord): AcademicClassification {
     record.classification === "Passed" ||
     record.classification === "Incomplete" ||
     record.classification === "Failed" ||
+    record.classification === "Unofficial Drop" ||
     record.classification === "Credited"
   ) {
     return record.classification;
@@ -311,7 +320,11 @@ function requiresRetake(record: AcademicRecord): boolean {
   if (typeof record.retake === "boolean") return record.retake;
 
   const classification = getClassification(record);
-  return classification === "Incomplete" || classification === "Failed";
+  return (
+    classification === "Incomplete" ||
+    classification === "Failed" ||
+    classification === "Unofficial Drop"
+  );
 }
 
 function getStatusClass(value: string | null | undefined): string {
@@ -325,7 +338,33 @@ function getSubjectStatusClass(value: string | null | undefined): string {
 
 function getResultClass(classification: AcademicClassification): string {
   if (classification === "Credited") return "credited";
-  return classification.toLowerCase();
+  return classification.toLowerCase().replace(/\s+/g, "-");
+}
+
+function getGradingOutcomeLabel(record: AcademicRecord): string {
+  if (isTransferCredit(record)) return "Transfer Credit";
+
+  if (record.grading_outcome === "INCOMPLETE") return "Incomplete";
+  if (record.grading_outcome === "UNOFFICIAL_DROP") return "Unofficial Drop";
+  if (record.grading_outcome === "NUMERIC") return "Numeric Grade";
+
+  const classification = getClassification(record);
+
+  if (classification === "Incomplete") return "Incomplete";
+  if (classification === "Unofficial Drop") return "Unofficial Drop";
+
+  return "Numeric Grade";
+}
+
+function getGradingOutcomeClass(record: AcademicRecord): string {
+  if (isTransferCredit(record)) return "transfer";
+
+  const outcome = record.grading_outcome;
+
+  if (outcome === "INCOMPLETE") return "incomplete";
+  if (outcome === "UNOFFICIAL_DROP") return "unofficial-drop";
+
+  return "numeric";
 }
 
 function getStudentName(student: Student): string {
@@ -588,7 +627,9 @@ export default function AcademicRecordsR() {
         (getFacultyLabel(record) || "").toLowerCase().includes(query) ||
         (transferSource?.school || "").toLowerCase().includes(query) ||
         (transferSource?.subject_code || "").toLowerCase().includes(query) ||
-        (transferSource?.subject_name || "").toLowerCase().includes(query);
+        (transferSource?.subject_name || "").toLowerCase().includes(query) ||
+        (record.outcome_reason || "").toLowerCase().includes(query) ||
+        getGradingOutcomeLabel(record).toLowerCase().includes(query);
 
       const matchesAY =
         academicYearFilter === "All" ||
@@ -615,6 +656,9 @@ export default function AcademicRecordsR() {
     );
     const failed = ptcRecords.filter(
       (record) => getClassification(record) === "Failed",
+    );
+    const unofficialDrop = ptcRecords.filter(
+      (record) => getClassification(record) === "Unofficial Drop",
     );
     const retakes = ptcRecords.filter(requiresRetake);
     const satisfiedSubjects = new Map<number, number>();
@@ -652,6 +696,8 @@ export default function AcademicRecordsR() {
         apiSummary?.official_transfer_credit_records ?? transferRecords.length,
       incomplete: apiSummary?.incomplete_subjects ?? incomplete.length,
       failed: apiSummary?.failed_subjects ?? failed.length,
+      unofficialDrop:
+        apiSummary?.unofficial_drop_subjects ?? unofficialDrop.length,
       retakes: apiSummary?.retake_subjects ?? retakes.length,
       totalRecordedUnits:
         apiSummary?.total_recorded_units ?? fallbackRecordedUnits,
@@ -919,6 +965,7 @@ export default function AcademicRecordsR() {
 
             {(summary.incomplete > 0 ||
               summary.failed > 0 ||
+              summary.unofficialDrop > 0 ||
               summary.retakes > 0) && (
               <section className="registrar-academic-record__attention">
                 <div className="registrar-academic-record__attention-heading">
@@ -935,6 +982,9 @@ export default function AcademicRecordsR() {
                   </span>
                   <span>
                     Failed <strong>{summary.failed}</strong>
+                  </span>
+                  <span>
+                    Unofficial Drop <strong>{summary.unofficialDrop}</strong>
                   </span>
                   <span>
                     Retake Required <strong>{summary.retakes}</strong>
@@ -1037,6 +1087,7 @@ export default function AcademicRecordsR() {
                     <option value="Credited">Credited</option>
                     <option value="Incomplete">Incomplete</option>
                     <option value="Failed">Failed</option>
+                    <option value="Unofficial Drop">Unofficial Drop</option>
                   </select>
                 </div>
 
@@ -1178,9 +1229,9 @@ export default function AcademicRecordsR() {
                                       <th>Academic Source</th>
                                       <th>Class / Faculty</th>
                                       <th>Units</th>
-                                      <th>Term Grades</th>
+                                      <th>Grade Components</th>
                                       <th>Final / Source Grade</th>
-                                      <th>Result</th>
+                                      <th>Result / Outcome</th>
                                       <th>Review</th>
                                     </tr>
                                   </thead>
@@ -1299,6 +1350,19 @@ export default function AcademicRecordsR() {
                                                     )}
                                                   </strong>
                                                 </span>
+                                                <span>
+                                                  <small>Overall</small>
+                                                  <strong>
+                                                    {record.overall_percentage ===
+                                                      null ||
+                                                    record.overall_percentage ===
+                                                      undefined
+                                                      ? "—"
+                                                      : `${Number(
+                                                          record.overall_percentage,
+                                                        ).toFixed(2)}%`}
+                                                  </strong>
+                                                </span>
                                               </div>
                                             )}
                                           </td>
@@ -1338,6 +1402,23 @@ export default function AcademicRecordsR() {
                                               >
                                                 {record.subject_status}
                                               </span>
+                                              {!transfer && (
+                                                <span
+                                                  className={`registrar-academic-record__outcome registrar-academic-record__outcome--${getGradingOutcomeClass(
+                                                    record,
+                                                  )}`}
+                                                >
+                                                  {getGradingOutcomeLabel(
+                                                    record,
+                                                  )}
+                                                </span>
+                                              )}
+                                              {!transfer &&
+                                                record.outcome_reason && (
+                                                  <small className="registrar-academic-record__outcome-reason">
+                                                    {record.outcome_reason}
+                                                  </small>
+                                                )}
                                               {requiresRetake(record) && (
                                                 <small>
                                                   <RotateCcw size={11} />
@@ -1456,6 +1537,19 @@ export default function AcademicRecordsR() {
                     <p>
                       The subject must be retaken according to enrollment and
                       prerequisite rules.
+                    </p>
+                  </div>
+                </article>
+
+                <article>
+                  <span className="registrar-academic-record__guide-rating registrar-academic-record__guide-rating--unofficial-drop">
+                    6.00
+                  </span>
+                  <div>
+                    <strong>Unofficial Drop</strong>
+                    <p>
+                      The subject remains unsatisfied and is treated as a retake
+                      requirement for future enrollment.
                     </p>
                   </div>
                 </article>

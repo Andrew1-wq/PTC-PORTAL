@@ -34,6 +34,8 @@ type GradeStatus = "Draft" | "Submitted" | "Returned" | "Approved";
 
 type GradeRemark = "Passed" | "Failed" | "Incomplete" | "Unofficial Drop";
 
+type GradeOutcome = "NUMERIC" | "INCOMPLETE" | "UNOFFICIAL_DROP";
+
 interface FacultyInfo {
   faculty_id: number;
   employee_number: string;
@@ -216,6 +218,8 @@ interface GradeMutationResponse {
 }
 
 interface GradeForm {
+  gradingOutcome: GradeOutcome;
+  outcomeReason: string;
   midtermGrade: string;
   finalGrade: string;
 }
@@ -272,7 +276,16 @@ function gradeValueToString(value: number | null | undefined): string {
 }
 
 function createGradeForm(grade: FacultyGrade | null): GradeForm {
+  const storedOutcome = grade?.grading_outcome;
+
+  const gradingOutcome: GradeOutcome =
+    storedOutcome === "INCOMPLETE" || storedOutcome === "UNOFFICIAL_DROP"
+      ? storedOutcome
+      : "NUMERIC";
+
   return {
+    gradingOutcome,
+    outcomeReason: grade?.outcome_reason || "",
     midtermGrade: gradeValueToString(grade?.midterm_grade),
     finalGrade: gradeValueToString(grade?.final_grade),
   };
@@ -374,12 +387,27 @@ function parsePercentageHundredths(value: string): number | null {
   return Math.round(numeric * 100);
 }
 
-function calculateGradePreview(
-  midtermGrade: string,
-  finalGrade: string,
-): GradePreview {
-  const midterm = parsePercentageHundredths(midtermGrade);
-  const finalTerm = parsePercentageHundredths(finalGrade);
+function calculateGradePreview(form: GradeForm): GradePreview {
+  if (form.gradingOutcome === "INCOMPLETE") {
+    return {
+      complete: true,
+      overallPercentage: null,
+      finalRating: 4,
+      remarks: "Incomplete",
+    };
+  }
+
+  if (form.gradingOutcome === "UNOFFICIAL_DROP") {
+    return {
+      complete: true,
+      overallPercentage: null,
+      finalRating: 6,
+      remarks: "Unofficial Drop",
+    };
+  }
+
+  const midterm = parsePercentageHundredths(form.midtermGrade);
+  const finalTerm = parsePercentageHundredths(form.finalGrade);
 
   if (midterm === null || finalTerm === null) {
     return {
@@ -825,6 +853,8 @@ export default function EnterGrades() {
 
       [enrollmentSubjectId]: {
         ...(current[enrollmentSubjectId] || {
+          gradingOutcome: "NUMERIC",
+          outcomeReason: "",
           midtermGrade: "",
           finalGrade: "",
         }),
@@ -845,14 +875,39 @@ export default function EnterGrades() {
   };
 
   const buildGradeBody = (form: GradeForm) => {
+    const specialOutcome = form.gradingOutcome !== "NUMERIC";
+
     return {
-      midterm_grade: form.midtermGrade.trim() || null,
-      final_grade: form.finalGrade.trim() || null,
-      grading_outcome: "NUMERIC",
+      midterm_grade: specialOutcome ? null : form.midtermGrade.trim() || null,
+      final_grade: specialOutcome ? null : form.finalGrade.trim() || null,
+      grading_outcome: form.gradingOutcome,
+      outcome_reason: specialOutcome ? form.outcomeReason.trim() : null,
     };
   };
 
+  const validateOutcomeReason = (form: GradeForm): string | null => {
+    if (form.gradingOutcome === "NUMERIC") {
+      return null;
+    }
+
+    const reason = form.outcomeReason.trim();
+
+    if (!reason) {
+      return "A reason is required for Incomplete or Unofficial Drop.";
+    }
+
+    if (reason.length > 500) {
+      return "Outcome reason must not exceed 500 characters.";
+    }
+
+    return null;
+  };
+
   const validateNumericFields = (form: GradeForm): string | null => {
+    if (form.gradingOutcome !== "NUMERIC") {
+      return validateOutcomeReason(form);
+    }
+
     return (
       validatePercentageField(form.midtermGrade, "Midterm") ||
       validatePercentageField(form.finalGrade, "Final Term")
@@ -860,6 +915,10 @@ export default function EnterGrades() {
   };
 
   const validateForSubmit = (form: GradeForm): string | null => {
+    if (form.gradingOutcome !== "NUMERIC") {
+      return validateOutcomeReason(form);
+    }
+
     return (
       validatePercentageField(form.midtermGrade, "Midterm", true) ||
       validatePercentageField(form.finalGrade, "Final Term", true)
@@ -1008,8 +1067,23 @@ export default function EnterGrades() {
       return;
     }
 
+    const preview = calculateGradePreview(form);
+
+    const outcomeLabel =
+      form.gradingOutcome === "NUMERIC"
+        ? "Numeric Grade"
+        : form.gradingOutcome === "INCOMPLETE"
+          ? "Incomplete"
+          : "Unofficial Drop";
+
     const confirmed = window.confirm(
-      `Submit the grade for ${student.student_number} - ${student.full_name}?\n\nAfter submission, Faculty cannot edit it unless the Program Head returns it.`,
+      `Submit the grade for ${student.student_number} - ${student.full_name}?\n\nOutcome: ${outcomeLabel}\nFinal Rating: ${
+        preview.finalRating !== null ? preview.finalRating.toFixed(2) : "—"
+      }\nResult: ${preview.remarks || "—"}${
+        form.gradingOutcome !== "NUMERIC"
+          ? `\nReason: ${form.outcomeReason.trim()}`
+          : ""
+      }\n\nAfter submission, Faculty cannot edit it unless the Program Head returns it.`,
     );
 
     if (!confirmed) {
@@ -1530,11 +1604,13 @@ export default function EnterGrades() {
                       <thead>
                         <tr>
                           <th>Student</th>
+                          <th>Outcome</th>
                           <th>Midterm %</th>
                           <th>Final Term %</th>
                           <th>Overall %</th>
                           <th>Final Rating</th>
                           <th>Result</th>
+                          <th>Reason</th>
                           <th>Status</th>
                           <th>Program Head Review</th>
                           <th>Actions</th>
@@ -1552,22 +1628,22 @@ export default function EnterGrades() {
                           const busy = isSaving || isSubmitting;
                           const status = getGradeStatus(student);
                           const feedback = rowFeedback[id];
-                          const preview = calculateGradePreview(
-                            form.midtermGrade,
-                            form.finalGrade,
-                          );
+                          const preview = calculateGradePreview(form);
 
-                          const overallPercentage = preview.complete
-                            ? preview.overallPercentage
-                            : (student.grade?.overall_percentage ?? null);
+                          const useStoredResult =
+                            !editable && Boolean(student.grade);
 
-                          const finalRating = preview.complete
-                            ? preview.finalRating
-                            : (student.grade?.final_rating ?? null);
+                          const overallPercentage = useStoredResult
+                            ? (student.grade?.overall_percentage ?? null)
+                            : preview.overallPercentage;
 
-                          const resultRemark = preview.complete
-                            ? preview.remarks
-                            : (student.grade?.remarks ?? null);
+                          const finalRating = useStoredResult
+                            ? (student.grade?.final_rating ?? null)
+                            : preview.finalRating;
+
+                          const resultRemark = useStoredResult
+                            ? (student.grade?.remarks ?? null)
+                            : preview.remarks;
 
                           return (
                             <tr
@@ -1596,6 +1672,28 @@ export default function EnterGrades() {
                               </td>
 
                               <td>
+                                <select
+                                  className="faculty-grade-remarks"
+                                  value={form.gradingOutcome}
+                                  onChange={(event) =>
+                                    updateForm(
+                                      id,
+                                      "gradingOutcome",
+                                      event.target.value as GradeOutcome,
+                                    )
+                                  }
+                                  disabled={!editable || busy}
+                                  aria-label={`Grade outcome for ${student.full_name}`}
+                                >
+                                  <option value="NUMERIC">Numeric Grade</option>
+                                  <option value="INCOMPLETE">Incomplete</option>
+                                  <option value="UNOFFICIAL_DROP">
+                                    Unofficial Drop
+                                  </option>
+                                </select>
+                              </td>
+
+                              <td>
                                 <input
                                   className="faculty-grade-input"
                                   type="number"
@@ -1610,8 +1708,16 @@ export default function EnterGrades() {
                                       event.target.value,
                                     )
                                   }
-                                  disabled={!editable || busy}
-                                  placeholder="0-100"
+                                  disabled={
+                                    !editable ||
+                                    busy ||
+                                    form.gradingOutcome !== "NUMERIC"
+                                  }
+                                  placeholder={
+                                    form.gradingOutcome === "NUMERIC"
+                                      ? "0-100"
+                                      : "—"
+                                  }
                                   aria-label={`Midterm percentage for ${student.full_name}`}
                                 />
                               </td>
@@ -1631,8 +1737,16 @@ export default function EnterGrades() {
                                       event.target.value,
                                     )
                                   }
-                                  disabled={!editable || busy}
-                                  placeholder="0-100"
+                                  disabled={
+                                    !editable ||
+                                    busy ||
+                                    form.gradingOutcome !== "NUMERIC"
+                                  }
+                                  placeholder={
+                                    form.gradingOutcome === "NUMERIC"
+                                      ? "0-100"
+                                      : "—"
+                                  }
                                   aria-label={`Final Term percentage for ${student.full_name}`}
                                 />
                               </td>
@@ -1664,6 +1778,35 @@ export default function EnterGrades() {
                                   <strong>{resultRemark || "—"}</strong>
                                   <small>Calculated by policy</small>
                                 </div>
+                              </td>
+
+                              <td>
+                                {form.gradingOutcome === "NUMERIC" ? (
+                                  <span className="faculty-grade-no-review">
+                                    Not required
+                                  </span>
+                                ) : (
+                                  <input
+                                    className="faculty-grade-remarks"
+                                    type="text"
+                                    maxLength={500}
+                                    value={form.outcomeReason}
+                                    onChange={(event) =>
+                                      updateForm(
+                                        id,
+                                        "outcomeReason",
+                                        event.target.value,
+                                      )
+                                    }
+                                    disabled={!editable || busy}
+                                    placeholder={
+                                      form.gradingOutcome === "INCOMPLETE"
+                                        ? "Reason for incomplete..."
+                                        : "Reason for unofficial drop..."
+                                    }
+                                    aria-label={`Outcome reason for ${student.full_name}`}
+                                  />
+                                )}
                               </td>
 
                               <td>
@@ -1824,8 +1967,10 @@ export default function EnterGrades() {
                 <div>
                   <strong>Encode</strong>
                   <p>
-                    Enter Midterm and Final Term percentages from 0 to 100.
-                    Final Rating and Result are calculated automatically.
+                    Choose Numeric Grade for normal 0–100 Midterm and Final Term
+                    encoding, or choose Incomplete / Unofficial Drop and provide
+                    a required reason. Final Rating and Result are calculated
+                    automatically by policy.
                   </p>
                 </div>
               </article>

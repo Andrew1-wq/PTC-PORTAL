@@ -31,7 +31,12 @@ import "../../../styles/RegistrarCertificateOfGrades.css";
 
 const API_BASE_URL = "http://localhost:3000/api/registrar/students";
 
-type AcademicClassification = "Passed" | "Incomplete" | "Failed" | "Unknown";
+type AcademicClassification =
+  | "Passed"
+  | "Incomplete"
+  | "Failed"
+  | "Unofficial Drop"
+  | "Unknown";
 
 interface Student {
   student_id: number;
@@ -78,8 +83,13 @@ interface AcademicRecord {
   midterm_grade: number | null;
   final_grade: number | null;
   final_rating: number | null;
-  academic_result?: "Passed" | "Incomplete" | "Failed" | null;
-  remarks: "Passed" | "Incomplete" | "Failed" | null;
+  academic_result?:
+    | "Passed"
+    | "Incomplete"
+    | "Failed"
+    | "Unofficial Drop"
+    | null;
+  remarks: "Passed" | "Incomplete" | "Failed" | "Unofficial Drop" | null;
   grade_status: "Draft" | "Submitted" | "Returned" | "Approved";
   submitted_at?: string | null;
   reviewed_by?: number | null;
@@ -158,6 +168,7 @@ function classifyFinalRating(
   if (rating >= 1 && rating <= 3) return "Passed";
   if (rating === 4) return "Incomplete";
   if (rating === 5) return "Failed";
+  if (rating === 6) return "Unofficial Drop";
 
   return "Unknown";
 }
@@ -166,7 +177,8 @@ function getClassification(record: AcademicRecord): AcademicClassification {
   if (
     record.academic_result === "Passed" ||
     record.academic_result === "Incomplete" ||
-    record.academic_result === "Failed"
+    record.academic_result === "Failed" ||
+    record.academic_result === "Unofficial Drop"
   ) {
     return record.academic_result;
   }
@@ -176,7 +188,11 @@ function getClassification(record: AcademicRecord): AcademicClassification {
 
 function requiresRetake(record: AcademicRecord): boolean {
   const result = getClassification(record);
-  return result === "Incomplete" || result === "Failed";
+  return (
+    result === "Incomplete" ||
+    result === "Failed" ||
+    result === "Unofficial Drop"
+  );
 }
 
 function getStatusClass(value: string | null | undefined): string {
@@ -205,6 +221,9 @@ function ResultIcon({ result }: { result: AcademicClassification }) {
   if (result === "Incomplete")
     return <AlertTriangle size={14} aria-hidden="true" />;
   if (result === "Failed") return <XCircle size={14} aria-hidden="true" />;
+  if (result === "Unofficial Drop") {
+    return <AlertCircle size={14} aria-hidden="true" />;
+  }
   return <CircleHelp size={14} aria-hidden="true" />;
 }
 
@@ -442,6 +461,7 @@ export default function CertificateOfGradesR() {
         if (result === "Passed") summary.passed += 1;
         if (result === "Incomplete") summary.incomplete += 1;
         if (result === "Failed") summary.failed += 1;
+        if (result === "Unofficial Drop") summary.unofficialDrop += 1;
 
         return summary;
       },
@@ -451,6 +471,7 @@ export default function CertificateOfGradesR() {
         passed: 0,
         incomplete: 0,
         failed: 0,
+        unofficialDrop: 0,
       },
     );
   }, [cogRecords]);
@@ -709,7 +730,10 @@ export default function CertificateOfGradesR() {
 
                 <article
                   className={`registrar-cog__summary-card ${
-                    termSummary.incomplete + termSummary.failed > 0
+                    termSummary.incomplete +
+                      termSummary.failed +
+                      termSummary.unofficialDrop >
+                    0
                       ? "registrar-cog__summary-card--attention"
                       : ""
                   }`}
@@ -720,11 +744,13 @@ export default function CertificateOfGradesR() {
                   <div>
                     <span>Needs Attention</span>
                     <strong>
-                      {termSummary.incomplete + termSummary.failed}
+                      {termSummary.incomplete +
+                        termSummary.failed +
+                        termSummary.unofficialDrop}
                     </strong>
                     <small>
                       {termSummary.incomplete} incomplete · {termSummary.failed}{" "}
-                      failed
+                      failed · {termSummary.unofficialDrop} unofficial drop
                     </small>
                   </div>
                 </article>
@@ -847,7 +873,9 @@ export default function CertificateOfGradesR() {
                               <td>
                                 <div className="registrar-cog-document__result-cell">
                                   <span
-                                    className={`registrar-cog-document__result registrar-cog-document__result--${result.toLowerCase()}`}
+                                    className={`registrar-cog-document__result registrar-cog-document__result--${getStatusClass(
+                                      result,
+                                    )}`}
                                   >
                                     <ResultIcon result={result} />
                                     {result}
@@ -895,6 +923,9 @@ export default function CertificateOfGradesR() {
                       </span>
                       <span>
                         <b>5.00</b> Failed
+                      </span>
+                      <span>
+                        <b>6.00</b> Unofficial Drop
                       </span>
                     </div>
                   </section>

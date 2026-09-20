@@ -49,8 +49,12 @@ interface SubmittedGrade {
   grades: {
     midterm_grade: number | null;
     final_grade: number | null;
+    overall_percentage: number | null;
     final_rating: number | null;
-    remarks: "Passed" | "Failed" | "Incomplete" | null;
+    grading_policy: string;
+    grading_outcome: "NUMERIC" | "INCOMPLETE" | "UNOFFICIAL_DROP" | string;
+    outcome_reason: string | null;
+    remarks: "Passed" | "Failed" | "Incomplete" | "Unofficial Drop" | null;
   };
   student: {
     student_id: number;
@@ -179,8 +183,28 @@ function formatDays(value: string | null) {
     .join(", ");
 }
 
-function getRemarkClass(remark: "Passed" | "Failed" | "Incomplete" | null) {
-  return remark ? remark.toLowerCase() : "none";
+function getRemarkClass(
+  remark: "Passed" | "Failed" | "Incomplete" | "Unofficial Drop" | null,
+) {
+  return remark ? remark.toLowerCase().replace(/\s+/g, "-") : "none";
+}
+
+function formatPercentage(value: number | null) {
+  return value === null || value === undefined
+    ? "—"
+    : `${Number(value).toFixed(3)}%`;
+}
+
+function getOutcomeLabel(value: string | null | undefined) {
+  if (value === "INCOMPLETE") return "Incomplete";
+  if (value === "UNOFFICIAL_DROP") return "Unofficial Drop";
+  return "Numeric Grade";
+}
+
+function getOutcomeClass(value: string | null | undefined) {
+  if (value === "INCOMPLETE") return "incomplete";
+  if (value === "UNOFFICIAL_DROP") return "unofficial-drop";
+  return "numeric";
 }
 
 export default function PendingGrades() {
@@ -352,7 +376,11 @@ export default function PendingGrades() {
         grade.class.subject.subject_code.toLowerCase().includes(q) ||
         grade.class.subject.subject_name.toLowerCase().includes(q) ||
         grade.class.section.section_name.toLowerCase().includes(q) ||
-        grade.faculty.faculty_name.toLowerCase().includes(q);
+        grade.faculty.faculty_name.toLowerCase().includes(q) ||
+        getOutcomeLabel(grade.grades.grading_outcome)
+          .toLowerCase()
+          .includes(q) ||
+        (grade.grades.outcome_reason || "").toLowerCase().includes(q);
 
       return (
         matchesSearch &&
@@ -394,6 +422,9 @@ export default function PendingGrades() {
       ).length,
       failed: filteredGrades.filter((g) => g.grades.remarks === "Failed")
         .length,
+      unofficialDrop: filteredGrades.filter(
+        (g) => g.grades.remarks === "Unofficial Drop",
+      ).length,
     };
   }, [filteredGrades]);
 
@@ -418,10 +449,17 @@ export default function PendingGrades() {
   };
 
   const approveGrade = async (grade: SubmittedGrade) => {
+    const outcomeLabel = getOutcomeLabel(grade.grades.grading_outcome);
+    const reasonLine = grade.grades.outcome_reason
+      ? `\nReason: ${grade.grades.outcome_reason}`
+      : "";
+
     const confirmed = window.confirm(
-      `Approve the submitted grade for ${grade.student.student_number} - ${grade.student.full_name}?\n\nSubject: ${grade.class.subject.subject_code}\nFinal Rating: ${formatGrade(
+      `Approve the submitted grade for ${grade.student.student_number} - ${grade.student.full_name}?\n\nSubject: ${grade.class.subject.subject_code}\nOutcome: ${outcomeLabel}\nOverall: ${formatPercentage(
+        grade.grades.overall_percentage,
+      )}\nFinal Rating: ${formatGrade(
         grade.grades.final_rating,
-      )}\nRemarks: ${grade.grades.remarks || "—"}\n\nApproved grades become official and locked.`,
+      )}\nResult: ${grade.grades.remarks || "—"}${reasonLine}\n\nApproved grades become official and locked.`,
     );
     if (!confirmed) return;
 
@@ -719,6 +757,16 @@ export default function PendingGrades() {
               <span>Submitted failing results</span>
             </div>
           </article>
+          <article className="program-head-grade-summary-card">
+            <span className="program-head-grade-summary-icon program-head-grade-summary-icon--unofficial-drop">
+              <X size={19} />
+            </span>
+            <div>
+              <small>Unofficial Drop</small>
+              <strong>{loading ? "…" : summary.unofficialDrop}</strong>
+              <span>Special drop outcomes</span>
+            </div>
+          </article>
         </section>
 
         <section className="program-head-grade-filters">
@@ -731,7 +779,7 @@ export default function PendingGrades() {
                 <strong>Review Filters</strong>
                 <p>
                   Find a student or narrow the approval queue by academic
-                  period, course, or Faculty.
+                  period, course, Faculty, outcome, or reason.
                 </p>
               </div>
             </div>
@@ -756,7 +804,7 @@ export default function PendingGrades() {
                   type="search"
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Student, subject, section, faculty..."
+                  placeholder="Student, subject, faculty, outcome, reason..."
                 />
               </div>
             </label>
@@ -887,9 +935,9 @@ export default function PendingGrades() {
                 <span>Grade Review Queue</span>
                 <h2>Submitted Grades</h2>
                 <p>
-                  Verify the grade components, final rating, remarks, Faculty,
-                  and class information before approving an official academic
-                  result.
+                  Verify the grading outcome, percentages, final rating, reason,
+                  Faculty, and class information before approving an official
+                  academic result.
                 </p>
               </div>
               <strong>
@@ -907,10 +955,13 @@ export default function PendingGrades() {
                     <th>Student</th>
                     <th>Class</th>
                     <th>Faculty</th>
+                    <th>Outcome</th>
                     <th>Midterm</th>
                     <th>Final</th>
+                    <th>Overall</th>
                     <th>Final Rating</th>
-                    <th>Remarks</th>
+                    <th>Result</th>
+                    <th>Reason</th>
                     <th>Submitted</th>
                     <th>Actions</th>
                   </tr>
@@ -951,6 +1002,13 @@ export default function PendingGrades() {
                           </div>
                         </td>
                         <td>
+                          <span
+                            className={`program-head-grade-outcome ${getOutcomeClass(grade.grades.grading_outcome)}`}
+                          >
+                            {getOutcomeLabel(grade.grades.grading_outcome)}
+                          </span>
+                        </td>
+                        <td>
                           <span className="program-head-grade-value">
                             {formatGrade(grade.grades.midterm_grade)}
                           </span>
@@ -958,6 +1016,11 @@ export default function PendingGrades() {
                         <td>
                           <span className="program-head-grade-value">
                             {formatGrade(grade.grades.final_grade)}
+                          </span>
+                        </td>
+                        <td>
+                          <span className="program-head-grade-overall">
+                            {formatPercentage(grade.grades.overall_percentage)}
                           </span>
                         </td>
                         <td>
@@ -971,6 +1034,19 @@ export default function PendingGrades() {
                           >
                             {grade.grades.remarks || "—"}
                           </span>
+                        </td>
+                        <td>
+                          <div className="program-head-grade-reason">
+                            {grade.grades.outcome_reason ? (
+                              <span title={grade.grades.outcome_reason}>
+                                {grade.grades.outcome_reason}
+                              </span>
+                            ) : (
+                              <span className="program-head-grade-reason--none">
+                                Not required
+                              </span>
+                            )}
+                          </div>
                         </td>
                         <td>
                           <div className="program-head-submitted-time">
@@ -1040,8 +1116,8 @@ export default function PendingGrades() {
                 <div>
                   <strong>Review</strong>
                   <p>
-                    Verify grade components, final rating, remarks, student, and
-                    class information.
+                    Verify the grading outcome, percentages, final rating,
+                    result, reason, student, and class information.
                   </p>
                 </div>
               </article>
@@ -1126,11 +1202,26 @@ export default function PendingGrades() {
                   <small>{returnGrade.faculty.employee_number}</small>
                 </div>
                 <div>
-                  <span>Final Rating</span>
+                  <span>Outcome</span>
                   <strong>
+                    {getOutcomeLabel(returnGrade.grades.grading_outcome)}
+                  </strong>
+                  <small>{returnGrade.grades.grading_policy || "—"}</small>
+                </div>
+                <div>
+                  <span>Overall / Final Rating</span>
+                  <strong>
+                    {formatPercentage(returnGrade.grades.overall_percentage)} ·{" "}
                     {formatGrade(returnGrade.grades.final_rating)}
                   </strong>
-                  <small>{returnGrade.grades.remarks || "No remarks"}</small>
+                  <small>{returnGrade.grades.remarks || "No result"}</small>
+                </div>
+                <div className="program-head-return-grade-summary__reason">
+                  <span>Outcome Reason</span>
+                  <strong>
+                    {returnGrade.grades.outcome_reason || "Not required"}
+                  </strong>
+                  <small>Faculty-provided special outcome reason</small>
                 </div>
               </div>
 
