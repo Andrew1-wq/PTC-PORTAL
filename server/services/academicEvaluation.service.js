@@ -116,7 +116,7 @@ export async function getApprovedAcademicHistory(studentId, executor = db) {
           g.enrollment_subject_id,
           g.faculty_id,
 
-          g.prelim_grade,
+      
           g.midterm_grade,
           g.final_grade,
           g.final_rating,
@@ -203,8 +203,6 @@ export async function getApprovedAcademicHistory(studentId, executor = db) {
 
     faculty_id: row.faculty_id === null ? null : Number(row.faculty_id),
 
-    prelim_grade: row.prelim_grade === null ? null : Number(row.prelim_grade),
-
     midterm_grade:
       row.midterm_grade === null ? null : Number(row.midterm_grade),
 
@@ -251,8 +249,7 @@ export async function getLatestApprovedGrade(
           g.grade_id,
           g.enrollment_subject_id,
           g.faculty_id,
-
-          g.prelim_grade,
+     
           g.midterm_grade,
           g.final_grade,
           g.final_rating,

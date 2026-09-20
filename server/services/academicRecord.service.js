@@ -196,7 +196,7 @@ export async function getOfficialAcademicRecordForStudent(
             g.enrollment_subject_id,
             g.faculty_id,
 
-            g.prelim_grade,
+            
             g.midterm_grade,
             g.final_grade,
             g.final_rating,
@@ -405,8 +405,6 @@ export async function getOfficialAcademicRecordForStudent(
       // PTC GRADE VALUES
       // ---------------------------------------------
 
-      prelim_grade: toNullableNumber(row.prelim_grade),
-
       midterm_grade: toNullableNumber(row.midterm_grade),
 
       final_grade: toNullableNumber(row.final_grade),
@@ -575,8 +573,6 @@ export async function getOfficialAcademicRecordForStudent(
       // ---------------------------------------------
       // NO PTC GRADE VALUES
       // ---------------------------------------------
-
-      prelim_grade: null,
 
       midterm_grade: null,
 

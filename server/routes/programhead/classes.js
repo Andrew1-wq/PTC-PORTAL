@@ -2,6 +2,7 @@
 
 import express from "express";
 import db from "../../db.js";
+import { calculateGrade } from "../../services/gradingPolicy.service.js";
 
 const router = express.Router();
 
@@ -2668,7 +2669,7 @@ router.get("/:offeringId/gradebook", async (req, res) => {
               g.faculty_id
                   AS grade_faculty_id,
 
-              g.prelim_grade,
+              
               g.midterm_grade,
               g.final_grade,
               g.final_rating,
@@ -2789,9 +2790,6 @@ router.get("/:offeringId/gradebook", async (req, res) => {
                 row.grade_faculty_id !== null
                   ? Number(row.grade_faculty_id)
                   : null,
-
-              prelim_grade:
-                row.prelim_grade !== null ? Number(row.prelim_grade) : null,
 
               midterm_grade:
                 row.midterm_grade !== null ? Number(row.midterm_grade) : null,
@@ -3062,102 +3060,36 @@ router.put(
       }
 
       // ===============================================
-      // REQUEST VALUES
+      // OFFICIAL TWO-TERM GRADE CALCULATION
+      // ===============================================
+      //
+      // Frontend only provides:
+      //
+      // midterm_grade
+      // final_grade
+      // grading_outcome
+      // outcome_reason
+      //
+      // The backend calculates:
+      //
+      // overall_percentage
+      // final_rating
+      // remarks
+      //
+      // Never trust final_rating or remarks
+      // from the frontend.
       // ===============================================
 
-      const {
-        prelim_grade,
-        midterm_grade,
-        final_grade,
-        final_rating,
-        remarks,
-      } = req.body ?? {};
+      let calculated;
 
-      // ===============================================
-      // NORMALIZE NUMBERS
-      // ===============================================
-
-      const normalizeNullableNumber = (value, fieldName) => {
-        if (value === null || value === undefined || value === "") {
-          return {
-            valid: true,
-            value: null,
-          };
-        }
-
-        const number = Number(value);
-
-        if (!Number.isFinite(number)) {
-          return {
-            valid: false,
-            message: `${fieldName} must be a valid number.`,
-          };
-        }
-
-        return {
-          valid: true,
-          value: number,
-        };
-      };
-
-      const prelimResult = normalizeNullableNumber(
-        prelim_grade,
-        "Prelim grade",
-      );
-
-      if (!prelimResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: prelimResult.message,
+      try {
+        calculated = calculateGrade(req.body ?? {}, {
+          requireComplete: true,
         });
-      }
-
-      const midtermResult = normalizeNullableNumber(
-        midterm_grade,
-        "Midterm grade",
-      );
-
-      if (!midtermResult.valid) {
+      } catch (error) {
         return res.status(400).json({
           success: false,
-          message: midtermResult.message,
-        });
-      }
-
-      const finalGradeResult = normalizeNullableNumber(
-        final_grade,
-        "Final grade",
-      );
-
-      if (!finalGradeResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: finalGradeResult.message,
-        });
-      }
-
-      const finalRatingResult = normalizeNullableNumber(
-        final_rating,
-        "Final rating",
-      );
-
-      if (!finalRatingResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: finalRatingResult.message,
-        });
-      }
-
-      // ===============================================
-      // REMARKS
-      // ===============================================
-
-      const allowedRemarks = ["Passed", "Failed", "Incomplete"];
-
-      if (!allowedRemarks.includes(remarks)) {
-        return res.status(400).json({
-          success: false,
-          message: "Remarks must be Passed, Failed, or Incomplete.",
+          message: error.message,
         });
       }
 
@@ -3178,10 +3110,6 @@ router.put(
 
       if (["Passed", "Failed"].includes(remarks)) {
         const missingFields = [];
-
-        if (prelimResult.value === null) {
-          missingFields.push("prelim_grade");
-        }
 
         if (midtermResult.value === null) {
           missingFields.push("midterm_grade");
@@ -3466,39 +3394,54 @@ router.put(
 
       const [insertResult] = await connection.execute(
         `
-          INSERT INTO grades (
-              enrollment_subject_id,
-              faculty_id,
+    INSERT INTO grades (
+        enrollment_subject_id,
+        faculty_id,
 
-              prelim_grade,
-              midterm_grade,
-              final_grade,
-              final_rating,
+        grading_policy,
+        grading_outcome,
+        outcome_reason,
 
-              remarks,
-              grade_status
-          )
-          VALUES (
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              ?,
-              'Draft'
-          )
-          `,
+        midterm_grade,
+        final_grade,
+        overall_percentage,
+        final_rating,
+
+        remarks,
+        grade_status
+    )
+
+    VALUES (
+        ?,
+        ?,
+
+        ?,
+        ?,
+        ?,
+
+        ?,
+        ?,
+        ?,
+        ?,
+
+        ?,
+        'Draft'
+    )
+  `,
         [
           enrollmentSubjectId,
           record.offering_faculty_id,
 
-          prelimResult.value,
-          midtermResult.value,
-          finalGradeResult.value,
-          finalRatingResult.value,
+          calculated.grading_policy,
+          calculated.grading_outcome,
+          calculated.outcome_reason,
 
-          remarks,
+          calculated.midterm_grade,
+          calculated.final_grade,
+          calculated.overall_percentage,
+          calculated.final_rating,
+
+          calculated.remarks,
         ],
       );
 
@@ -3570,14 +3513,17 @@ router.put(
               g.enrollment_subject_id,
               g.faculty_id,
 
-              g.prelim_grade,
-              g.midterm_grade,
-              g.final_grade,
-              g.final_rating,
+           g.grading_policy,
+g.grading_outcome,
+g.outcome_reason,
 
-              g.remarks,
-              g.grade_status,
+g.midterm_grade,
+g.final_grade,
+g.overall_percentage,
+g.final_rating,
 
+g.remarks,
+g.grade_status,
               g.submitted_at,
 
               g.reviewed_by,
@@ -3692,10 +3638,11 @@ router.put(
 
           faculty_id: Number(approved.faculty_id),
 
-          prelim_grade:
-            approved.prelim_grade !== null
-              ? Number(approved.prelim_grade)
-              : null,
+          grading_policy: approved.grading_policy,
+
+          grading_outcome: approved.grading_outcome,
+
+          outcome_reason: approved.outcome_reason,
 
           midterm_grade:
             approved.midterm_grade !== null
@@ -3704,6 +3651,11 @@ router.put(
 
           final_grade:
             approved.final_grade !== null ? Number(approved.final_grade) : null,
+
+          overall_percentage:
+            approved.overall_percentage !== null
+              ? Number(approved.overall_percentage)
+              : null,
 
           final_rating:
             approved.final_rating !== null

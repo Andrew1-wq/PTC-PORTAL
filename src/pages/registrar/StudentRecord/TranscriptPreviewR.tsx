@@ -91,7 +91,6 @@ interface AcademicRecord {
 
   subject_status: string;
 
-  prelim_grade: number | null;
   midterm_grade: number | null;
   final_grade: number | null;
 

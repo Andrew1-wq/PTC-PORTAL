@@ -75,7 +75,6 @@ interface AcademicRecord {
   section_name?: string | null;
   grade_id: number;
   faculty_id?: number | null;
-  prelim_grade: number | null;
   midterm_grade: number | null;
   final_grade: number | null;
   final_rating: number | null;
@@ -181,7 +180,12 @@ function requiresRetake(record: AcademicRecord): boolean {
 }
 
 function getStatusClass(value: string | null | undefined): string {
-  return value?.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-") || "unknown";
+  return (
+    value
+      ?.trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-") || "unknown"
+  );
 }
 
 function getStudentName(student: Student): string {
@@ -198,7 +202,8 @@ function getInitials(student: Student): string {
 
 function ResultIcon({ result }: { result: AcademicClassification }) {
   if (result === "Passed") return <CheckCircle2 size={14} aria-hidden="true" />;
-  if (result === "Incomplete") return <AlertTriangle size={14} aria-hidden="true" />;
+  if (result === "Incomplete")
+    return <AlertTriangle size={14} aria-hidden="true" />;
   if (result === "Failed") return <XCircle size={14} aria-hidden="true" />;
   return <CircleHelp size={14} aria-hidden="true" />;
 }
@@ -287,12 +292,16 @@ export default function CertificateOfGradesR() {
 
         if (!response.ok || !data.success) {
           throw new Error(
-            data.message || data.error || "Unable to load Certificate of Grades.",
+            data.message ||
+              data.error ||
+              "Unable to load Certificate of Grades.",
           );
         }
 
         if (!data.student) {
-          throw new Error("Student information was not returned by the server.");
+          throw new Error(
+            "Student information was not returned by the server.",
+          );
         }
 
         const officialRecords = Array.isArray(data.records)
@@ -396,7 +405,8 @@ export default function CertificateOfGradesR() {
   );
 
   const cogRecords = useMemo(() => {
-    if (selectedAcademicYearId === null || selectedSemesterId === null) return [];
+    if (selectedAcademicYearId === null || selectedSemesterId === null)
+      return [];
 
     return records
       .filter(
@@ -474,8 +484,8 @@ export default function CertificateOfGradesR() {
             </div>
             <h1>Certificate of Grades</h1>
             <p>
-              Review and print an official term-based Certificate of Grades using
-              only approved academic results recorded in the PTC Portal.
+              Review and print an official term-based Certificate of Grades
+              using only approved academic results recorded in the PTC Portal.
             </p>
           </div>
 
@@ -511,9 +521,10 @@ export default function CertificateOfGradesR() {
           <div>
             <strong>Official grades only</strong>
             <p>
-              Draft, Submitted, and Returned grades are excluded. This certificate
-              only uses approved enrollments, Program Head-approved grades, and an
-              official final rating from First or Second Semester.
+              Draft, Submitted, and Returned grades are excluded. This
+              certificate only uses approved enrollments, Program Head-approved
+              grades, and an official final rating from First or Second
+              Semester.
             </p>
           </div>
         </section>
@@ -611,13 +622,18 @@ export default function CertificateOfGradesR() {
                   </span>
                   <div>
                     <h3>Certificate Period</h3>
-                    <p>Select the approved academic term to preview and print.</p>
+                    <p>
+                      Select the approved academic term to preview and print.
+                    </p>
                   </div>
                 </div>
               </div>
 
               <div className="registrar-cog__control-row">
-                <label className="registrar-cog__select-field" htmlFor="cog-term">
+                <label
+                  className="registrar-cog__select-field"
+                  htmlFor="cog-term"
+                >
                   <span>Academic term</span>
                   <select
                     id="cog-term"
@@ -703,9 +719,12 @@ export default function CertificateOfGradesR() {
                   </span>
                   <div>
                     <span>Needs Attention</span>
-                    <strong>{termSummary.incomplete + termSummary.failed}</strong>
+                    <strong>
+                      {termSummary.incomplete + termSummary.failed}
+                    </strong>
                     <small>
-                      {termSummary.incomplete} incomplete · {termSummary.failed} failed
+                      {termSummary.incomplete} incomplete · {termSummary.failed}{" "}
+                      failed
                     </small>
                   </div>
                 </article>
@@ -720,8 +739,8 @@ export default function CertificateOfGradesR() {
                 <h3>No Certificate of Grades available</h3>
                 <p>
                   This student does not yet have approved grades for an official
-                  First or Second Semester period. Only official approved records can
-                  appear on the certificate.
+                  First or Second Semester period. Only official approved
+                  records can appear on the certificate.
                 </p>
               </section>
             )}
@@ -735,7 +754,9 @@ export default function CertificateOfGradesR() {
                     </span>
                     <div>
                       <h3>Document Preview</h3>
-                      <p>This is the content that will be included when printed.</p>
+                      <p>
+                        This is the content that will be included when printed.
+                      </p>
                     </div>
                   </div>
                   <span className="registrar-cog__ready-badge">
@@ -746,7 +767,10 @@ export default function CertificateOfGradesR() {
 
                 <article className="registrar-cog-document">
                   <header className="registrar-cog-document__header">
-                    <div className="registrar-cog-document__seal" aria-hidden="true">
+                    <div
+                      className="registrar-cog-document__seal"
+                      aria-hidden="true"
+                    >
                       <School size={28} />
                     </div>
                     <div>
@@ -760,7 +784,8 @@ export default function CertificateOfGradesR() {
                     <span>Official Academic Document</span>
                     <h2>CERTIFICATE OF GRADES</h2>
                     <p>
-                      Academic Year {selectedTerm.academic_year} · {selectedTerm.semester_name}
+                      Academic Year {selectedTerm.academic_year} ·{" "}
+                      {selectedTerm.semester_name}
                     </p>
                   </div>
 
@@ -862,21 +887,28 @@ export default function CertificateOfGradesR() {
                       <strong>Grade Interpretation</strong>
                     </div>
                     <div className="registrar-cog-document__guide-items">
-                      <span><b>1.00–3.00</b> Passed</span>
-                      <span><b>4.00</b> Incomplete</span>
-                      <span><b>5.00</b> Failed</span>
+                      <span>
+                        <b>1.00–3.00</b> Passed
+                      </span>
+                      <span>
+                        <b>4.00</b> Incomplete
+                      </span>
+                      <span>
+                        <b>5.00</b> Failed
+                      </span>
                     </div>
                   </section>
 
                   <section className="registrar-cog-document__certification">
                     <p>
-                      This is to certify that the grades stated above are the official
-                      approved academic results recorded in the PTC Student Portal for
-                      the indicated academic period.
+                      This is to certify that the grades stated above are the
+                      official approved academic results recorded in the PTC
+                      Student Portal for the indicated academic period.
                     </p>
                     <p>
-                      Only grades approved by the Program Head from approved student
-                      enrollments are included in this Certificate of Grades.
+                      Only grades approved by the Program Head from approved
+                      student enrollments are included in this Certificate of
+                      Grades.
                     </p>
                   </section>
 
@@ -914,7 +946,9 @@ export default function CertificateOfGradesR() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/registrar/student/DetailsR/${student.student_id}`)
+                    navigate(
+                      `/registrar/student/DetailsR/${student.student_id}`,
+                    )
                   }
                 >
                   <UserRound size={14} aria-hidden="true" />
@@ -923,7 +957,9 @@ export default function CertificateOfGradesR() {
                 <button
                   type="button"
                   onClick={() =>
-                    navigate(`/registrar/student/${student.student_id}/AcadRecR`)
+                    navigate(
+                      `/registrar/student/${student.student_id}/AcadRecR`,
+                    )
                   }
                 >
                   <BookOpenCheck size={14} aria-hidden="true" />
@@ -933,7 +969,9 @@ export default function CertificateOfGradesR() {
                   type="button"
                   className="registrar-cog__footer-button--primary"
                   onClick={() =>
-                    navigate(`/registrar/student/${student.student_id}/transcriptR`)
+                    navigate(
+                      `/registrar/student/${student.student_id}/transcriptR`,
+                    )
                   }
                 >
                   <ScrollText size={14} aria-hidden="true" />

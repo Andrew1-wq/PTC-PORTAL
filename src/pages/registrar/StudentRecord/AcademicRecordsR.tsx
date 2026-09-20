@@ -137,7 +137,6 @@ interface AcademicRecord {
   section_name?: string | null;
   faculty_id?: number | null;
   faculty?: FacultyInfo | null;
-  prelim_grade: number | null;
   midterm_grade: number | null;
   final_grade: number | null;
   final_rating: number | null;
@@ -491,7 +490,9 @@ export default function AcademicRecordsR() {
         }
 
         if (!data.student) {
-          throw new Error("Student information was not returned by the server.");
+          throw new Error(
+            "Student information was not returned by the server.",
+          );
         }
 
         const officialRecords = Array.isArray(data.records)
@@ -966,7 +967,9 @@ export default function AcademicRecordsR() {
 
               <div className="registrar-academic-record__filters">
                 <div className="registrar-academic-record__search-field">
-                  <label htmlFor="registrar-academic-search">Search records</label>
+                  <label htmlFor="registrar-academic-search">
+                    Search records
+                  </label>
                   <div className="registrar-academic-record__input-shell">
                     <Search size={15} />
                     <input
@@ -1056,7 +1059,9 @@ export default function AcademicRecordsR() {
                   {academicYearFilter !== "All" && (
                     <strong>{academicYearFilter}</strong>
                   )}
-                  {semesterFilter !== "All" && <strong>{semesterFilter}</strong>}
+                  {semesterFilter !== "All" && (
+                    <strong>{semesterFilter}</strong>
+                  )}
                   {resultFilter !== "All" && <strong>{resultFilter}</strong>}
                 </div>
               )}
@@ -1156,7 +1161,8 @@ export default function AcademicRecordsR() {
 
                                 <div className="registrar-academic-record__semester-stats">
                                   <span>
-                                    Recorded <strong>{semesterUnits}</strong> units
+                                    Recorded <strong>{semesterUnits}</strong>{" "}
+                                    units
                                   </span>
                                   <span>
                                     Earned <strong>{earnedUnits}</strong> units
@@ -1196,7 +1202,9 @@ export default function AcademicRecordsR() {
                                         <tr key={getRecordKey(record)}>
                                           <td>
                                             <div className="registrar-academic-record__subject-cell">
-                                              <strong>{record.subject_code}</strong>
+                                              <strong>
+                                                {record.subject_code}
+                                              </strong>
                                               <span>{record.subject_name}</span>
                                               <small>
                                                 {transfer
@@ -1275,14 +1283,6 @@ export default function AcademicRecordsR() {
                                               </span>
                                             ) : (
                                               <div className="registrar-academic-record__term-grades">
-                                                <span>
-                                                  <small>Prelim</small>
-                                                  <strong>
-                                                    {formatGrade(
-                                                      record.prelim_grade,
-                                                    )}
-                                                  </strong>
-                                                </span>
                                                 <span>
                                                   <small>Midterm</small>
                                                   <strong>
@@ -1369,7 +1369,7 @@ export default function AcademicRecordsR() {
                                                 record.transfer_completion
                                                   ?.completed_at && (
                                                   <small>
-                                                    Transfer completed {" "}
+                                                    Transfer completed{" "}
                                                     {formatDateTime(
                                                       record.transfer_completion
                                                         .completed_at,

@@ -32,7 +32,7 @@ const API_BASE_URL = "http://localhost:3000/api/faculty/classes";
 
 type GradeStatus = "Draft" | "Submitted" | "Returned" | "Approved";
 
-type GradeRemark = "" | "Passed" | "Failed" | "Incomplete";
+type GradeRemark = "Passed" | "Failed" | "Incomplete" | "Unofficial Drop";
 
 interface FacultyInfo {
   faculty_id: number;
@@ -125,12 +125,16 @@ interface FacultyGrade {
   grade_id: number;
   faculty_id: number | null;
 
-  prelim_grade: number | null;
   midterm_grade: number | null;
   final_grade: number | null;
+  overall_percentage: number | null;
   final_rating: number | null;
 
-  remarks: "Passed" | "Failed" | "Incomplete" | null;
+  grading_policy?: string;
+  grading_outcome?: string;
+  outcome_reason?: string | null;
+
+  remarks: GradeRemark | null;
 
   grade_status: GradeStatus;
 
@@ -196,23 +200,31 @@ interface GradeMutationResponse {
     grade_id: number;
     enrollment_subject_id: number;
 
-    prelim_grade: number | null;
     midterm_grade: number | null;
     final_grade: number | null;
+    overall_percentage?: number | null;
     final_rating: number | null;
 
-    remarks: "Passed" | "Failed" | "Incomplete" | null;
+    grading_policy?: string;
+    grading_outcome?: string;
+    outcome_reason?: string | null;
+
+    remarks: GradeRemark | null;
 
     grade_status: GradeStatus;
   };
 }
 
 interface GradeForm {
-  prelimGrade: string;
   midtermGrade: string;
   finalGrade: string;
-  finalRating: string;
-  remarks: GradeRemark;
+}
+
+interface GradePreview {
+  complete: boolean;
+  overallPercentage: number | null;
+  finalRating: number | null;
+  remarks: GradeRemark | null;
 }
 
 interface RowFeedback {
@@ -261,28 +273,9 @@ function gradeValueToString(value: number | null | undefined): string {
 
 function createGradeForm(grade: FacultyGrade | null): GradeForm {
   return {
-    prelimGrade: gradeValueToString(grade?.prelim_grade),
-
     midtermGrade: gradeValueToString(grade?.midterm_grade),
-
     finalGrade: gradeValueToString(grade?.final_grade),
-
-    finalRating: gradeValueToString(grade?.final_rating),
-
-    remarks: grade?.remarks || "",
   };
-}
-
-function toNullableNumber(value: string): number | null {
-  const clean = value.trim();
-
-  if (!clean) {
-    return null;
-  }
-
-  const parsed = Number(clean);
-
-  return Number.isFinite(parsed) ? parsed : null;
 }
 
 function formatDays(value: string | null): string {
@@ -352,27 +345,89 @@ function isEditable(student: GradebookStudent): boolean {
   );
 }
 
-function getSuggestedRemark(value: string): string | null {
-  if (!value.trim()) {
+const GRADE_BANDS = [
+  [97, 1.0],
+  [94, 1.25],
+  [91, 1.5],
+  [88, 1.75],
+  [85, 2.0],
+  [82, 2.25],
+  [79, 2.5],
+  [76, 2.75],
+  [75, 3.0],
+  [0, 5.0],
+] as const;
+
+function parsePercentageHundredths(value: string): number | null {
+  const clean = value.trim();
+
+  if (!clean || !/^\d+(?:\.\d{1,2})?$/.test(clean)) {
     return null;
   }
 
-  const rating = Number(value);
+  const numeric = Number(clean);
 
-  if (!Number.isFinite(rating)) {
+  if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
     return null;
   }
 
-  if (rating >= 1 && rating <= 3) {
-    return "Passed";
+  return Math.round(numeric * 100);
+}
+
+function calculateGradePreview(
+  midtermGrade: string,
+  finalGrade: string,
+): GradePreview {
+  const midterm = parsePercentageHundredths(midtermGrade);
+  const finalTerm = parsePercentageHundredths(finalGrade);
+
+  if (midterm === null || finalTerm === null) {
+    return {
+      complete: false,
+      overallPercentage: null,
+      finalRating: null,
+      remarks: null,
+    };
   }
 
-  if (rating === 4) {
-    return "Incomplete";
+  // Same TWO_TERM_50_50 rule used by the backend.
+  // Keep hundredths so 74.995 never rounds up to a passing 75.
+  const sum = midterm + finalTerm;
+  const overallPercentage = sum / 200;
+
+  const finalRating =
+    GRADE_BANDS.find(([threshold]) => sum >= threshold * 200)?.[1] ?? 5;
+
+  const remarks: GradeRemark =
+    finalRating >= 1 && finalRating <= 3 ? "Passed" : "Failed";
+
+  return {
+    complete: true,
+    overallPercentage,
+    finalRating,
+    remarks,
+  };
+}
+
+function validatePercentageField(
+  value: string,
+  label: string,
+  required = false,
+): string | null {
+  const clean = value.trim();
+
+  if (!clean) {
+    return required ? `${label} is required.` : null;
   }
 
-  if (rating === 5) {
-    return "Failed";
+  if (!/^\d+(?:\.\d{1,2})?$/.test(clean)) {
+    return `${label} must be a percentage from 0 to 100 with at most two decimal places.`;
+  }
+
+  const numeric = Number(clean);
+
+  if (!Number.isFinite(numeric) || numeric < 0 || numeric > 100) {
+    return `${label} must be between 0 and 100.`;
   }
 
   return null;
@@ -770,11 +825,8 @@ export default function EnterGrades() {
 
       [enrollmentSubjectId]: {
         ...(current[enrollmentSubjectId] || {
-          prelimGrade: "",
           midtermGrade: "",
           finalGrade: "",
-          finalRating: "",
-          remarks: "",
         }),
 
         [field]: value,
@@ -794,97 +846,24 @@ export default function EnterGrades() {
 
   const buildGradeBody = (form: GradeForm) => {
     return {
-      prelim_grade: toNullableNumber(form.prelimGrade),
-
-      midterm_grade: toNullableNumber(form.midtermGrade),
-
-      final_grade: toNullableNumber(form.finalGrade),
-
-      final_rating: toNullableNumber(form.finalRating),
-
-      remarks: form.remarks || null,
+      midterm_grade: form.midtermGrade.trim() || null,
+      final_grade: form.finalGrade.trim() || null,
+      grading_outcome: "NUMERIC",
     };
   };
 
   const validateNumericFields = (form: GradeForm): string | null => {
-    const fields = [
-      {
-        label: "Prelim grade",
-
-        value: form.prelimGrade,
-      },
-      {
-        label: "Midterm grade",
-
-        value: form.midtermGrade,
-      },
-      {
-        label: "Final grade",
-
-        value: form.finalGrade,
-      },
-      {
-        label: "Final rating",
-
-        value: form.finalRating,
-      },
-    ];
-
-    for (const field of fields) {
-      const clean = field.value.trim();
-
-      if (!clean) {
-        continue;
-      }
-
-      if (!Number.isFinite(Number(clean))) {
-        return `${field.label} must be a valid number.`;
-      }
-    }
-
-    return null;
+    return (
+      validatePercentageField(form.midtermGrade, "Midterm") ||
+      validatePercentageField(form.finalGrade, "Final Term")
+    );
   };
 
   const validateForSubmit = (form: GradeForm): string | null => {
-    const numericError = validateNumericFields(form);
-
-    if (numericError) {
-      return numericError;
-    }
-
-    if (!form.remarks) {
-      return "Grade remarks are required before submission.";
-    }
-
-    // Passed / Failed require complete grades.
-
-    if (form.remarks === "Passed" || form.remarks === "Failed") {
-      const missing: string[] = [];
-
-      if (!form.prelimGrade.trim()) {
-        missing.push("Prelim");
-      }
-
-      if (!form.midtermGrade.trim()) {
-        missing.push("Midterm");
-      }
-
-      if (!form.finalGrade.trim()) {
-        missing.push("Final Grade");
-      }
-
-      if (!form.finalRating.trim()) {
-        missing.push("Final Rating");
-      }
-
-      if (missing.length > 0) {
-        return `Complete the following before submission: ${missing.join(
-          ", ",
-        )}.`;
-      }
-    }
-
-    return null;
+    return (
+      validatePercentageField(form.midtermGrade, "Midterm", true) ||
+      validatePercentageField(form.finalGrade, "Final Term", true)
+    );
   };
 
   const saveDraftRequest = async (
@@ -1199,7 +1178,9 @@ export default function EnterGrades() {
             <div className="faculty-grade-faculty__copy">
               <small>Faculty</small>
               <strong>{faculty?.faculty_name || "Faculty"}</strong>
-              <span>{faculty?.employee_number || "Employee number unavailable"}</span>
+              <span>
+                {faculty?.employee_number || "Employee number unavailable"}
+              </span>
             </div>
           </div>
 
@@ -1347,7 +1328,10 @@ export default function EnterGrades() {
           </section>
         )}
 
-        <section className="faculty-grade-summary" aria-label="Grade status summary">
+        <section
+          className="faculty-grade-summary"
+          aria-label="Grade status summary"
+        >
           <article className="faculty-grade-summary-card faculty-grade-summary-card--total">
             <span className="faculty-grade-summary-icon">
               <UsersRound size={18} />
@@ -1546,11 +1530,11 @@ export default function EnterGrades() {
                       <thead>
                         <tr>
                           <th>Student</th>
-                          <th>Prelim</th>
-                          <th>Midterm</th>
-                          <th>Final</th>
+                          <th>Midterm %</th>
+                          <th>Final Term %</th>
+                          <th>Overall %</th>
                           <th>Final Rating</th>
-                          <th>Remarks</th>
+                          <th>Result</th>
                           <th>Status</th>
                           <th>Program Head Review</th>
                           <th>Actions</th>
@@ -1568,9 +1552,22 @@ export default function EnterGrades() {
                           const busy = isSaving || isSubmitting;
                           const status = getGradeStatus(student);
                           const feedback = rowFeedback[id];
-                          const suggestedRemark = getSuggestedRemark(
-                            form.finalRating,
+                          const preview = calculateGradePreview(
+                            form.midtermGrade,
+                            form.finalGrade,
                           );
+
+                          const overallPercentage = preview.complete
+                            ? preview.overallPercentage
+                            : (student.grade?.overall_percentage ?? null);
+
+                          const finalRating = preview.complete
+                            ? preview.finalRating
+                            : (student.grade?.final_rating ?? null);
+
+                          const resultRemark = preview.complete
+                            ? preview.remarks
+                            : (student.grade?.remarks ?? null);
 
                           return (
                             <tr
@@ -1591,7 +1588,8 @@ export default function EnterGrades() {
                                     <strong>{student.full_name}</strong>
                                     <span>{student.student_number}</span>
                                     <small>
-                                      Enrollment Subject #{student.enrollment_subject_id}
+                                      Enrollment Subject #
+                                      {student.enrollment_subject_id}
                                     </small>
                                   </div>
                                 </div>
@@ -1601,25 +1599,8 @@ export default function EnterGrades() {
                                 <input
                                   className="faculty-grade-input"
                                   type="number"
-                                  step="0.01"
-                                  value={form.prelimGrade}
-                                  onChange={(event) =>
-                                    updateForm(
-                                      id,
-                                      "prelimGrade",
-                                      event.target.value,
-                                    )
-                                  }
-                                  disabled={!editable || busy}
-                                  placeholder="—"
-                                  aria-label={`Prelim grade for ${student.full_name}`}
-                                />
-                              </td>
-
-                              <td>
-                                <input
-                                  className="faculty-grade-input"
-                                  type="number"
+                                  min="0"
+                                  max="100"
                                   step="0.01"
                                   value={form.midtermGrade}
                                   onChange={(event) =>
@@ -1630,8 +1611,8 @@ export default function EnterGrades() {
                                     )
                                   }
                                   disabled={!editable || busy}
-                                  placeholder="—"
-                                  aria-label={`Midterm grade for ${student.full_name}`}
+                                  placeholder="0-100"
+                                  aria-label={`Midterm percentage for ${student.full_name}`}
                                 />
                               </td>
 
@@ -1639,6 +1620,8 @@ export default function EnterGrades() {
                                 <input
                                   className="faculty-grade-input"
                                   type="number"
+                                  min="0"
+                                  max="100"
                                   step="0.01"
                                   value={form.finalGrade}
                                   onChange={(event) =>
@@ -1649,53 +1632,38 @@ export default function EnterGrades() {
                                     )
                                   }
                                   disabled={!editable || busy}
-                                  placeholder="—"
-                                  aria-label={`Final grade for ${student.full_name}`}
+                                  placeholder="0-100"
+                                  aria-label={`Final Term percentage for ${student.full_name}`}
                                 />
                               </td>
 
                               <td>
                                 <div className="faculty-grade-rating-field">
-                                  <input
-                                    className="faculty-grade-input"
-                                    type="number"
-                                    step="0.01"
-                                    value={form.finalRating}
-                                    onChange={(event) =>
-                                      updateForm(
-                                        id,
-                                        "finalRating",
-                                        event.target.value,
-                                      )
-                                    }
-                                    disabled={!editable || busy}
-                                    placeholder="—"
-                                    aria-label={`Final rating for ${student.full_name}`}
-                                  />
-
-                                  {suggestedRemark && (
-                                    <small>
-                                      Suggested: <strong>{suggestedRemark}</strong>
-                                    </small>
-                                  )}
+                                  <strong>
+                                    {overallPercentage !== null
+                                      ? overallPercentage.toFixed(3)
+                                      : "—"}
+                                  </strong>
+                                  <small>Automatic 50/50 average</small>
                                 </div>
                               </td>
 
                               <td>
-                                <select
-                                  className="faculty-grade-remarks"
-                                  value={form.remarks}
-                                  onChange={(event) =>
-                                    updateForm(id, "remarks", event.target.value)
-                                  }
-                                  disabled={!editable || busy}
-                                  aria-label={`Remarks for ${student.full_name}`}
-                                >
-                                  <option value="">Select</option>
-                                  <option value="Passed">Passed</option>
-                                  <option value="Incomplete">Incomplete</option>
-                                  <option value="Failed">Failed</option>
-                                </select>
+                                <div className="faculty-grade-rating-field">
+                                  <strong>
+                                    {finalRating !== null
+                                      ? Number(finalRating).toFixed(2)
+                                      : "—"}
+                                  </strong>
+                                  <small>Automatic</small>
+                                </div>
+                              </td>
+
+                              <td>
+                                <div className="faculty-grade-rating-field">
+                                  <strong>{resultRemark || "—"}</strong>
+                                  <small>Calculated by policy</small>
+                                </div>
                               </td>
 
                               <td>
@@ -1711,7 +1679,9 @@ export default function EnterGrades() {
                                   {student.grade?.submitted_at && (
                                     <small>
                                       Submitted{" "}
-                                      {formatDateTime(student.grade.submitted_at)}
+                                      {formatDateTime(
+                                        student.grade.submitted_at,
+                                      )}
                                     </small>
                                   )}
                                 </div>
@@ -1727,9 +1697,12 @@ export default function EnterGrades() {
                                     <div>
                                       <strong>
                                         {student.grade.review
-                                          .reviewed_by_username || "Program Head"}
+                                          .reviewed_by_username ||
+                                          "Program Head"}
                                       </strong>
-                                      <p>{student.grade.review.review_remarks}</p>
+                                      <p>
+                                        {student.grade.review.review_remarks}
+                                      </p>
                                       <small>
                                         {formatDateTime(
                                           student.grade.review.reviewed_at,
@@ -1737,7 +1710,8 @@ export default function EnterGrades() {
                                       </small>
                                     </div>
                                   </div>
-                                ) : student.grade?.grade_status === "Approved" ? (
+                                ) : student.grade?.grade_status ===
+                                  "Approved" ? (
                                   <div className="faculty-grade-review approved">
                                     <span className="faculty-grade-review__icon">
                                       <CheckCircle2 size={14} />
@@ -1781,7 +1755,9 @@ export default function EnterGrades() {
                                       <button
                                         type="button"
                                         className="faculty-grade-submit"
-                                        onClick={() => void submitGrade(student)}
+                                        onClick={() =>
+                                          void submitGrade(student)
+                                        }
                                         disabled={busy}
                                       >
                                         <Send size={13} />
@@ -1847,7 +1823,10 @@ export default function EnterGrades() {
                 </span>
                 <div>
                   <strong>Encode</strong>
-                  <p>Enter grading components, final rating, and remarks.</p>
+                  <p>
+                    Enter Midterm and Final Term percentages from 0 to 100.
+                    Final Rating and Result are calculated automatically.
+                  </p>
                 </div>
               </article>
 
@@ -1858,7 +1837,9 @@ export default function EnterGrades() {
                 </span>
                 <div>
                   <strong>Save Draft</strong>
-                  <p>Keep unfinished grade records editable before submission.</p>
+                  <p>
+                    Keep unfinished grade records editable before submission.
+                  </p>
                 </div>
               </article>
 
@@ -1869,7 +1850,9 @@ export default function EnterGrades() {
                 </span>
                 <div>
                   <strong>Submit</strong>
-                  <p>Lock the grade and send it to the Program Head for review.</p>
+                  <p>
+                    Lock the grade and send it to the Program Head for review.
+                  </p>
                 </div>
               </article>
 
@@ -1880,7 +1863,10 @@ export default function EnterGrades() {
                 </span>
                 <div>
                   <strong>Review</strong>
-                  <p>The Program Head approves the grade or returns it for correction.</p>
+                  <p>
+                    The Program Head approves the grade or returns it for
+                    correction.
+                  </p>
                 </div>
               </article>
             </div>
