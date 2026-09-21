@@ -21,6 +21,7 @@ import {
   Library,
   Menu,
   Megaphone,
+  ReceiptText,
   School,
   ShieldCheck,
   UserCircle,
@@ -265,6 +266,13 @@ function getFallbackIcon(item: NavItem) {
 
   if (key.includes("schedule")) return <CalendarDays size={18} />;
   if (key.includes("class")) return <School size={18} />;
+
+  if (
+    key.includes("/student/transactions") ||
+    key.includes("my transactions")
+  ) {
+    return <ReceiptText size={18} />;
+  }
 
   if (key.includes("request document")) return <FilePlus2 size={18} />;
   if (key.includes("document release")) return <FileCheck2 size={18} />;

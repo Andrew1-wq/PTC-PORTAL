@@ -137,6 +137,12 @@ const SUBJECT_COLORS = [
   "#0369a1",
 ];
 
+function getSubjectColorClass(color: string): string {
+  const index = SUBJECT_COLORS.indexOf(color);
+
+  return `schedule-subject-color-${index >= 0 ? index : 0}`;
+}
+
 const DAY_ALIASES: Record<string, number> = {
   sunday: 0,
   sun: 0,
@@ -700,29 +706,35 @@ export default function StudentSchedule() {
             </div>
           </div>
 
-          {viewMode === "month" && (
-            <div className="month-navigation">
-              <button
-                type="button"
-                onClick={handlePreviousMonth}
-                aria-label="Previous month"
-              >
-                &lt;
-              </button>
+          <div className="schedule-header-actions">
+            {viewMode === "month" && (
+              <div className="month-navigation">
+                <button
+                  type="button"
+                  onClick={handlePreviousMonth}
+                  aria-label="Previous month"
+                >
+                  &lt;
+                </button>
 
-              <button type="button" onClick={handleToday}>
-                Today
-              </button>
+                <button type="button" onClick={handleToday}>
+                  Today
+                </button>
 
-              <button
-                type="button"
-                onClick={handleNextMonth}
-                aria-label="Next month"
-              >
-                &gt;
-              </button>
+                <button
+                  type="button"
+                  onClick={handleNextMonth}
+                  aria-label="Next month"
+                >
+                  &gt;
+                </button>
+              </div>
+            )}
+
+            <div className="schedule-header-icon" aria-hidden="true">
+              <CalendarDays size={28} strokeWidth={1.9} />
             </div>
-          )}
+          </div>
         </section>
 
         <section className="schedule-summary-grid" aria-label="Schedule summary">
@@ -916,14 +928,13 @@ export default function StudentSchedule() {
                           dayMeetings.map((meeting) => (
                             <button
                               type="button"
-                              className="weekly-class-card"
+                              className={`weekly-class-card ${getSubjectColorClass(
+                                meeting.color,
+                              )}`}
                               key={meeting.key}
                               onClick={() =>
                                 setSelectedSubject(meeting.subject)
                               }
-                              style={{
-                                borderLeftColor: meeting.color,
-                              }}
                             >
                               <span className="weekly-class-time">
                                 {formatMinutesForDisplay(
@@ -1022,12 +1033,10 @@ export default function StudentSchedule() {
                   onClick={() => setSelectedSubject(subject)}
                 >
                   <span
-                    className="legend-color"
-                    style={{
-                      backgroundColor:
-                        subjectColorMap.get(subject.subject_id) ||
+                    className={`legend-color ${getSubjectColorClass(
+                      subjectColorMap.get(subject.subject_id) ||
                         SUBJECT_COLORS[0],
-                    }}
+                    )}`}
                   />
 
                   <span>

@@ -2695,3 +2695,1899 @@
   }
 }
 
+
+/* =========================================================
+   FINAL STUDENT RECORD UI SYSTEM
+   Aligned with Finance / Enrollment / Schedule
+   ========================================================= */
+
+.student-academic-record-page {
+  --ptc-green: #15803d;
+  --ptc-green-dark: #166534;
+  --ptc-green-deep: #071b10;
+  --ptc-green-medium: #16a34a;
+  --ptc-green-bright: #22c55e;
+
+  --ptc-green-light: #dcfce7;
+  --ptc-green-soft: #f0fdf4;
+  --ptc-green-soft-2: #f8fbf9;
+  --ptc-green-border: #cdebd7;
+
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+
+  --surface: #ffffff;
+  --surface-soft: #f8fbf9;
+
+  --border: #dce6df;
+  --border-soft: #edf3ef;
+
+  --danger: #dc2626;
+  --danger-dark: #991b1b;
+  --danger-soft: #fef2f2;
+  --danger-border: #fecaca;
+
+  --warning: #d97706;
+  --warning-dark: #92400e;
+  --warning-soft: #fffbeb;
+  --warning-border: #fde68a;
+
+  --gray: #64748b;
+  --gray-soft: #f8fafc;
+
+  display: grid;
+  gap: 18px;
+
+  width: 100%;
+  min-height: 100%;
+
+  padding: 4px;
+
+  background: transparent;
+  color: var(--text-primary);
+}
+
+/* =========================================================
+   HEADER
+   ========================================================= */
+
+.student-academic-record-page .student-record-header {
+  position: relative;
+  overflow: hidden;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px;
+
+  margin: 0;
+  padding: 22px 24px;
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  background:
+    radial-gradient(
+      circle at 94% 10%,
+      rgba(34, 197, 94, 0.11),
+      transparent 28%
+    ),
+    linear-gradient(135deg, #ffffff 0%, #fbfefc 100%);
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.04),
+    0 8px 22px rgba(15, 23, 42, 0.045);
+}
+
+.student-academic-record-page .student-record-header::before {
+  display: none;
+}
+
+.student-academic-record-page .student-record-header::after {
+  content: "";
+
+  position: absolute;
+  right: -44px;
+  bottom: -70px;
+  top: auto;
+
+  width: 170px;
+  height: 170px;
+
+  border: 26px solid rgba(21, 128, 61, 0.045);
+  border-radius: 50%;
+
+  background: transparent;
+
+  pointer-events: none;
+}
+
+.student-academic-record-page .student-record-header > * {
+  position: relative;
+  z-index: 1;
+}
+
+.student-academic-record-page .student-record-eyebrow,
+.student-academic-record-page .student-progress-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  margin: 0;
+
+  color: var(--ptc-green);
+
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.075em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-record-header h1 {
+  margin: 5px 0 0;
+
+  color: var(--ptc-green-deep);
+
+  font-size: 1.65rem;
+  font-weight: 850;
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+}
+
+.student-academic-record-page .student-record-header p {
+  max-width: 760px;
+
+  margin: 7px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 0.84rem;
+  line-height: 1.6;
+}
+
+.student-academic-record-page .student-record-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  flex: 0 0 auto;
+}
+
+.student-academic-record-page .student-record-header-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 54px;
+
+  width: 54px;
+  height: 54px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 14px;
+
+  background: linear-gradient(145deg, #f0fdf4, #dcfce7);
+  color: var(--ptc-green);
+
+  box-shadow: 0 8px 18px rgba(21, 128, 61, 0.08);
+}
+
+.student-academic-record-page .student-record-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  min-height: 40px;
+  padding: 9px 13px;
+
+  border: 1px solid #ccd8d0;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: var(--text-secondary);
+
+  font: inherit;
+  font-size: 12px;
+  font-weight: 780;
+
+  cursor: pointer;
+
+  box-shadow: none;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.student-academic-record-page .student-record-refresh:hover:not(:disabled) {
+  transform: none;
+
+  border-color: #a8c6b2;
+
+  background: #f8fcf9;
+  color: var(--ptc-green-dark);
+
+  filter: none;
+  box-shadow: none;
+}
+
+.student-academic-record-page .student-record-refresh:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.student-academic-record-page .student-record-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.student-academic-record-page .student-record-refresh-icon.is-spinning {
+  animation: studentRecordSpin 0.8s linear infinite;
+}
+
+/* =========================================================
+   OFFICIAL NOTICE
+   ========================================================= */
+
+.student-academic-record-page .student-record-official-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 0;
+  padding: 12px 13px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 10px;
+
+  background: #f8fcf9;
+}
+
+.student-academic-record-page .student-record-official-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 28px;
+
+  width: 28px;
+  height: 28px;
+
+  border-radius: 8px;
+
+  background: var(--ptc-green-light);
+  color: var(--ptc-green-dark);
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.student-academic-record-page .student-record-official-notice strong {
+  display: block;
+
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-official-notice p {
+  margin: 3px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* =========================================================
+   STUDENT PROFILE
+   ========================================================= */
+
+.student-academic-record-page .student-record-profile {
+  display: grid;
+  grid-template-columns: 1.35fr repeat(4, minmax(0, 1fr));
+  gap: 13px;
+
+  margin: 0;
+}
+
+.student-academic-record-page .student-record-profile > div {
+  min-width: 0;
+  min-height: 85px;
+
+  padding: 15px 16px;
+
+  border: 1px solid var(--border);
+  border-radius: 14px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.025),
+    0 5px 14px rgba(15, 23, 42, 0.025);
+
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.student-academic-record-page .student-record-profile > div:hover {
+  transform: translateY(-1px);
+
+  border-color: #bfdac8;
+
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055);
+}
+
+.student-academic-record-page .student-record-profile-primary {
+  border-left: 1px solid var(--border) !important;
+}
+
+.student-academic-record-page .student-record-profile span {
+  display: block;
+
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-record-profile strong {
+  display: block;
+  overflow: hidden;
+
+  margin-top: 5px;
+
+  color: var(--text-primary);
+
+  font-size: 12.5px;
+  font-weight: 820;
+  line-height: 1.3;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.student-academic-record-page .student-record-profile small {
+  display: block;
+  overflow: hidden;
+
+  margin-top: 3px;
+
+  color: var(--text-muted);
+
+  font-size: 10px;
+  line-height: 1.35;
+
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* =========================================================
+   SUMMARY
+   ========================================================= */
+
+.student-academic-record-page .student-record-summary {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 11px;
+
+  margin: 0;
+}
+
+.student-academic-record-page .student-record-summary > div {
+  min-width: 0;
+  min-height: 80px;
+  overflow: visible;
+
+  padding: 14px 15px;
+
+  border: 1px solid var(--border);
+  border-radius: 13px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.025),
+    0 5px 14px rgba(15, 23, 42, 0.025);
+
+  transition:
+    transform 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.student-academic-record-page .student-record-summary > div::before {
+  display: none;
+}
+
+.student-academic-record-page .student-record-summary > div:hover {
+  transform: translateY(-1px);
+
+  border-color: #bfdac8;
+
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.055);
+}
+
+.student-academic-record-page .student-record-summary span {
+  display: block;
+
+  margin: 0;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+  font-weight: 760;
+  line-height: 1.3;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-record-summary strong {
+  display: block;
+
+  margin-top: 5px;
+
+  color: var(--text-primary);
+
+  font-size: 1.25rem;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+/* =========================================================
+   SHARED PANELS
+   ========================================================= */
+
+.student-academic-record-page .student-curriculum-progress,
+.student-academic-record-page .student-record-history,
+.student-academic-record-page .student-record-legend,
+.student-academic-record-page .student-record-footer {
+  min-width: 0;
+
+  margin: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  background: var(--surface);
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.025),
+    0 5px 16px rgba(15, 23, 42, 0.025);
+}
+
+/* =========================================================
+   CURRICULUM PROGRESS
+   ========================================================= */
+
+.student-academic-record-page .student-curriculum-progress {
+  overflow: hidden;
+}
+
+.student-academic-record-page .student-progress-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+
+  padding: 20px;
+
+  border-bottom: 1px solid var(--border-soft);
+
+  background:
+    radial-gradient(
+      circle at 94% 10%,
+      rgba(34, 197, 94, 0.07),
+      transparent 26%
+    ),
+    #ffffff;
+}
+
+.student-academic-record-page .student-progress-header h2,
+.student-academic-record-page .student-record-history-header h2 {
+  margin: 3px 0 0;
+
+  color: var(--text-primary);
+
+  font-size: 1.02rem;
+  font-weight: 820;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+.student-academic-record-page .student-progress-header p,
+.student-academic-record-page .student-record-history-header p {
+  max-width: 760px;
+
+  margin: 4px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.student-academic-record-page .student-progress-percentage {
+  flex: 0 0 auto;
+
+  min-width: 112px;
+  padding: 10px 12px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 10px;
+
+  background: var(--ptc-green-soft);
+
+  text-align: center;
+}
+
+.student-academic-record-page .student-progress-percentage strong {
+  display: block;
+
+  color: var(--ptc-green-dark);
+
+  font-size: 1.15rem;
+  font-weight: 850;
+  line-height: 1.05;
+}
+
+.student-academic-record-page .student-progress-percentage span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--text-muted);
+
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-progress-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
+  gap: 13px;
+
+  padding: 16px 20px;
+}
+
+.student-academic-record-page .student-progress-primary-card {
+  padding: 15px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+.student-academic-record-page .student-progress-primary-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.student-academic-record-page .student-progress-primary-topline > div > span {
+  color: var(--text-muted);
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-progress-primary-topline > div > strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: var(--text-primary);
+
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-progress-context-badge {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 25px;
+  padding: 4px 8px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 999px;
+
+  background: var(--ptc-green-soft);
+  color: var(--ptc-green-dark);
+
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.student-academic-record-page .student-progress-bar {
+  appearance: none;
+  -webkit-appearance: none;
+
+  display: block;
+
+  width: 100%;
+  height: 8px;
+
+  margin: 12px 0 0;
+  overflow: hidden;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #eef3ef;
+}
+
+.student-academic-record-page .student-progress-bar::-webkit-progress-bar {
+  background: #eef3ef;
+  border-radius: 999px;
+}
+
+.student-academic-record-page .student-progress-bar::-webkit-progress-value {
+  background: var(--ptc-green);
+  border-radius: 999px;
+}
+
+.student-academic-record-page .student-progress-bar::-moz-progress-bar {
+  background: var(--ptc-green);
+  border-radius: 999px;
+}
+
+.student-academic-record-page .student-progress-unit-row {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  margin-top: 12px;
+}
+
+.student-academic-record-page .student-progress-unit-row > div {
+  padding: 9px 10px;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+
+  background: var(--surface-soft);
+}
+
+.student-academic-record-page .student-progress-unit-row span,
+.student-academic-record-page .student-progress-status-grid span {
+  display: block;
+
+  color: var(--text-muted);
+
+  font-size: 8.5px;
+  font-weight: 800;
+  letter-spacing: 0.035em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-progress-unit-row strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: var(--text-primary);
+
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-progress-status-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.student-academic-record-page .student-progress-status-grid > div {
+  min-width: 0;
+  padding: 10px;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+}
+
+.student-academic-record-page .student-progress-status-grid strong {
+  display: block;
+
+  margin-top: 4px;
+
+  color: var(--text-primary);
+
+  font-size: 1rem;
+  font-weight: 850;
+}
+
+.student-academic-record-page .student-progress-status-grid small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 8.5px;
+  line-height: 1.3;
+}
+
+.student-academic-record-page .student-progress-status-grid .completed,
+.student-academic-record-page .student-progress-status-grid .ptc,
+.student-academic-record-page .student-progress-status-grid .transfer {
+  border-color: #d8ecde;
+  background: #f7fdf8;
+}
+
+.student-academic-record-page .student-progress-status-grid .retake,
+.student-academic-record-page .student-progress-status-grid .blocked {
+  border-color: #f3d7bc;
+  background: #fffbf5;
+}
+
+.student-academic-record-page .student-progress-unit-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+
+  margin: 0 20px 16px;
+  padding: 11px 12px;
+
+  border: 1px solid var(--warning-border);
+  border-radius: 9px;
+
+  background: var(--warning-soft);
+}
+
+.student-academic-record-page .student-progress-unit-warning-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 27px;
+
+  width: 27px;
+  height: 27px;
+
+  border-radius: 8px;
+
+  background: #fef3c7;
+  color: var(--warning-dark);
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.student-academic-record-page .student-progress-unit-warning strong {
+  color: var(--warning-dark);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-progress-unit-warning p {
+  margin: 3px 0 0;
+
+  color: #9a5a08;
+
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+/* =========================================================
+   CURRICULUM SUBJECTS / FILTERS
+   ========================================================= */
+
+.student-academic-record-page .student-progress-subjects {
+  border-top: 1px solid var(--border-soft);
+}
+
+.student-academic-record-page .student-progress-subjects-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding: 16px 20px;
+}
+
+.student-academic-record-page .student-progress-subjects-header h3 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-size: 0.95rem;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-progress-subjects-header p {
+  margin: 4px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.student-academic-record-page .student-progress-subjects-header > span {
+  display: inline-flex;
+  align-items: center;
+
+  min-height: 25px;
+  padding: 4px 8px;
+
+  border: 1px solid var(--border);
+  border-radius: 999px;
+
+  background: var(--surface-soft);
+  color: var(--text-muted);
+
+  font-size: 9px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.student-academic-record-page .student-progress-filters,
+.student-academic-record-page .student-record-filters {
+  display: grid;
+  align-items: end;
+  gap: 10px;
+
+  margin: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.025),
+    0 5px 16px rgba(15, 23, 42, 0.025);
+}
+
+.student-academic-record-page .student-progress-filters {
+  grid-template-columns: minmax(240px, 1.5fr) minmax(190px, 0.8fr) auto;
+
+  margin: 0 20px 16px;
+  padding: 14px;
+
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.student-academic-record-page .student-record-filters {
+  grid-template-columns:
+    minmax(230px, 1.45fr)
+    repeat(3, minmax(150px, 1fr))
+    auto;
+
+  padding: 20px;
+}
+
+.student-academic-record-page .student-progress-filters > div,
+.student-academic-record-page .student-record-filters > div {
+  min-width: 0;
+}
+
+.student-academic-record-page .student-progress-filters label,
+.student-academic-record-page .student-record-filters label {
+  display: block;
+
+  margin: 0 0 6px;
+
+  color: var(--text-secondary);
+
+  font-size: 10.5px;
+  font-weight: 720;
+}
+
+.student-academic-record-page .student-progress-filters input,
+.student-academic-record-page .student-progress-filters select,
+.student-academic-record-page .student-record-filters input,
+.student-academic-record-page .student-record-filters select {
+  width: 100%;
+  min-height: 40px;
+  box-sizing: border-box;
+
+  padding: 9px 11px;
+
+  border: 1.5px solid #ccd8d0;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: var(--text-primary);
+
+  font: inherit;
+  font-size: 12px;
+
+  outline: none;
+
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.student-academic-record-page .student-progress-filters input:focus,
+.student-academic-record-page .student-progress-filters select:focus,
+.student-academic-record-page .student-record-filters input:focus,
+.student-academic-record-page .student-record-filters select:focus {
+  border-color: var(--ptc-green-medium);
+
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.1);
+}
+
+.student-academic-record-page .student-progress-filters button,
+.student-academic-record-page .student-record-clear-filter,
+.student-academic-record-page .student-record-error button,
+.student-academic-record-page .student-record-empty button,
+.student-academic-record-page .student-progress-error button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-height: 40px;
+  padding: 9px 13px;
+
+  border: 1px solid #ccd8d0;
+  border-radius: 9px;
+
+  background: #ffffff;
+  color: var(--text-secondary);
+
+  font: inherit;
+  font-size: 11px;
+  font-weight: 780;
+
+  cursor: pointer;
+
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.student-academic-record-page .student-progress-filters button:hover:not(:disabled),
+.student-academic-record-page .student-record-clear-filter:hover,
+.student-academic-record-page .student-record-error button:hover,
+.student-academic-record-page .student-record-empty button:hover,
+.student-academic-record-page .student-progress-error button:hover {
+  border-color: #a8c6b2;
+
+  background: #f8fcf9;
+  color: var(--ptc-green-dark);
+}
+
+.student-academic-record-page .student-progress-filters button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   CURRICULUM YEAR ACCORDION
+   ========================================================= */
+
+.student-academic-record-page .student-progress-years {
+  display: grid;
+  gap: 10px;
+
+  padding: 0 20px 20px;
+}
+
+.student-academic-record-page .student-progress-year {
+  overflow: hidden;
+
+  margin: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #ffffff;
+
+  box-shadow: none;
+}
+
+.student-academic-record-page .student-progress-year-header {
+  width: 100% !important;
+  min-height: 58px;
+
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px;
+
+  margin: 0;
+  padding: 11px 13px !important;
+
+  border: 0 !important;
+  border-bottom: 1px solid transparent !important;
+  border-radius: 0;
+
+  background: #f8fbf9 !important;
+  color: inherit;
+
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  box-shadow: none;
+
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.student-academic-record-page .student-progress-year-header:hover {
+  background: #f3f9f5 !important;
+}
+
+.student-academic-record-page
+  .student-progress-year-header[aria-expanded="true"] {
+  border-bottom-color: var(--border) !important;
+  background: var(--ptc-green-soft) !important;
+}
+
+.student-academic-record-page
+  .student-progress-year-header
+  > div:first-child
+  > span {
+  display: block !important;
+
+  margin: 0 0 2px !important;
+
+  color: var(--ptc-green) !important;
+
+  font-size: 8.5px !important;
+  font-weight: 850 !important;
+  letter-spacing: 0.05em !important;
+  text-transform: uppercase !important;
+}
+
+.student-academic-record-page
+  .student-progress-year-header
+  > div:first-child
+  > h4 {
+  margin: 0;
+
+  color: var(--text-primary);
+
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-progress-year-header-actions,
+.student-academic-record-page
+  .student-progress-year-header
+  > div:last-child {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+
+  margin-left: auto;
+}
+
+.student-academic-record-page
+  .student-progress-year-header-actions
+  > strong,
+.student-academic-record-page
+  .student-progress-year-header
+  > div:last-child
+  > strong {
+  color: var(--text-secondary) !important;
+
+  font-size: 9.5px !important;
+  font-weight: 760 !important;
+}
+
+.student-academic-record-page .student-progress-year-toggle,
+.student-academic-record-page
+  .student-progress-year-header
+  > div:last-child
+  > span:last-child {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 28px !important;
+
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  border: 1px solid #cdebd7 !important;
+  border-radius: 8px !important;
+
+  background: #ffffff !important;
+  color: var(--ptc-green) !important;
+
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1 !important;
+
+  transform: rotate(-90deg) !important;
+
+  box-shadow: none;
+
+  transition:
+    transform 150ms ease,
+    background 150ms ease;
+}
+
+.student-academic-record-page
+  .student-progress-year-header[aria-expanded="true"]
+  .student-progress-year-toggle {
+  background: var(--ptc-green-light) !important;
+  transform: rotate(0deg) !important;
+}
+
+.student-academic-record-page .student-progress-semester-header {
+  padding: 10px 13px;
+
+  background: #ffffff;
+}
+
+.student-academic-record-page .student-progress-semester-header h5 {
+  color: var(--text-primary);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.student-academic-record-page
+  .student-progress-semester-header
+  > div:first-child
+  > span,
+.student-academic-record-page
+  .student-progress-semester-header
+  > div:last-child {
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+/* =========================================================
+   TABLES
+   ========================================================= */
+
+.student-academic-record-page .student-progress-table,
+.student-academic-record-page .student-record-table {
+  width: 100%;
+
+  border-collapse: collapse;
+}
+
+.student-academic-record-page .student-progress-table {
+  min-width: 900px;
+}
+
+.student-academic-record-page .student-record-table {
+  min-width: 1080px;
+}
+
+.student-academic-record-page .student-progress-table th,
+.student-academic-record-page .student-record-table th {
+  padding: 10px 11px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: #f8fbf9;
+  color: var(--ptc-green-dark);
+
+  text-align: left;
+
+  font-size: 9.5px;
+  font-weight: 820;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.student-academic-record-page .student-progress-table td,
+.student-academic-record-page .student-record-table td {
+  padding: 11px;
+
+  border-bottom: 1px solid var(--border-soft);
+
+  vertical-align: top;
+
+  color: var(--text-secondary);
+
+  font-size: 10.5px;
+  line-height: 1.4;
+}
+
+.student-academic-record-page .student-progress-table tbody tr:hover,
+.student-academic-record-page .student-record-table tbody tr:hover {
+  background: #fbfefc;
+}
+
+.student-academic-record-page .student-record-subject {
+  min-width: 180px;
+  gap: 2px;
+}
+
+.student-academic-record-page .student-record-subject strong,
+.student-academic-record-page .student-progress-subject-name strong {
+  color: var(--text-primary);
+
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-record-subject span,
+.student-academic-record-page .student-progress-subject-name span {
+  color: var(--ptc-green);
+
+  font-size: 9.8px;
+  font-weight: 720;
+}
+
+.student-academic-record-page .student-record-subject small,
+.student-academic-record-page .student-progress-subject-name small {
+  color: var(--text-muted);
+
+  font-size: 8.8px;
+}
+
+.student-academic-record-page .student-record-final-rating {
+  min-width: 48px;
+  min-height: 27px;
+
+  padding: 3px 7px;
+
+  border-radius: 7px;
+
+  font-size: 11px;
+}
+
+.student-academic-record-page .student-record-result,
+.student-academic-record-page .student-record-subject-status,
+.student-academic-record-page .student-record-approved-badge,
+.student-academic-record-page .student-progress-status {
+  min-height: 24px;
+  padding: 3px 7px;
+
+  font-size: 8.8px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-retake {
+  margin-top: 4px;
+
+  font-size: 9px;
+}
+
+.student-academic-record-page .student-record-approval {
+  min-width: 125px;
+  gap: 3px;
+}
+
+.student-academic-record-page .student-record-approval small {
+  color: var(--text-muted);
+
+  font-size: 8.7px;
+  line-height: 1.35;
+}
+
+/* =========================================================
+   ACADEMIC RECORD FILTERS / HISTORY
+   ========================================================= */
+
+.student-academic-record-page .student-record-history {
+  overflow: hidden;
+}
+
+.student-academic-record-page .student-record-history-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+
+  padding: 20px;
+
+  border-bottom: 1px solid var(--border-soft);
+
+  background: #ffffff;
+}
+
+.student-academic-record-page .student-record-history-header > span {
+  flex: 0 0 auto;
+
+  padding: 4px 8px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 999px;
+
+  background: var(--ptc-green-soft);
+  color: var(--ptc-green-dark);
+
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-years {
+  display: grid;
+  gap: 10px;
+
+  padding: 16px 20px 20px;
+}
+
+.student-academic-record-page .student-record-year {
+  overflow: hidden;
+
+  margin: 0;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #ffffff;
+}
+
+.student-academic-record-page .student-record-year-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  padding: 11px 13px;
+
+  border-bottom: 1px solid var(--border);
+
+  background: var(--ptc-green-soft);
+}
+
+.student-academic-record-page .student-record-year-header span {
+  margin: 0;
+
+  color: var(--ptc-green);
+
+  font-size: 8.5px;
+  font-weight: 820;
+  letter-spacing: 0.05em;
+}
+
+.student-academic-record-page .student-record-year-header h3 {
+  margin: 2px 0 0;
+
+  color: var(--text-primary);
+
+  font-size: 13px;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-record-year-header > strong {
+  color: var(--text-muted);
+
+  font-size: 9.5px;
+  font-weight: 760;
+}
+
+.student-academic-record-page .student-record-semester-header {
+  padding: 10px 13px;
+}
+
+.student-academic-record-page .student-record-semester-header h4 {
+  color: var(--text-primary);
+
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.student-academic-record-page
+  .student-record-semester-header
+  > div:first-child
+  > span,
+.student-academic-record-page .student-record-semester-stats {
+  color: var(--text-muted);
+
+  font-size: 9px;
+}
+
+.student-academic-record-page .student-record-semester-stats {
+  gap: 12px;
+}
+
+/* =========================================================
+   ERROR / LOADING / EMPTY
+   ========================================================= */
+
+.student-academic-record-page .student-record-error,
+.student-academic-record-page .student-progress-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+
+  margin: 0;
+  padding: 12px 13px;
+
+  border-radius: 10px;
+}
+
+.student-academic-record-page .student-record-error {
+  border: 1px solid var(--danger-border);
+  background: var(--danger-soft);
+}
+
+.student-academic-record-page .student-progress-error {
+  border: 1px solid var(--warning-border);
+  background: var(--warning-soft);
+}
+
+.student-academic-record-page .student-record-error strong,
+.student-academic-record-page .student-progress-error strong {
+  margin: 0;
+
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-error p,
+.student-academic-record-page .student-progress-error p {
+  margin: 3px 0 0;
+
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.student-academic-record-page .student-record-loading,
+.student-academic-record-page .student-record-empty {
+  min-height: 180px;
+
+  margin: 0;
+  padding: 20px;
+
+  border: 1px solid var(--border);
+  border-radius: 16px;
+
+  background: #ffffff;
+
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.025),
+    0 5px 16px rgba(15, 23, 42, 0.025);
+}
+
+.student-academic-record-page .student-record-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.student-academic-record-page .student-record-loading strong,
+.student-academic-record-page .student-record-empty strong {
+  color: var(--text-primary);
+
+  font-size: 11.5px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-loading span,
+.student-academic-record-page .student-record-empty p {
+  color: var(--text-muted);
+
+  font-size: 10.5px;
+}
+
+.student-academic-record-page .student-record-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 6px;
+
+  border-style: dashed;
+
+  text-align: center;
+}
+
+.student-academic-record-page .student-record-empty-icon {
+  display: grid;
+  place-items: center;
+
+  width: 42px;
+  height: 42px;
+
+  border: 0;
+  border-radius: 11px;
+
+  background: var(--ptc-green-soft);
+  color: var(--ptc-green);
+
+  font-size: 14px;
+}
+
+.student-academic-record-page .student-record-spinner {
+  width: 26px;
+  height: 26px;
+
+  border-width: 3px;
+}
+
+/* =========================================================
+   LEGEND / FOOTER
+   ========================================================= */
+
+.student-academic-record-page .student-record-legend {
+  padding: 20px;
+}
+
+.student-academic-record-page .student-record-legend-header {
+  margin-bottom: 12px;
+}
+
+.student-academic-record-page .student-record-legend-header span {
+  color: var(--ptc-green);
+
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.student-academic-record-page .student-record-legend-header strong {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--text-primary);
+
+  font-size: 0.95rem;
+  font-weight: 820;
+}
+
+.student-academic-record-page .student-record-legend-items {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.student-academic-record-page .student-record-legend-items > div {
+  padding: 10px;
+
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+
+  background: var(--surface-soft);
+}
+
+.student-academic-record-page .student-record-legend-items > div > div strong {
+  color: var(--text-primary);
+
+  font-size: 10.5px;
+  font-weight: 800;
+}
+
+.student-academic-record-page .student-record-legend-items p {
+  margin: 3px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 9px;
+  line-height: 1.4;
+}
+
+.student-academic-record-page .student-record-legend-rating {
+  min-height: 24px;
+  padding: 3px 7px;
+
+  font-size: 8.8px;
+}
+
+.student-academic-record-page .student-record-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 16px 20px;
+}
+
+.student-academic-record-page .student-record-footer strong {
+  color: var(--text-primary);
+
+  font-size: 11px;
+}
+
+.student-academic-record-page .student-record-footer p {
+  max-width: 760px;
+
+  margin: 4px 0 0;
+
+  color: var(--text-muted);
+
+  font-size: 9.5px;
+  line-height: 1.45;
+}
+
+.student-academic-record-page .student-record-footer-stat {
+  flex: 0 0 auto;
+
+  min-width: 130px;
+  padding: 9px 11px;
+
+  border: 1px solid #cdebd7;
+  border-radius: 9px;
+
+  background: var(--ptc-green-soft);
+
+  text-align: center;
+}
+
+.student-academic-record-page .student-record-footer-stat span {
+  color: var(--text-muted);
+
+  font-size: 8.5px;
+}
+
+.student-academic-record-page .student-record-footer-stat strong {
+  display: block;
+
+  margin-top: 3px;
+
+  color: var(--ptc-green-dark);
+
+  font-size: 1.05rem;
+  font-weight: 850;
+}
+
+.student-academic-record-page .student-record-footer-stat small {
+  display: block;
+
+  margin-top: 2px;
+
+  color: var(--text-muted);
+
+  font-size: 8.5px;
+}
+
+/* =========================================================
+   SCROLLBARS
+   ========================================================= */
+
+.student-academic-record-page
+  .student-record-table-wrapper::-webkit-scrollbar,
+.student-academic-record-page
+  .student-progress-table-wrapper::-webkit-scrollbar {
+  height: 7px;
+}
+
+.student-academic-record-page
+  .student-record-table-wrapper::-webkit-scrollbar-track,
+.student-academic-record-page
+  .student-progress-table-wrapper::-webkit-scrollbar-track {
+  background: #eef3ef;
+}
+
+.student-academic-record-page
+  .student-record-table-wrapper::-webkit-scrollbar-thumb,
+.student-academic-record-page
+  .student-progress-table-wrapper::-webkit-scrollbar-thumb {
+  border: 2px solid #eef3ef;
+  border-radius: 999px;
+
+  background: #a5cbb0;
+}
+
+/* =========================================================
+   ACCESSIBILITY
+   ========================================================= */
+
+.student-academic-record-page
+  :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid rgba(21, 128, 61, 0.45);
+  outline-offset: 2px;
+}
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 1300px) {
+  .student-academic-record-page .student-record-profile {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-record-summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-record-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-record-search {
+    grid-column: span 2;
+  }
+
+  .student-academic-record-page .student-record-clear-filter {
+    grid-column: span 2;
+    width: 100%;
+  }
+}
+
+@media (max-width: 1080px) {
+  .student-academic-record-page .student-progress-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .student-academic-record-page .student-record-legend-items {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .student-academic-record-page {
+    gap: 14px;
+    padding: 0;
+  }
+
+  .student-academic-record-page .student-record-header {
+    align-items: flex-start;
+    padding: 18px;
+  }
+
+  .student-academic-record-page .student-record-header h1 {
+    font-size: 1.45rem;
+  }
+
+  .student-academic-record-page .student-record-header-actions {
+    align-items: flex-end;
+    flex-direction: column-reverse;
+  }
+
+  .student-academic-record-page .student-record-header-icon {
+    width: 46px;
+    height: 46px;
+    flex-basis: 46px;
+  }
+
+  .student-academic-record-page .student-record-profile {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-record-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-progress-header,
+  .student-academic-record-page .student-progress-subjects-header,
+  .student-academic-record-page .student-record-history-header,
+  .student-academic-record-page .student-record-year-header,
+  .student-academic-record-page .student-record-semester-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .student-academic-record-page .student-progress-percentage {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .student-academic-record-page .student-progress-overview {
+    padding: 14px 17px;
+  }
+
+  .student-academic-record-page .student-progress-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .student-academic-record-page .student-progress-filters {
+    grid-template-columns: 1fr;
+    margin: 0 17px 14px;
+  }
+
+  .student-academic-record-page .student-progress-filters button {
+    width: 100%;
+  }
+
+  .student-academic-record-page .student-progress-years {
+    padding: 0 17px 17px;
+  }
+
+  .student-academic-record-page .student-record-filters {
+    grid-template-columns: 1fr;
+    padding: 17px;
+  }
+
+  .student-academic-record-page .student-record-search,
+  .student-academic-record-page .student-record-clear-filter {
+    grid-column: auto;
+  }
+
+  .student-academic-record-page .student-record-clear-filter {
+    width: 100%;
+  }
+
+  .student-academic-record-page .student-record-years {
+    padding: 14px 17px 17px;
+  }
+
+  .student-academic-record-page .student-record-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-academic-record-page .student-record-footer-stat {
+    width: auto;
+  }
+}
+
+@media (max-width: 540px) {
+  .student-academic-record-page .student-record-header {
+    flex-direction: column;
+  }
+
+  .student-academic-record-page .student-record-header-actions {
+    width: 100%;
+  }
+
+  .student-academic-record-page .student-record-header-icon {
+    display: none;
+  }
+
+  .student-academic-record-page .student-record-refresh {
+    width: 100%;
+  }
+
+  .student-academic-record-page .student-record-profile,
+  .student-academic-record-page .student-record-summary,
+  .student-academic-record-page .student-progress-unit-row,
+  .student-academic-record-page .student-progress-status-grid,
+  .student-academic-record-page .student-record-legend-items {
+    grid-template-columns: 1fr;
+  }
+
+  .student-academic-record-page .student-progress-primary-topline {
+    flex-direction: column;
+  }
+
+  .student-academic-record-page .student-record-error,
+  .student-academic-record-page .student-progress-error {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .student-academic-record-page
+    .student-progress-semester-header
+    > div:last-child,
+  .student-academic-record-page .student-record-semester-stats {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .student-academic-record-page *,
+  .student-academic-record-page *::before,
+  .student-academic-record-page *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+
+  .student-academic-record-page .student-record-spinner,
+  .student-academic-record-page .student-record-refresh-icon.is-spinning {
+    animation-duration: 1.5s;
+  }
+}

@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { GraduationCap, RefreshCcw } from "lucide-react";
 
 import "../../../styles/StudentAcademicRecord.css";
 
@@ -1151,14 +1152,25 @@ export default function StudentRecord() {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="student-record-refresh"
-            onClick={refresh}
-            disabled={loading}
-          >
-            {loading ? "Refreshing..." : "Refresh Record"}
-          </button>
+          <div className="student-record-header-actions">
+            <button
+              type="button"
+              className="student-record-refresh"
+              onClick={refresh}
+              disabled={loading}
+            >
+              <RefreshCcw
+                size={16}
+                className={loading ? "student-record-refresh-icon is-spinning" : "student-record-refresh-icon"}
+                aria-hidden="true"
+              />
+              {loading ? "Refreshing..." : "Refresh Record"}
+            </button>
+
+            <div className="student-record-header-icon" aria-hidden="true">
+              <GraduationCap size={28} strokeWidth={1.9} />
+            </div>
+          </div>
         </section>
 
         <section className="student-record-official-notice">
@@ -1322,28 +1334,18 @@ export default function StudentRecord() {
                     </span>
                   </div>
 
-                  <div
+                  <progress
                     className="student-progress-bar"
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={100}
-                    aria-valuenow={
-                      curriculumProgress.summary.completion_percentage
-                    }
+                    max={100}
+                    value={Math.min(
+                      100,
+                      Math.max(
+                        0,
+                        curriculumProgress.summary.completion_percentage,
+                      ),
+                    )}
                     aria-label="Curriculum completion percentage"
-                  >
-                    <div
-                      style={{
-                        width: `${Math.min(
-                          100,
-                          Math.max(
-                            0,
-                            curriculumProgress.summary.completion_percentage,
-                          ),
-                        )}%`,
-                      }}
-                    />
-                  </div>
+                  />
 
                   <div className="student-progress-unit-row">
                     <div>

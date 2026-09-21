@@ -1,7 +1,8 @@
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
 import { useNavigate } from "react-router-dom";
-import { useEffect, useState, type CSSProperties, type KeyboardEvent } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
+import { BookOpenCheck } from "lucide-react";
 
 import "../../../styles/Enrollmentmain.css";
 
@@ -491,25 +492,6 @@ type EnrollmentSectionKey =
       toggleEnrollmentSection(section);
     }
   };
-
-  const sectionArrowStyle = (isOpen: boolean): CSSProperties => ({
-    width: "30px",
-    height: "30px",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-    border: "1px solid #63c77c",
-    borderRadius: "8px",
-    background: isOpen ? "#dcfce7" : "#f0fdf4",
-    color: "#15803d",
-    fontSize: "16px",
-    fontWeight: 900,
-    lineHeight: 1,
-    transform: isOpen ? "rotate(180deg)" : "rotate(0deg)",
-    transition: "transform 0.2s ease, background 0.2s ease",
-    pointerEvents: "none",
-  });
 
   // ============================================================
   // AUTHORIZATION
@@ -1404,19 +1386,9 @@ type EnrollmentSectionKey =
     return (
       <div
         key={subject.enrollment_subject_id}
-        className={`subject-card ${isIrregular ? "retake-subject" : ""}`}
-        style={{
-          borderColor: isIrregular
-            ? isExpanded
-              ? "#dc2626"
-              : undefined
-            : isExpanded
-              ? "#15803d"
-              : "#63c77c",
-          boxShadow: isExpanded
-            ? "0 7px 20px rgba(21, 128, 61, 0.10)"
-            : undefined,
-        }}
+        className={`subject-card ${
+          isIrregular ? "retake-subject" : ""
+        } ${isExpanded ? "subject-card--expanded" : ""}`}
       >
         {/* ====================================================
             CLICKABLE SUBJECT HEADER
@@ -1427,7 +1399,9 @@ type EnrollmentSectionKey =
         ==================================================== */}
 
         <div
-          className="subject-header"
+          className={`subject-header subject-header--interactive ${
+            isExpanded ? "is-expanded" : ""
+          }`}
           role="button"
           tabIndex={0}
           aria-expanded={isExpanded}
@@ -1438,11 +1412,6 @@ type EnrollmentSectionKey =
               event.preventDefault();
               handleSubjectAccordion();
             }
-          }}
-          style={{
-            cursor: "pointer",
-            userSelect: "none",
-            background: isExpanded ? "#f4fbf6" : undefined,
           }}
         >
           <div className="subject-number">{subjectMarker}</div>
@@ -1470,14 +1439,7 @@ type EnrollmentSectionKey =
           </div>
 
           <div className="academic-status">
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-end",
-                gap: "9px",
-              }}
-            >
+            <div className="official-subject-status-row">
               <span
                 className={`status-badge ${
                   subject.assignment_complete ? "approved" : "pending"
@@ -1489,33 +1451,18 @@ type EnrollmentSectionKey =
               {/* Accordion arrow — not a separate View Details button. */}
               <span
                 aria-hidden="true"
-                style={{
-                  width: "26px",
-                  height: "26px",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  flexShrink: 0,
-                  border: "1px solid #63c77c",
-                  borderRadius: "7px",
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  fontSize: "15px",
-                  fontWeight: 900,
-                  lineHeight: 1,
-                  transform: isExpanded ? "rotate(180deg)" : "rotate(0deg)",
-                  transition: "transform 0.2s ease",
-                }}
+                className={`subject-accordion-arrow ${
+                  isExpanded ? "is-open" : ""
+                }`}
               >
                 ▾
               </span>
             </div>
 
             <small
-              style={{
-                color: subject.assignment_complete ? "#15803d" : "#c2410c",
-                fontWeight: 700,
-              }}
+              className={`placement-status-text ${
+                subject.assignment_complete ? "is-complete" : "is-pending"
+              }`}
             >
               {subject.assignment_complete
                 ? "Official placement assigned"
@@ -1535,19 +1482,9 @@ type EnrollmentSectionKey =
         {isExpanded && (
           <div
             id={`official-subject-details-${subject.enrollment_subject_id}`}
-            className="section-area"
-            style={{
-              borderTop: "1px solid #4caf68",
-              background: "#fbfefc",
-            }}
+            className="section-area section-area--official"
           >
-            <div
-              className="section-area-header"
-              style={{
-                paddingBottom: "12px",
-                borderBottom: "1px solid #8fd39f",
-              }}
-            >
+            <div className="section-area-header section-area-header--official">
               <div>
                 <strong>Official Class Placement</strong>
 
@@ -1566,10 +1503,7 @@ type EnrollmentSectionKey =
             </div>
 
             {subject.assignment_complete ? (
-              <div
-                className="assigned-section-card"
-                style={{ borderColor: "#63c77c" }}
-              >
+              <div className="assigned-section-card assigned-section-card--official">
                 <div className="assigned-section-main">
                   <span className="section-radio" aria-label="Assigned section">
                     ✓
@@ -1619,21 +1553,12 @@ type EnrollmentSectionKey =
                       ? "open"
                       : ""
                   }`}
-                  style={{
-                    borderColor:
-                      subject.offering.status?.toLowerCase() === "open"
-                        ? "#63c77c"
-                        : undefined,
-                  }}
                 >
                   {subject.offering.status || "Assigned"}
                 </span>
               </div>
             ) : (
-              <div
-                className="no-sections"
-                style={{ borderColor: "#8fd39f" }}
-              >
+              <div className="no-sections no-sections--official">
                 <span className="no-section-icon">—</span>
 
                 <div>
@@ -1652,10 +1577,7 @@ type EnrollmentSectionKey =
               </div>
             )}
 
-            <div
-              className="selected-section-message"
-              style={{ borderColor: "#8fd39f" }}
-            >
+            <div className="selected-section-message selected-section-message--official">
               <span>{subject.assignment_complete ? "✓" : "i"}</span>
 
               <p>
@@ -1845,21 +1767,13 @@ type EnrollmentSectionKey =
 
         <div className="section-area">
           {selectable ? (
-            <label
-              className="selected-section-message"
-              style={{
-                cursor: "pointer",
-                alignItems: "flex-start",
-              }}
-            >
+            <label className="selected-section-message selected-section-message--selectable">
               <input
+                className="retake-checkbox"
                 type="checkbox"
                 checked={selectedBeforePrepare}
                 onChange={() => toggleRetakeSubject(subject.subject_id)}
                 disabled={preparing || submitting}
-                style={{
-                  marginTop: "4px",
-                }}
               />
 
               <p>
@@ -2034,10 +1948,16 @@ type EnrollmentSectionKey =
             </p>
           </div>
 
-          <div className="enrollment-period-badge">
-            <span className="period-dot"></span>
+          <div className="enrollment-header-actions">
+            <div className="enrollment-period-badge">
+              <span className="period-dot"></span>
 
-            {enrollment_period?.status || "Closed"}
+              {enrollment_period?.status || "Closed"}
+            </div>
+
+            <div className="enrollment-header-icon" aria-hidden="true">
+              <BookOpenCheck size={28} strokeWidth={1.9} />
+            </div>
           </div>
         </div>
 
@@ -2387,7 +2307,7 @@ type EnrollmentSectionKey =
                 aria-expanded={expandedSection === "official"}
                 onClick={() => toggleEnrollmentSection("official")}
                 onKeyDown={(event) => handleSectionKeyDown(event, "official")}
-                style={{ cursor: "pointer", userSelect: "none" }}
+                
               >
                 <div>
                   <span className="enrollment-eyebrow">
@@ -2409,14 +2329,7 @@ type EnrollmentSectionKey =
                   </p>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    flexShrink: 0,
-                  }}
-                >
+                <div className="subjects-header-meta">
                   <div className="selection-counter">
                     {officialSummary?.total_subjects ?? 0} subjects •{" "}
                     {officialUnits} units
@@ -2424,7 +2337,7 @@ type EnrollmentSectionKey =
 
                   <span
                     aria-hidden="true"
-                    style={sectionArrowStyle(expandedSection === "official")}
+                    className={`section-toggle-arrow ${expandedSection === "official" ? "is-open" : ""}`}
                   >
                     ▾
                   </span>
@@ -2493,7 +2406,7 @@ type EnrollmentSectionKey =
             aria-expanded={expandedSection === "regular"}
             onClick={() => toggleEnrollmentSection("regular")}
             onKeyDown={(event) => handleSectionKeyDown(event, "regular")}
-            style={{ cursor: "pointer", userSelect: "none" }}
+            
           >
             <div>
               <span className="enrollment-eyebrow">Academic Eligibility</span>
@@ -2506,21 +2419,14 @@ type EnrollmentSectionKey =
               </p>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                flexShrink: 0,
-              }}
-            >
+            <div className="subjects-header-meta">
               <div className="selection-counter">
                 {regular_subjects.length} eligible
               </div>
 
               <span
                 aria-hidden="true"
-                style={sectionArrowStyle(expandedSection === "regular")}
+                className={`section-toggle-arrow ${expandedSection === "regular" ? "is-open" : ""}`}
               >
                 ▾
               </span>
@@ -2572,7 +2478,7 @@ type EnrollmentSectionKey =
               onKeyDown={(event) =>
                 handleSectionKeyDown(event, "carryover")
               }
-              style={{ cursor: "pointer", userSelect: "none" }}
+              
             >
               <div>
                 <span className="enrollment-eyebrow">
@@ -2588,21 +2494,14 @@ type EnrollmentSectionKey =
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  flexShrink: 0,
-                }}
-              >
+              <div className="subjects-header-meta">
                 <div className="selection-counter">
                   {carry_over_subjects.length} eligible
                 </div>
 
                 <span
                   aria-hidden="true"
-                  style={sectionArrowStyle(expandedSection === "carryover")}
+                  className={`section-toggle-arrow ${expandedSection === "carryover" ? "is-open" : ""}`}
                 >
                   ▾
                 </span>
@@ -2631,7 +2530,7 @@ type EnrollmentSectionKey =
             aria-expanded={expandedSection === "retake"}
             onClick={() => toggleEnrollmentSection("retake")}
             onKeyDown={(event) => handleSectionKeyDown(event, "retake")}
-            style={{ cursor: "pointer", userSelect: "none" }}
+            
           >
             <div>
               <span className="enrollment-eyebrow">Retake Eligibility</span>
@@ -2644,14 +2543,7 @@ type EnrollmentSectionKey =
               </p>
             </div>
 
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                flexShrink: 0,
-              }}
-            >
+            <div className="subjects-header-meta">
               <div className="selection-counter">
                 {data.can_prepare || data.can_modify_draft
                   ? `${selectedRetakeSubjectIds.length} / ${retake_candidates.length} selected`
@@ -2660,7 +2552,7 @@ type EnrollmentSectionKey =
 
               <span
                 aria-hidden="true"
-                style={sectionArrowStyle(expandedSection === "retake")}
+                className={`section-toggle-arrow ${expandedSection === "retake" ? "is-open" : ""}`}
               >
                 ▾
               </span>
@@ -2706,7 +2598,7 @@ type EnrollmentSectionKey =
               aria-expanded={expandedSection === "blocked"}
               onClick={() => toggleEnrollmentSection("blocked")}
               onKeyDown={(event) => handleSectionKeyDown(event, "blocked")}
-              style={{ cursor: "pointer", userSelect: "none" }}
+              
             >
               <div>
                 <span className="enrollment-eyebrow">Not Yet Eligible</span>
@@ -2719,21 +2611,14 @@ type EnrollmentSectionKey =
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  flexShrink: 0,
-                }}
-              >
+              <div className="subjects-header-meta">
                 <div className="selection-counter">
                   {blocked_subjects.length} blocked
                 </div>
 
                 <span
                   aria-hidden="true"
-                  style={sectionArrowStyle(expandedSection === "blocked")}
+                  className={`section-toggle-arrow ${expandedSection === "blocked" ? "is-open" : ""}`}
                 >
                   ▾
                 </span>
@@ -2763,7 +2648,7 @@ type EnrollmentSectionKey =
               aria-expanded={expandedSection === "completed"}
               onClick={() => toggleEnrollmentSection("completed")}
               onKeyDown={(event) => handleSectionKeyDown(event, "completed")}
-              style={{ cursor: "pointer", userSelect: "none" }}
+              
             >
               <div>
                 <span className="enrollment-eyebrow">Academic Record</span>
@@ -2776,21 +2661,14 @@ type EnrollmentSectionKey =
                 </p>
               </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  flexShrink: 0,
-                }}
-              >
+              <div className="subjects-header-meta">
                 <div className="selection-counter">
                   {completed_subjects.length} completed
                 </div>
 
                 <span
                   aria-hidden="true"
-                  style={sectionArrowStyle(expandedSection === "completed")}
+                  className={`section-toggle-arrow ${expandedSection === "completed" ? "is-open" : ""}`}
                 >
                   ▾
                 </span>
