@@ -41,6 +41,29 @@ export interface ResendOtpResponse {
 
 
 // ======================
+// Forgot Password
+// ======================
+
+export interface ForgotPasswordResponse {
+  success: boolean;
+  message: string;
+  requestId: string;
+}
+
+export interface VerifyResetOtpResponse {
+  success: boolean;
+  message: string;
+  verified: boolean;
+  resetToken: string;
+}
+
+export interface ResetPasswordResponse {
+  success: boolean;
+  message: string;
+}
+
+
+// ======================
 // Backend Auth User
 //
 // Supports:
@@ -469,6 +492,289 @@ export const authService = {
 
     return user;
   },
+
+  // =====================================================
+  // FORGOT PASSWORD — REQUEST RESET OTP
+  //
+  // POST /auth/forgot-password
+  //
+  // Flow:
+  //
+  // Forgot Password
+  //      ↓
+  // Enter username
+  //      ↓
+  // Backend creates password reset request
+  //      ↓
+  // OTP sent through email
+  //      ↓
+  // requestId returned
+  // =====================================================
+
+  async forgotPassword(
+    username: string,
+  ): Promise<ForgotPasswordResponse> {
+    const cleanUsername = username.trim();
+
+    if (!cleanUsername) {
+      throw new Error("Username is required.");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/forgot-password`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+
+        body: JSON.stringify({
+          username: cleanUsername,
+        }),
+      },
+    );
+
+    const data: ForgotPasswordResponse & {
+      error?: string;
+    } = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          data.message ||
+          "Unable to process the password reset request.",
+      );
+    }
+
+    if (!data.requestId) {
+      throw new Error(
+        "Password reset request ID was not returned by the server.",
+      );
+    }
+
+    return data;
+  },
+
+  // =====================================================
+  // FORGOT PASSWORD — VERIFY OTP
+  //
+  // POST /auth/forgot-password/verify
+  //
+  // Successful verification returns a temporary
+  // password-reset authorization token.
+  //
+  // IMPORTANT:
+  //
+  // This is NOT the normal login JWT.
+  // =====================================================
+
+  async verifyResetOtp(
+    requestId: string,
+    otp: string,
+  ): Promise<VerifyResetOtpResponse> {
+    const cleanRequestId = requestId.trim();
+    const cleanOtp = otp.trim();
+
+    if (!cleanRequestId) {
+      throw new Error("Password reset request is missing.");
+    }
+
+    if (!cleanOtp) {
+      throw new Error("Verification code is required.");
+    }
+
+    if (!/^\d{6}$/.test(cleanOtp)) {
+      throw new Error(
+        "Verification code must be 6 digits.",
+      );
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/forgot-password/verify`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+
+        body: JSON.stringify({
+          requestId: cleanRequestId,
+          otp: cleanOtp,
+        }),
+      },
+    );
+
+    const data: VerifyResetOtpResponse & {
+      error?: string;
+    } = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          data.message ||
+          "Unable to verify the password reset code.",
+      );
+    }
+
+    if (!data.verified) {
+      throw new Error(
+        "Password reset verification was not completed.",
+      );
+    }
+
+    if (!data.resetToken) {
+      throw new Error(
+        "Password reset authorization was not returned by the server.",
+      );
+    }
+
+    return data;
+  },
+
+  // =====================================================
+  // FORGOT PASSWORD — RESEND OTP
+  //
+  // POST /auth/forgot-password/resend
+  //
+  // IMPORTANT:
+  //
+  // The backend creates a NEW requestId.
+  // The frontend must replace the old requestId.
+  // =====================================================
+
+  async resendResetOtp(
+    requestId: string,
+  ): Promise<ForgotPasswordResponse> {
+    const cleanRequestId = requestId.trim();
+
+    if (!cleanRequestId) {
+      throw new Error("Password reset request is missing.");
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/forgot-password/resend`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+
+        body: JSON.stringify({
+          requestId: cleanRequestId,
+        }),
+      },
+    );
+
+    const data: ForgotPasswordResponse & {
+      error?: string;
+      retryAfterSeconds?: number;
+    } = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          data.message ||
+          "Unable to resend the verification code.",
+      );
+    }
+
+    if (!data.requestId) {
+      throw new Error(
+        "New password reset request ID was not returned.",
+      );
+    }
+
+    return data;
+  },
+
+  // =====================================================
+  // FORGOT PASSWORD — RESET PASSWORD
+  //
+  // POST /auth/forgot-password/reset
+  //
+  // requestId
+  // resetToken
+  // newPassword
+  //      ↓
+  // Backend validates verified reset request
+  //      ↓
+  // bcrypt hashes password
+  //      ↓
+  // users.password_hash updated
+  //      ↓
+  // reset request marked used
+  //      ↓
+  // activity log created
+  // =====================================================
+
+  async resetPassword(
+    requestId: string,
+    resetToken: string,
+    newPassword: string,
+  ): Promise<ResetPasswordResponse> {
+    const cleanRequestId = requestId.trim();
+    const cleanResetToken = resetToken.trim();
+
+    if (!cleanRequestId) {
+      throw new Error("Password reset request is missing.");
+    }
+
+    if (!cleanResetToken) {
+      throw new Error(
+        "Password reset authorization is missing.",
+      );
+    }
+
+    if (!newPassword) {
+      throw new Error("New password is required.");
+    }
+
+    if (newPassword.length < 8) {
+      throw new Error(
+        "Password must be at least 8 characters long.",
+      );
+    }
+
+    const response = await fetch(
+      `${API_BASE_URL}/auth/forgot-password/reset`,
+      {
+        method: "POST",
+
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+
+        body: JSON.stringify({
+          requestId: cleanRequestId,
+          resetToken: cleanResetToken,
+          newPassword,
+        }),
+      },
+    );
+
+    const data: ResetPasswordResponse & {
+      error?: string;
+    } = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        data.error ||
+          data.message ||
+          "Unable to reset the password.",
+      );
+    }
+
+    return data;
+  },
+
+
 
   // =====================================================
   // DEVELOPMENT LOGIN
