@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +19,7 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
+import "../../styles/FinancePaymentHistory.css";
 
 // ============================================================
 // API
@@ -237,9 +238,6 @@ function paymentMethodLabel(value: string | null) {
   return value || "—";
 }
 
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export default function FinancePaymentHistory() {
   const navigate = useNavigate();
@@ -622,108 +620,34 @@ export default function FinancePaymentHistory() {
     return null;
   }
 
+
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-
-          gap: "22px",
-
-          padding: "4px",
-        }}
-      >
+      <main className="finance-payment-history">
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section style={panelStyle}>
+        <section className="finance-payment-history__hero">
+          <div className="finance-payment-history__hero-copy">
+            <div className="finance-payment-history__eyebrow">
+              <WalletCards size={16} aria-hidden="true" />
+              Finance Records
+            </div>
+
+            <h1>Payment History</h1>
+
+            <p>
+              Review completed student payments, receipts, payment methods,
+              and Finance transaction records.
+            </p>
+          </div>
+
           <div
-            style={{
-              display: "flex",
-
-              alignItems: "center",
-
-              justifyContent: "space-between",
-
-              gap: "20px",
-
-              flexWrap: "wrap",
-            }}
+            className="finance-payment-history__hero-icon"
+            aria-hidden="true"
           >
-            <div>
-              <div
-                style={{
-                  display: "inline-flex",
-
-                  alignItems: "center",
-
-                  gap: "7px",
-
-                  marginBottom: "8px",
-
-                  color: "#15803d",
-
-                  fontSize: "12px",
-
-                  fontWeight: 800,
-
-                  textTransform: "uppercase",
-
-                  letterSpacing: ".08em",
-                }}
-              >
-                <WalletCards size={16} />
-                Finance
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-
-                  color: "#0f172a",
-
-                  fontSize: "28px",
-                }}
-              >
-                Payment History
-              </h1>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-
-                  maxWidth: "760px",
-
-                  color: "#64748b",
-
-                  lineHeight: 1.6,
-                }}
-              >
-                Review completed student payments, receipts, payment methods,
-                and Finance transaction records.
-              </p>
-            </div>
-
-            <div
-              style={{
-                width: "58px",
-
-                height: "58px",
-
-                borderRadius: "16px",
-
-                background: "#f0fdf4",
-
-                color: "#15803d",
-
-                display: "grid",
-
-                placeItems: "center",
-              }}
-            >
-              <ReceiptText size={31} />
-            </div>
+            <ReceiptText size={28} strokeWidth={1.9} />
           </div>
         </section>
 
@@ -732,36 +656,31 @@ export default function FinancePaymentHistory() {
         ================================================= */}
 
         <section
-          style={{
-            display: "grid",
-
-            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-
-            gap: "14px",
-          }}
+          className="finance-payment-history__summary-grid"
+          aria-label="Payment history summary"
         >
           <SummaryCard
             label="Paid Transactions"
             value={String(reportSummary.paid_tickets)}
-            icon={<CheckCircle2 size={21} />}
+            icon={<CheckCircle2 size={20} />}
           />
 
           <SummaryCard
             label="Total Collected"
             value={formatMoney(reportSummary.total_collected)}
-            icon={<Banknote size={21} />}
+            icon={<Banknote size={20} />}
           />
 
           <SummaryCard
             label="Collected Today"
             value={formatMoney(reportSummary.collected_today)}
-            icon={<WalletCards size={21} />}
+            icon={<WalletCards size={20} />}
           />
 
           <SummaryCard
             label="This Month"
             value={formatMoney(reportSummary.collected_this_month)}
-            icon={<CreditCard size={21} />}
+            icon={<CreditCard size={20} />}
           />
         </section>
 
@@ -771,19 +690,8 @@ export default function FinancePaymentHistory() {
 
         {errorMessage && (
           <section
-            style={{
-              padding: "14px 16px",
-
-              border: "1px solid #fecaca",
-
-              borderRadius: "11px",
-
-              background: "#fef2f2",
-
-              color: "#991b1b",
-
-              fontSize: "13px",
-            }}
+            className="finance-payment-history__message finance-payment-history__message--error"
+            role="alert"
           >
             {errorMessage}
           </section>
@@ -793,38 +701,31 @@ export default function FinancePaymentHistory() {
             FILTERS
         ================================================= */}
 
-        <section style={panelStyle}>
-          <div
-            style={{
-              display: "grid",
+        <section className="finance-payment-history__panel">
+          <div className="finance-payment-history__section-header">
+            <div>
+              <span className="finance-payment-history__section-kicker">
+                Search and Filter
+              </span>
 
-              gridTemplateColumns:
-                "minmax(240px, 1fr) minmax(170px, 220px) minmax(190px, 250px) auto",
+              <h2>Payment Records</h2>
 
-              gap: "12px",
+              <p>
+                Narrow the completed-payment history by student, ticket,
+                receipt, payment method, or transaction type.
+              </p>
+            </div>
+          </div>
 
-              alignItems: "end",
-            }}
-          >
-            {/* SEARCH */}
+          <div className="finance-payment-history__filters">
+            <label className="finance-payment-history__field">
+              <span>Search</span>
 
-            <label style={fieldLabelStyle}>
-              Search
-              <div
-                style={{
-                  position: "relative",
-                }}
-              >
+              <div className="finance-payment-history__search-field">
                 <Search
                   size={17}
-                  color="#94a3b8"
-                  style={{
-                    position: "absolute",
-
-                    left: "13px",
-
-                    top: "13px",
-                  }}
+                  className="finance-payment-history__search-icon"
+                  aria-hidden="true"
                 />
 
                 <input
@@ -836,46 +737,38 @@ export default function FinancePaymentHistory() {
                     }
                   }}
                   placeholder="Ticket, student, request, receipt..."
-                  style={{
-                    ...inputStyle,
-
-                    paddingLeft: "40px",
-                  }}
+                  disabled={loading || refreshing}
                 />
               </div>
             </label>
 
-            {/* PAYMENT METHOD */}
+            <label className="finance-payment-history__field">
+              <span>Payment Method</span>
 
-            <label style={fieldLabelStyle}>
-              Payment Method
               <select
                 value={paymentMethod}
                 onChange={(event) =>
                   setPaymentMethod(event.target.value as PaymentMethod)
                 }
-                style={inputStyle}
+                disabled={loading || refreshing}
               >
                 <option value="All">All Methods</option>
-
                 <option value="Cash">Cash</option>
-
                 <option value="GCash">GCash</option>
-
                 <option value="Bank">Bank</option>
-
                 <option value="Online">Online</option>
               </select>
             </label>
 
-            {/* TRANSACTION TYPE */}
+            <label className="finance-payment-history__field">
+              <span>Transaction</span>
 
-            <label style={fieldLabelStyle}>
-              Transaction
               <select
                 value={transactionFilter}
-                onChange={(event) => setTransactionFilter(event.target.value)}
-                style={inputStyle}
+                onChange={(event) =>
+                  setTransactionFilter(event.target.value)
+                }
+                disabled={loading || refreshing}
               >
                 <option value="All">All Transactions</option>
 
@@ -890,85 +783,34 @@ export default function FinancePaymentHistory() {
               </select>
             </label>
 
-            {/* ACTION BUTTONS */}
-
-            <div
-              style={{
-                display: "flex",
-
-                gap: "8px",
-
-                flexWrap: "wrap",
-              }}
-            >
+            <div className="finance-payment-history__filter-actions">
               <button
                 type="button"
+                className="finance-payment-history__button finance-payment-history__button--primary"
                 onClick={applyFilters}
                 disabled={loading || refreshing}
-                style={{
-                  minHeight: "44px",
-
-                  display: "inline-flex",
-
-                  alignItems: "center",
-
-                  justifyContent: "center",
-
-                  gap: "7px",
-
-                  padding: "10px 15px",
-
-                  border: "none",
-
-                  borderRadius: "10px",
-
-                  background: "#15803d",
-
-                  color: "#ffffff",
-
-                  fontWeight: 800,
-
-                  cursor: loading || refreshing ? "wait" : "pointer",
-
-                  opacity: loading || refreshing ? 0.7 : 1,
-                }}
               >
-                <Search size={16} />
+                <Search size={16} aria-hidden="true" />
                 Apply
               </button>
 
               <button
                 type="button"
+                className="finance-payment-history__button finance-payment-history__button--secondary"
                 onClick={refreshHistory}
                 disabled={refreshing}
-                style={{
-                  minHeight: "44px",
-
-                  display: "inline-flex",
-
-                  alignItems: "center",
-
-                  justifyContent: "center",
-
-                  gap: "7px",
-
-                  padding: "10px 14px",
-
-                  border: "1px solid #cbd5e1",
-
-                  borderRadius: "10px",
-
-                  background: "#ffffff",
-
-                  color: "#334155",
-
-                  fontWeight: 750,
-
-                  cursor: refreshing ? "wait" : "pointer",
-                }}
               >
-                {refreshing ? <Loader2 size={16} /> : <RefreshCcw size={16} />}
-                Refresh
+                {refreshing ? (
+                  <Loader2
+                    size={16}
+                    className="finance-payment-history__spinner"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <RefreshCcw size={16} aria-hidden="true" />
+                )}
+
+                {refreshing ? "Refreshing..." : "Refresh"}
               </button>
             </div>
           </div>
@@ -978,229 +820,80 @@ export default function FinancePaymentHistory() {
             PAYMENT LIST
         ================================================= */}
 
-        <section style={panelStyle}>
-          <div
-            style={{
-              display: "flex",
-
-              justifyContent: "space-between",
-
-              alignItems: "center",
-
-              gap: "12px",
-
-              flexWrap: "wrap",
-
-              marginBottom: "18px",
-            }}
-          >
+        <section className="finance-payment-history__panel">
+          <div className="finance-payment-history__list-header">
             <div>
-              <h2
-                style={{
-                  margin: 0,
+              <span className="finance-payment-history__section-kicker">
+                Finance Records
+              </span>
 
-                  color: "#0f172a",
+              <h2>Completed Payments</h2>
 
-                  fontSize: "18px",
-                }}
-              >
-                Completed Payments
-              </h2>
-
-              <p
-                style={{
-                  margin: "5px 0 0",
-
-                  color: "#64748b",
-
-                  fontSize: "12px",
-                }}
-              >
+              <p>
                 Showing {tickets.length} of {totalRecords} payment record
                 {totalRecords === 1 ? "" : "s"}.
               </p>
             </div>
 
             {totalRecords > 0 && (
-              <div
-                style={{
-                  padding: "7px 10px",
-
-                  borderRadius: "999px",
-
-                  background: "#f0fdf4",
-
-                  color: "#166534",
-
-                  fontSize: "11px",
-
-                  fontWeight: 800,
-                }}
-              >
+              <span className="finance-payment-history__paid-count">
                 {totalRecords} Paid
-              </div>
+              </span>
             )}
           </div>
 
-          {/* LOADING */}
-
           {loading ? (
-            <div
-              style={{
-                minHeight: "180px",
-
-                display: "grid",
-
-                placeItems: "center",
-
-                color: "#64748b",
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-
-                  justifyItems: "center",
-
-                  gap: "9px",
-                }}
-              >
-                <Loader2 size={25} />
-                Loading payment history...
-              </div>
-            </div>
-          ) : tickets.length === 0 ? (
-            <div
-              style={{
-                padding: "38px 20px",
-
-                textAlign: "center",
-
-                border: "1px dashed #cbd5e1",
-
-                borderRadius: "13px",
-
-                color: "#64748b",
-              }}
-            >
-              <ReceiptText
-                size={30}
-                style={{
-                  marginBottom: "8px",
-                }}
+            <div className="finance-payment-history__state">
+              <Loader2
+                size={24}
+                className="finance-payment-history__spinner"
+                aria-hidden="true"
               />
 
-              <div
-                style={{
-                  fontWeight: 800,
-
-                  color: "#334155",
-                }}
-              >
-                No payment records found
+              <strong>Loading payment history...</strong>
+              <span>Please wait while payment records are loaded.</span>
+            </div>
+          ) : tickets.length === 0 ? (
+            <div className="finance-payment-history__state finance-payment-history__state--empty">
+              <div className="finance-payment-history__state-icon">
+                <ReceiptText size={26} aria-hidden="true" />
               </div>
 
-              <div
-                style={{
-                  marginTop: "5px",
-
-                  fontSize: "12px",
-                }}
-              >
-                Try changing the search or filters.
-              </div>
+              <strong>No payment records found</strong>
+              <span>Try changing the search or filters.</span>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-
-                gap: "13px",
-              }}
-            >
+            <div className="finance-payment-history__list">
               {tickets.map((ticket) => (
                 <PaymentCard key={ticket.ticket_id} ticket={ticket} />
               ))}
             </div>
           )}
 
-          {/* =================================================
-              PAGINATION
-          ================================================= */}
-
           {!loading && totalPages > 0 && (
-            <div
-              style={{
-                display: "flex",
-
-                alignItems: "center",
-
-                justifyContent: "space-between",
-
-                gap: "12px",
-
-                marginTop: "18px",
-
-                paddingTop: "16px",
-
-                borderTop: "1px solid #e2e8f0",
-
-                flexWrap: "wrap",
-              }}
-            >
-              <div
-                style={{
-                  color: "#64748b",
-
-                  fontSize: "12px",
-                }}
-              >
+            <div className="finance-payment-history__pagination">
+              <span>
                 Page {page} of {totalPages}
                 {" · "}
                 {totalRecords} total payment
                 {totalRecords === 1 ? "" : "s"}
-              </div>
+              </span>
 
-              <div
-                style={{
-                  display: "flex",
-
-                  gap: "8px",
-                }}
-              >
+              <div>
                 <button
                   type="button"
+                  className="finance-payment-history__pagination-button"
                   disabled={page <= 1 || loading || refreshing}
                   onClick={goToPreviousPage}
-                  style={{
-                    ...paginationButtonStyle,
-
-                    opacity: page <= 1 || loading || refreshing ? 0.5 : 1,
-
-                    cursor:
-                      page <= 1 || loading || refreshing
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
                 >
                   Previous
                 </button>
 
                 <button
                   type="button"
+                  className="finance-payment-history__pagination-button"
                   disabled={page >= totalPages || loading || refreshing}
                   onClick={goToNextPage}
-                  style={{
-                    ...paginationButtonStyle,
-
-                    opacity:
-                      page >= totalPages || loading || refreshing ? 0.5 : 1,
-
-                    cursor:
-                      page >= totalPages || loading || refreshing
-                        ? "not-allowed"
-                        : "pointer",
-                  }}
                 >
                   Next
                 </button>
@@ -1213,202 +906,56 @@ export default function FinancePaymentHistory() {
   );
 }
 
-// ============================================================
-// PAYMENT CARD
-// ============================================================
-
 function PaymentCard({ ticket }: { ticket: FinanceTicket }) {
   return (
-    <article
-      style={{
-        padding: "19px",
-
-        border: "1px solid #e2e8f0",
-
-        borderRadius: "14px",
-
-        background: "#ffffff",
-      }}
-    >
-      {/* TOP */}
-
-      <div
-        style={{
-          display: "flex",
-
-          justifyContent: "space-between",
-
-          gap: "18px",
-
-          flexWrap: "wrap",
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-
-            gap: "12px",
-
-            flex: "1 1 360px",
-          }}
-        >
+    <article className="finance-payment-history__payment-card">
+      <div className="finance-payment-history__payment-top">
+        <div className="finance-payment-history__payment-main">
           <div
-            style={{
-              width: "44px",
-
-              height: "44px",
-
-              borderRadius: "12px",
-
-              background: "#f0fdf4",
-
-              color: "#15803d",
-
-              display: "grid",
-
-              placeItems: "center",
-
-              flexShrink: 0,
-            }}
+            className="finance-payment-history__payment-icon"
+            aria-hidden="true"
           >
-            <ReceiptText size={21} />
+            <ReceiptText size={20} />
           </div>
 
-          <div>
-            <div
-              style={{
-                display: "flex",
+          <div className="finance-payment-history__payment-copy">
+            <div className="finance-payment-history__payment-title-row">
+              <strong>{ticket.transaction.transaction_name}</strong>
 
-                gap: "7px",
-
-                alignItems: "center",
-
-                flexWrap: "wrap",
-              }}
-            >
-              <strong
-                style={{
-                  color: "#0f172a",
-
-                  fontSize: "15px",
-                }}
-              >
-                {ticket.transaction.transaction_name}
-              </strong>
-
-              <span style={paidBadgeStyle}>PAID</span>
+              <span className="finance-payment-history__badge finance-payment-history__badge--paid">
+                Paid
+              </span>
 
               {ticket.source_type && (
-                <span style={sourceBadgeStyle}>
+                <span className="finance-payment-history__badge finance-payment-history__badge--source">
                   {ticket.source_type.replaceAll("_", " ")}
                 </span>
               )}
             </div>
 
-            <div
-              style={{
-                marginTop: "5px",
-
-                color: "#64748b",
-
-                fontSize: "12px",
-              }}
-            >
+            <span className="finance-payment-history__ticket-number">
               {ticket.ticket_number}
-            </div>
+            </span>
 
-            <div
-              style={{
-                marginTop: "10px",
-
-                display: "flex",
-
-                alignItems: "center",
-
-                gap: "7px",
-
-                color: "#334155",
-
-                fontSize: "13px",
-
-                flexWrap: "wrap",
-              }}
-            >
-              <UserRound size={15} color="#64748b" />
-
+            <div className="finance-payment-history__student">
+              <UserRound size={15} aria-hidden="true" />
               <strong>{ticket.student.student_number}</strong>
-
               <span>—</span>
-
               <span>{ticket.student.student_name}</span>
             </div>
           </div>
         </div>
 
-        {/* AMOUNT */}
+        <div className="finance-payment-history__amount">
+          <span>Amount Paid</span>
 
-        <div
-          style={{
-            textAlign: "right",
+          <strong>{formatMoney(ticket.payment.amount_paid)}</strong>
 
-            minWidth: "160px",
-          }}
-        >
-          <div
-            style={{
-              color: "#64748b",
-
-              fontSize: "10px",
-
-              fontWeight: 800,
-
-              textTransform: "uppercase",
-            }}
-          >
-            Amount Paid
-          </div>
-
-          <div
-            style={{
-              marginTop: "3px",
-
-              color: "#15803d",
-
-              fontSize: "20px",
-
-              fontWeight: 850,
-            }}
-          >
-            {formatMoney(ticket.payment.amount_paid)}
-          </div>
-
-          <div
-            style={{
-              marginTop: "4px",
-
-              color: "#64748b",
-
-              fontSize: "11px",
-            }}
-          >
-            {formatDate(ticket.payment.paid_at)}
-          </div>
+          <small>{formatDate(ticket.payment.paid_at)}</small>
         </div>
       </div>
 
-      {/* DETAILS */}
-
-      <div
-        style={{
-          display: "grid",
-
-          gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-
-          gap: "10px",
-
-          marginTop: "17px",
-        }}
-      >
+      <div className="finance-payment-history__detail-grid">
         <DetailBox
           label="Receipt Number"
           value={ticket.payment.receipt_number || "—"}
@@ -1434,103 +981,39 @@ function PaymentCard({ ticket }: { ticket: FinanceTicket }) {
         />
       </div>
 
-      {/* DOCUMENT REQUEST */}
-
       {ticket.document_request && (
-        <div
-          style={{
-            marginTop: "12px",
-
-            padding: "11px 13px",
-
-            borderRadius: "10px",
-
-            background: "#f8fafc",
-
-            border: "1px solid #e2e8f0",
-
-            color: "#475569",
-
-            fontSize: "12px",
-
-            lineHeight: 1.6,
-          }}
-        >
+        <div className="finance-payment-history__notice finance-payment-history__notice--document">
           <strong>Document Request:</strong>{" "}
           {ticket.document_request.request_number}
           {" · "}
           {ticket.document_request.document_type}
+
           {ticket.document_request.academic_period && (
             <>
               {" · "}
-
               {ticket.document_request.academic_period.academic_year}
-
               {" — "}
-
               {ticket.document_request.academic_period.semester_name}
             </>
           )}
         </div>
       )}
 
-      {/* FINANCE-ONLY NOTICE */}
-
       {ticket.transaction.workflow_type === "FINANCE_ONLY" && (
-        <div
-          style={{
-            marginTop: "11px",
-
-            padding: "10px 12px",
-
-            border: "1px solid #dbeafe",
-
-            borderRadius: "10px",
-
-            background: "#eff6ff",
-
-            color: "#1e40af",
-
-            fontSize: "11px",
-
-            lineHeight: 1.5,
-          }}
-        >
+        <div className="finance-payment-history__notice finance-payment-history__notice--finance-only">
           Finance-only transaction. Registrar processing is not required.
         </div>
       )}
 
-      {/* REMARKS */}
-
       {ticket.payment.finance_remarks && (
-        <div
-          style={{
-            marginTop: "11px",
-
-            color: "#64748b",
-
-            fontSize: "12px",
-
-            lineHeight: 1.55,
-          }}
-        >
-          <strong
-            style={{
-              color: "#475569",
-            }}
-          >
-            Finance Remarks:
-          </strong>{" "}
+        <div className="finance-payment-history__remarks">
+          <strong>Finance Remarks:</strong>{" "}
           {ticket.payment.finance_remarks}
         </div>
       )}
     </article>
   );
 }
-
-// ============================================================
-// SUMMARY CARD
-// ============================================================
 
 function SummaryCard({
   label,
@@ -1542,77 +1025,18 @@ function SummaryCard({
   icon: ReactNode;
 }) {
   return (
-    <article
-      style={{
-        padding: "19px",
-
-        border: "1px solid #e2e8f0",
-
-        borderRadius: "15px",
-
-        background: "#ffffff",
-
-        display: "flex",
-
-        justifyContent: "space-between",
-
-        gap: "12px",
-      }}
-    >
+    <article className="finance-payment-history__summary-card">
       <div>
-        <div
-          style={{
-            color: "#64748b",
-
-            fontSize: "12px",
-
-            fontWeight: 700,
-          }}
-        >
-          {label}
-        </div>
-
-        <div
-          style={{
-            marginTop: "5px",
-
-            color: "#0f172a",
-
-            fontSize: "23px",
-
-            fontWeight: 850,
-          }}
-        >
-          {value}
-        </div>
+        <span>{label}</span>
+        <strong>{value}</strong>
       </div>
 
-      <div
-        style={{
-          width: "40px",
-
-          height: "40px",
-
-          borderRadius: "11px",
-
-          background: "#f0fdf4",
-
-          color: "#15803d",
-
-          display: "grid",
-
-          placeItems: "center",
-        }}
-      >
+      <div className="finance-payment-history__summary-icon">
         {icon}
       </div>
     </article>
   );
 }
-
-// ============================================================
-// DETAIL BOX
-// ============================================================
 
 function DetailBox({
   label,
@@ -1624,150 +1048,15 @@ function DetailBox({
   icon: ReactNode;
 }) {
   return (
-    <div
-      style={{
-        padding: "11px 12px",
-
-        borderRadius: "10px",
-
-        background: "#f8fafc",
-
-        border: "1px solid #e2e8f0",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-
-          alignItems: "center",
-
-          gap: "5px",
-
-          color: "#64748b",
-
-          fontSize: "9px",
-
-          fontWeight: 800,
-
-          textTransform: "uppercase",
-
-          marginBottom: "4px",
-        }}
-      >
+    <div className="finance-payment-history__detail-box">
+      <div className="finance-payment-history__detail-label">
         {icon}
-
         {label}
       </div>
 
-      <div
-        style={{
-          color: "#0f172a",
-
-          fontSize: "12px",
-
-          fontWeight: 750,
-
-          overflowWrap: "anywhere",
-        }}
-      >
+      <div className="finance-payment-history__detail-value">
         {value}
       </div>
     </div>
   );
 }
-
-// ============================================================
-// STYLES
-// ============================================================
-
-const panelStyle: CSSProperties = {
-  padding: "24px",
-
-  border: "1px solid #e2e8f0",
-
-  borderRadius: "18px",
-
-  background: "#ffffff",
-
-  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
-};
-
-const fieldLabelStyle: CSSProperties = {
-  display: "grid",
-
-  gap: "7px",
-
-  color: "#334155",
-
-  fontSize: "12px",
-
-  fontWeight: 700,
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-
-  minHeight: "44px",
-
-  boxSizing: "border-box",
-
-  padding: "10px 12px",
-
-  border: "1px solid #cbd5e1",
-
-  borderRadius: "10px",
-
-  background: "#ffffff",
-
-  color: "#0f172a",
-
-  outline: "none",
-
-  fontFamily: "inherit",
-};
-
-const paginationButtonStyle: CSSProperties = {
-  minHeight: "38px",
-
-  padding: "8px 13px",
-
-  border: "1px solid #cbd5e1",
-
-  borderRadius: "9px",
-
-  background: "#ffffff",
-
-  color: "#334155",
-
-  fontWeight: 750,
-};
-
-const paidBadgeStyle: CSSProperties = {
-  padding: "4px 8px",
-
-  borderRadius: "999px",
-
-  background: "#dcfce7",
-
-  color: "#166534",
-
-  fontSize: "9px",
-
-  fontWeight: 850,
-};
-
-const sourceBadgeStyle: CSSProperties = {
-  padding: "4px 8px",
-
-  borderRadius: "999px",
-
-  background: "#f1f5f9",
-
-  color: "#475569",
-
-  fontSize: "9px",
-
-  fontWeight: 800,
-
-  textTransform: "uppercase",
-};

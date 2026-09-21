@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { CSSProperties, FormEvent, ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import {
@@ -18,6 +18,7 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
+import "../../styles/FinanceTicketProcessing.css";
 
 const FINANCE_TICKETS_API = "http://localhost:3000/api/finance/tickets";
 
@@ -170,76 +171,45 @@ function safePositiveMoney(value: string) {
   return Number(amount.toFixed(2));
 }
 
-function paymentStatusStyle(status: string) {
+
+function getPaymentStatusClass(status: string) {
   if (status === "Paid") {
-    return {
-      border: "1px solid #bbf7d0",
-      background: "#dcfce7",
-      color: "#166534",
-    };
+    return "finance-requests__status--paid";
   }
 
   if (status === "Pending Payment") {
-    return {
-      border: "1px solid #fde68a",
-      background: "#fef3c7",
-      color: "#92400e",
-    };
+    return "finance-requests__status--pending";
   }
 
-  if (status === "Cancelled" || status === "Refunded") {
-    return {
-      border: "1px solid #fecaca",
-      background: "#fee2e2",
-      color: "#991b1b",
-    };
+  if (status === "Cancelled") {
+    return "finance-requests__status--cancelled";
   }
 
-  return {
-    border: "1px solid #e2e8f0",
-    background: "#f1f5f9",
-    color: "#475569",
-  };
+  if (status === "Refunded") {
+    return "finance-requests__status--refunded";
+  }
+
+  return "finance-requests__status--neutral";
 }
 
-function registrarStatusStyle(status: string) {
+function getRegistrarStatusClass(status: string) {
   if (status === "Done") {
-    return {
-      border: "1px solid #bbf7d0",
-      background: "#dcfce7",
-      color: "#166534",
-    };
+    return "finance-requests__status--done";
   }
 
   if (status === "Ready for Processing") {
-    return {
-      border: "1px solid #ddd6fe",
-      background: "#ede9fe",
-      color: "#6d28d9",
-    };
+    return "finance-requests__status--ready";
   }
 
   if (status === "Processing") {
-    return {
-      border: "1px solid #bfdbfe",
-      background: "#dbeafe",
-      color: "#1d4ed8",
-    };
+    return "finance-requests__status--processing";
   }
 
   if (status === "Cancelled" || status === "Rejected") {
-    return {
-      border: "1px solid #fecaca",
-      background: "#fee2e2",
-      color: "#991b1b",
-    };
+    return "finance-requests__status--cancelled";
   }
 
-  return {
-    border: "1px solid #e2e8f0",
-    background: "#f1f5f9",
-    color: "#475569",
-  };
+  return "finance-requests__status--neutral";
 }
 
 export default function FinanceTicketProcessing() {
@@ -659,83 +629,117 @@ export default function FinanceTicketProcessing() {
     return null;
   }
 
+
   return (
     <DashboardLayout>
-      <main style={pageStyle}>
-        <section style={heroStyle}>
-          <div style={heroInnerStyle}>
-            <div>
-              <div style={eyebrowStyle}>
-                <WalletCards size={16} />
-                Finance Office
-              </div>
+      <main className="finance-requests">
+        {/* ===================================================
+            HEADER
+        =================================================== */}
 
-              <h1 style={heroTitleStyle}>Finance Transactions</h1>
-
-              <p style={heroTextStyle}>
-                Review pending student transactions, search Finance tickets, and
-                record payment before forwarding requests to the Registrar.
-              </p>
+        <section className="finance-requests__hero">
+          <div className="finance-requests__hero-copy">
+            <div className="finance-requests__eyebrow">
+              <WalletCards size={16} aria-hidden="true" />
+              Finance Office
             </div>
 
-            <ReceiptText size={42} color="#15803d" aria-hidden="true" />
+            <h1>Finance Requests</h1>
+
+            <p>
+              Review student transaction requests, search Finance tickets, record
+              payments, and move completed requests forward for Registrar
+              processing.
+            </p>
+          </div>
+
+          <div className="finance-requests__hero-icon" aria-hidden="true">
+            <ReceiptText size={29} strokeWidth={1.9} />
           </div>
         </section>
 
-        <section style={summaryGridStyle}>
+        {/* ===================================================
+            SUMMARY
+        =================================================== */}
+
+        <section
+          className="finance-requests__summary-grid"
+          aria-label="Finance request summary"
+        >
           <SummaryCard
-            icon={<ReceiptText size={22} />}
+            icon={<ReceiptText size={21} />}
             label="Current View"
             value={summary.total}
           />
 
           <SummaryCard
-            icon={<Clock3 size={22} />}
+            icon={<Clock3 size={21} />}
             label="Pending Payment"
             value={summary.pending}
           />
 
           <SummaryCard
-            icon={<CheckCircle2 size={22} />}
+            icon={<CheckCircle2 size={21} />}
             label="Paid"
             value={summary.paid}
           />
 
           <SummaryCard
-            icon={<FileText size={22} />}
+            icon={<FileText size={21} />}
             label="Waiting for Registrar"
             value={summary.waitingForRegistrar}
           />
         </section>
 
-        <section style={panelStyle}>
-          <div style={sectionHeaderStyle}>
+        {/* ===================================================
+            REQUEST QUEUE
+        =================================================== */}
+
+        <section className="finance-requests__panel">
+          <div className="finance-requests__section-header">
             <div>
-              <h2 style={sectionTitleStyle}>Transaction Queue</h2>
-              <p style={sectionTextStyle}>
-                Pending transactions are shown by default. Search can also find
-                paid or historical tickets.
+              <span className="finance-requests__section-kicker">
+                Request Management
+              </span>
+
+              <h2>Transaction Queue</h2>
+
+              <p>
+                Pending requests are shown by default. Search can also locate
+                paid and historical Finance tickets.
               </p>
             </div>
 
             <button
               type="button"
+              className="finance-requests__button finance-requests__button--secondary"
               onClick={() => void loadQueue(activeSearch)}
               disabled={loadingQueue || paying}
-              style={secondaryButtonStyle}
             >
               {loadingQueue ? (
-                <Loader2 size={16} style={spinnerStyle} />
+                <Loader2
+                  size={16}
+                  className="finance-requests__spinner"
+                  aria-hidden="true"
+                />
               ) : (
-                <RefreshCcw size={16} />
+                <RefreshCcw size={16} aria-hidden="true" />
               )}
+
               Refresh
             </button>
           </div>
 
-          <form onSubmit={handleSearch} style={searchGridStyle}>
-            <div style={searchInputWrapStyle}>
-              <Search size={17} color="#94a3b8" style={searchIconStyle} />
+          <form
+            onSubmit={handleSearch}
+            className="finance-requests__filters"
+          >
+            <div className="finance-requests__search">
+              <Search
+                size={17}
+                className="finance-requests__search-icon"
+                aria-hidden="true"
+              />
 
               <input
                 type="text"
@@ -743,7 +747,6 @@ export default function FinanceTicketProcessing() {
                 onChange={(event) => setSearchText(event.target.value)}
                 placeholder="Ticket, request, student number, or student name"
                 disabled={loadingQueue || paying}
-                style={searchInputStyle}
               />
             </div>
 
@@ -753,7 +756,7 @@ export default function FinanceTicketProcessing() {
                 setPaymentFilter(event.target.value as PaymentFilter)
               }
               disabled={loadingQueue || paying}
-              style={inputStyle}
+              aria-label="Filter by payment status"
             >
               <option value="All">All Payment Statuses</option>
               <option value="Pending Payment">Pending Payment</option>
@@ -768,7 +771,7 @@ export default function FinanceTicketProcessing() {
                 setTransactionFilter(event.target.value as TransactionFilter)
               }
               disabled={loadingQueue || paying}
-              style={inputStyle}
+              aria-label="Filter by transaction type"
             >
               <option value="All">All Transactions</option>
               <option value="COR">COR</option>
@@ -778,96 +781,123 @@ export default function FinanceTicketProcessing() {
 
             <button
               type="submit"
+              className="finance-requests__button finance-requests__button--primary"
               disabled={loadingQueue || paying || !searchText.trim()}
-              style={{
-                ...primaryButtonStyle,
-                opacity:
-                  loadingQueue || paying || !searchText.trim() ? 0.65 : 1,
-              }}
             >
               {loadingQueue ? (
-                <Loader2 size={17} style={spinnerStyle} />
+                <Loader2
+                  size={17}
+                  className="finance-requests__spinner"
+                  aria-hidden="true"
+                />
               ) : (
-                <Search size={17} />
+                <Search size={17} aria-hidden="true" />
               )}
+
               Search
             </button>
 
             <button
               type="button"
+              className="finance-requests__button finance-requests__button--secondary"
               onClick={() => void handleShowAll()}
               disabled={loadingQueue || paying}
-              style={secondaryButtonStyle}
             >
-              <ListFilter size={16} />
+              <ListFilter size={16} aria-hidden="true" />
               Show All
             </button>
           </form>
 
           {activeSearch && (
-            <div style={searchResultNoteStyle}>
+            <div className="finance-requests__search-note">
               Search results for <strong>{activeSearch}</strong>
             </div>
           )}
 
-          {errorMessage && <div style={errorStyle}>{errorMessage}</div>}
+          {errorMessage && (
+            <div
+              className="finance-requests__message finance-requests__message--error"
+              role="alert"
+            >
+              {errorMessage}
+            </div>
+          )}
 
-          {successMessage && <div style={successStyle}>{successMessage}</div>}
+          {successMessage && (
+            <div
+              className="finance-requests__message finance-requests__message--success"
+              role="status"
+            >
+              {successMessage}
+            </div>
+          )}
 
           {loadingQueue ? (
-            <div style={loadingStateStyle}>
-              <Loader2 size={21} style={spinnerStyle} />
-              Loading Finance transactions...
+            <div className="finance-requests__state">
+              <Loader2
+                size={23}
+                className="finance-requests__spinner"
+                aria-hidden="true"
+              />
+              <strong>Loading Finance requests...</strong>
+              <span>Please wait while the request queue is refreshed.</span>
             </div>
           ) : filteredTickets.length === 0 ? (
-            <div style={emptyStateStyle}>
-              <ReceiptText size={34} color="#94a3b8" />
+            <div className="finance-requests__state finance-requests__state--empty">
+              <div className="finance-requests__state-icon">
+                <ReceiptText size={27} aria-hidden="true" />
+              </div>
+
               <strong>No transactions found</strong>
+
               <span>
                 Change the filters, search another student, or show all
                 transactions.
               </span>
             </div>
           ) : (
-            <div style={queueListStyle}>
+            <div className="finance-requests__queue">
               {filteredTickets.map((item) => {
-                const selected = selectedTicketNumber === item.ticket_number;
+                const selected =
+                  selectedTicketNumber === item.ticket_number;
 
                 return (
                   <button
                     key={item.ticket_id}
                     type="button"
+                    className={`finance-requests__queue-card ${
+                      selected ? "is-selected" : ""
+                    }`}
                     onClick={() => selectTicket(item)}
-                    style={{
-                      ...queueCardStyle,
-                      ...(selected ? queueCardSelectedStyle : {}),
-                    }}
+                    aria-pressed={selected}
                   >
-                    <div style={queueCardTopStyle}>
-                      <div style={{ minWidth: 0 }}>
-                        <div style={ticketTitleStyle}>{item.ticket_number}</div>
+                    <div className="finance-requests__queue-top">
+                      <div className="finance-requests__queue-heading">
+                        <span className="finance-requests__ticket-number">
+                          {item.ticket_number}
+                        </span>
 
-                        <div style={ticketSubtitleStyle}>
-                          {item.transaction.transaction_name}
-                        </div>
+                        <strong>{item.transaction.transaction_name}</strong>
                       </div>
 
-                      <div style={statusGroupStyle}>
+                      <div className="finance-requests__status-group">
                         <StatusPill
                           value={item.payment.payment_status}
-                          style={paymentStatusStyle(
+                          statusClass={getPaymentStatusClass(
                             item.payment.payment_status,
                           )}
                         />
 
                         <StatusPill
                           value={item.registrar.status}
-                          style={registrarStatusStyle(item.registrar.status)}
+                          statusClass={getRegistrarStatusClass(
+                            item.registrar.status,
+                          )}
                         />
                       </div>
                     </div>
 
-                    <div style={queueInfoGridStyle}>
+                    <div className="finance-requests__queue-grid">
                       <QueueInfo
                         label="Student"
                         value={item.student.student_name}
@@ -882,7 +912,9 @@ export default function FinanceTicketProcessing() {
                         label="Request"
                         value={
                           item.document_request?.request_number ??
-                          (item.grade_id ? `Grade ID ${item.grade_id}` : "—")
+                          (item.grade_id
+                            ? `Grade ID ${item.grade_id}`
+                            : "—")
                         }
                       />
 
@@ -908,58 +940,56 @@ export default function FinanceTicketProcessing() {
           )}
         </section>
 
+        {/* ===================================================
+            SELECTED REQUEST
+        =================================================== */}
+
         {selectedTicket && (
           <>
-            <section style={panelStyle}>
-              <div style={sectionHeaderStyle}>
+            <section className="finance-requests__panel finance-requests__selected-panel">
+              <div className="finance-requests__section-header">
                 <div>
-                  <div style={eyebrowStyle}>
-                    <ReceiptText size={16} />
+                  <div className="finance-requests__eyebrow">
+                    <ReceiptText size={16} aria-hidden="true" />
                     Selected Transaction
                   </div>
 
-                  <h2 style={selectedTicketTitleStyle}>
+                  <h2 className="finance-requests__selected-title">
                     {selectedTicket.ticket_number}
                   </h2>
 
-                  <p style={sectionTextStyle}>
-                    {selectedTicket.transaction.transaction_name}
-                  </p>
+                  <p>{selectedTicket.transaction.transaction_name}</p>
                 </div>
 
-                <div style={statusGroupStyle}>
+                <div className="finance-requests__status-group">
                   <StatusPill
                     value={selectedTicket.payment.payment_status}
-                    style={paymentStatusStyle(
+                    statusClass={getPaymentStatusClass(
                       selectedTicket.payment.payment_status,
                     )}
                   />
 
                   <StatusPill
                     value={selectedTicket.registrar.status}
-                    style={registrarStatusStyle(
+                    statusClass={getRegistrarStatusClass(
                       selectedTicket.registrar.status,
                     )}
                   />
                 </div>
               </div>
 
-              <div style={studentCardStyle}>
-                <div style={studentIconStyle}>
-                  <UserRound size={21} />
+              <div className="finance-requests__student-card">
+                <div className="finance-requests__student-icon">
+                  <UserRound size={21} aria-hidden="true" />
                 </div>
 
                 <div>
-                  <strong style={studentNameStyle}>
-                    {selectedTicket.student.student_name}
-                  </strong>
-                  <span style={studentNumberStyle}>
-                    {selectedTicket.student.student_number}
-                  </span>
+                  <strong>{selectedTicket.student.student_name}</strong>
+                  <span>{selectedTicket.student.student_number}</span>
                 </div>
               </div>
 
-              <div style={detailsGridStyle}>
+              <div className="finance-requests__details-grid">
                 <InfoBox
                   label="Transaction"
                   value={selectedTicket.transaction.transaction_code}
@@ -983,14 +1013,18 @@ export default function FinanceTicketProcessing() {
 
                 <InfoBox
                   label="Academic Period"
-                  value={formatAcademicPeriod(selectedTicket.document_request)}
+                  value={formatAcademicPeriod(
+                    selectedTicket.document_request,
+                  )}
                 />
 
                 <InfoBox
                   label="Enrollment ID"
                   value={
                     selectedTicket.document_request?.enrollment_id
-                      ? String(selectedTicket.document_request.enrollment_id)
+                      ? String(
+                          selectedTicket.document_request.enrollment_id,
+                        )
                       : "Not recorded"
                   }
                 />
@@ -1036,16 +1070,14 @@ export default function FinanceTicketProcessing() {
               </div>
 
               {selectedTicket.document_request?.purpose && (
-                <div style={purposeStyle}>
-                  <div style={purposeLabelStyle}>Purpose</div>
-                  <div style={purposeTextStyle}>
-                    {selectedTicket.document_request.purpose}
-                  </div>
+                <div className="finance-requests__purpose">
+                  <span>Purpose</span>
+                  <p>{selectedTicket.document_request.purpose}</p>
                 </div>
               )}
 
               {selectedTicket.document_request?.cancelled_at && (
-                <div style={errorStyle}>
+                <div className="finance-requests__message finance-requests__message--error">
                   This document request was cancelled
                   {selectedTicket.document_request.cancellation_reason
                     ? `: ${selectedTicket.document_request.cancellation_reason}`
@@ -1054,13 +1086,22 @@ export default function FinanceTicketProcessing() {
               )}
             </section>
 
-            <section style={panelStyle}>
-              <div style={paymentHeaderStyle}>
-                <CreditCard size={20} color="#15803d" />
+            {/* =================================================
+                PAYMENT
+            ================================================= */}
+
+            <section className="finance-requests__panel">
+              <div className="finance-requests__payment-header">
+                <div className="finance-requests__payment-icon">
+                  <CreditCard size={20} aria-hidden="true" />
+                </div>
 
                 <div>
-                  <h2 style={paymentTitleStyle}>Record Payment</h2>
-                  <p style={sectionTextStyle}>
+                  <span className="finance-requests__section-kicker">
+                    Cashier Action
+                  </span>
+                  <h2>Record Payment</h2>
+                  <p>
                     Finance records payment only. Registrar processing remains
                     separate.
                   </p>
@@ -1068,26 +1109,32 @@ export default function FinanceTicketProcessing() {
               </div>
 
               {selectedTicket.payment.payment_status === "Paid" ? (
-                <div style={paidCardStyle}>
-                  <div style={paidHeadingStyle}>
-                    <CheckCircle2 size={20} />
+                <div className="finance-requests__paid-card">
+                  <div className="finance-requests__paid-heading">
+                    <CheckCircle2 size={20} aria-hidden="true" />
                     Payment Completed
                   </div>
 
-                  <div style={detailsGridStyle}>
+                  <div className="finance-requests__details-grid">
                     <InfoBox
                       label="Amount Paid"
-                      value={formatMoney(selectedTicket.payment.amount_paid)}
+                      value={formatMoney(
+                        selectedTicket.payment.amount_paid,
+                      )}
                     />
 
                     <InfoBox
                       label="Payment Method"
-                      value={selectedTicket.payment.payment_method || "—"}
+                      value={
+                        selectedTicket.payment.payment_method || "—"
+                      }
                     />
 
                     <InfoBox
                       label="Receipt Number"
-                      value={selectedTicket.payment.receipt_number || "—"}
+                      value={
+                        selectedTicket.payment.receipt_number || "—"
+                      }
                     />
 
                     <InfoBox
@@ -1102,107 +1149,106 @@ export default function FinanceTicketProcessing() {
                   </div>
                 </div>
               ) : (
-                <form onSubmit={handlePayment} style={paymentFormStyle}>
-                  <label style={labelStyle}>
-                    Amount Due
+                <form
+                  onSubmit={handlePayment}
+                  className="finance-requests__payment-form"
+                >
+                  <FieldLabel label="Amount Due">
                     <input
                       type="number"
                       min="0.01"
                       step="0.01"
                       value={amountDue}
-                      onChange={(event) => setAmountDue(event.target.value)}
+                      onChange={(event) =>
+                        setAmountDue(event.target.value)
+                      }
                       disabled={
                         paying ||
                         paymentLocked ||
                         selectedTicket.payment.amount_due !== null
                       }
                       placeholder="Enter official amount due"
-                      style={inputStyle}
                     />
-                  </label>
+                  </FieldLabel>
 
-                  <label style={labelStyle}>
-                    Amount Paid
+                  <FieldLabel label="Amount Paid">
                     <input
                       type="number"
                       min="0.01"
                       step="0.01"
                       value={amountPaid}
-                      onChange={(event) => setAmountPaid(event.target.value)}
+                      onChange={(event) =>
+                        setAmountPaid(event.target.value)
+                      }
                       disabled={paying || paymentLocked}
                       placeholder="Enter amount paid"
-                      style={inputStyle}
                     />
-                  </label>
+                  </FieldLabel>
 
-                  <label style={labelStyle}>
-                    Payment Method
+                  <FieldLabel label="Payment Method">
                     <select
                       value={paymentMethod}
                       onChange={(event) =>
-                        setPaymentMethod(event.target.value as PaymentMethod)
+                        setPaymentMethod(
+                          event.target.value as PaymentMethod,
+                        )
                       }
                       disabled={paying || paymentLocked}
-                      style={inputStyle}
                     >
                       <option value="Cash">Cash</option>
                       <option value="GCash">GCash</option>
                       <option value="Bank">Bank</option>
                       <option value="Online">Online</option>
                     </select>
-                  </label>
+                  </FieldLabel>
 
-                  <label style={labelStyle}>
-                    Receipt Number
+                  <FieldLabel label="Receipt Number">
                     <input
                       type="text"
                       value={receiptNumber}
-                      onChange={(event) => setReceiptNumber(event.target.value)}
+                      onChange={(event) =>
+                        setReceiptNumber(event.target.value)
+                      }
                       disabled={paying || paymentLocked}
                       placeholder="Official receipt number"
                       maxLength={50}
-                      style={inputStyle}
                     />
-                  </label>
+                  </FieldLabel>
 
-                  <label
-                    style={{
-                      ...labelStyle,
-                      gridColumn: "1 / -1",
-                    }}
-                  >
-                    Finance Remarks
+                  <label className="finance-requests__field finance-requests__field--full">
+                    <span>Finance Remarks</span>
+
                     <textarea
                       value={remarks}
-                      onChange={(event) => setRemarks(event.target.value)}
+                      onChange={(event) =>
+                        setRemarks(event.target.value)
+                      }
                       disabled={paying || paymentLocked}
                       placeholder="Optional Finance remarks"
                       maxLength={500}
                       rows={3}
-                      style={{
-                        ...inputStyle,
-                        resize: "vertical",
-                        fontFamily: "inherit",
-                      }}
                     />
                   </label>
 
-                  <div style={paymentActionStyle}>
+                  <div className="finance-requests__payment-actions">
                     <button
                       type="submit"
+                      className="finance-requests__button finance-requests__button--primary finance-requests__button--pay"
                       disabled={paying || paymentLocked}
-                      style={{
-                        ...primaryButtonStyle,
-                        minWidth: "190px",
-                        opacity: paying || paymentLocked ? 0.65 : 1,
-                      }}
                     >
                       {paying ? (
-                        <Loader2 size={17} style={spinnerStyle} />
+                        <Loader2
+                          size={17}
+                          className="finance-requests__spinner"
+                          aria-hidden="true"
+                        />
                       ) : (
-                        <WalletCards size={17} />
+                        <WalletCards size={17} aria-hidden="true" />
                       )}
-                      {paying ? "Processing..." : "Confirm Payment"}
+
+                      {paying
+                        ? "Processing..."
+                        : "Confirm Payment"}
                     </button>
                   </div>
                 </form>
@@ -1210,7 +1256,7 @@ export default function FinanceTicketProcessing() {
 
               {paymentLocked &&
                 selectedTicket.payment.payment_status !== "Paid" && (
-                  <div style={warningStyle}>
+                  <div className="finance-requests__message finance-requests__message--warning">
                     This transaction is not currently payable. Payment must be
                     Pending Payment, Registrar must still be Pending, and the
                     linked request must not be cancelled.
@@ -1234,524 +1280,74 @@ function SummaryCard({
   value: number;
 }) {
   return (
-    <article style={summaryCardStyle}>
-      <div style={summaryIconStyle}>{icon}</div>
+    <article className="finance-requests__summary-card">
+      <div className="finance-requests__summary-icon">{icon}</div>
 
       <div>
-        <span style={summaryLabelStyle}>{label}</span>
-        <strong style={summaryValueStyle}>{value}</strong>
+        <span>{label}</span>
+        <strong>{value}</strong>
       </div>
     </article>
   );
 }
 
-function QueueInfo({ label, value }: { label: string; value: string }) {
+function QueueInfo({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
-    <div style={queueInfoStyle}>
-      <span style={queueInfoLabelStyle}>{label}</span>
-      <strong style={queueInfoValueStyle}>{value}</strong>
+    <div className="finance-requests__queue-info">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
-function InfoBox({ label, value }: { label: string; value: string }) {
+function InfoBox({
+  label,
+  value,
+}: {
+  label: string;
+  value: string;
+}) {
   return (
-    <div style={infoBoxStyle}>
-      <div style={infoLabelStyle}>{label}</div>
-      <div style={infoValueStyle}>{value}</div>
+    <div className="finance-requests__info-box">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
-function StatusPill({ value, style }: { value: string; style: CSSProperties }) {
+function StatusPill({
+  value,
+  statusClass,
+}: {
+  value: string;
+  statusClass: string;
+}) {
   return (
     <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        minHeight: "29px",
-        padding: "5px 10px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: 800,
-        whiteSpace: "nowrap",
-        ...style,
-      }}
+      className={`finance-requests__status ${statusClass}`}
     >
       {value}
     </span>
   );
 }
 
-const pageStyle: CSSProperties = {
-  display: "grid",
-  gap: "22px",
-  padding: "4px",
-};
-
-const heroStyle: CSSProperties = {
-  padding: "26px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "18px",
-  background: "#ffffff",
-  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-};
-
-const heroInnerStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "space-between",
-  gap: "20px",
-  flexWrap: "wrap",
-};
-
-const eyebrowStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  gap: "7px",
-  marginBottom: "8px",
-  color: "#15803d",
-  fontSize: "12px",
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: ".08em",
-};
-
-const heroTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#0f172a",
-  fontSize: "28px",
-};
-
-const heroTextStyle: CSSProperties = {
-  margin: "8px 0 0",
-  maxWidth: "780px",
-  color: "#64748b",
-  lineHeight: 1.6,
-};
-
-const summaryGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-  gap: "14px",
-};
-
-const summaryCardStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "13px",
-  minHeight: "96px",
-  padding: "18px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "14px",
-  background: "#ffffff",
-};
-
-const summaryIconStyle: CSSProperties = {
-  width: "44px",
-  height: "44px",
-  flex: "0 0 44px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "11px",
-  background: "#f0fdf4",
-  color: "#15803d",
-};
-
-const summaryLabelStyle: CSSProperties = {
-  display: "block",
-  color: "#64748b",
-  fontSize: "12px",
-  fontWeight: 650,
-};
-
-const summaryValueStyle: CSSProperties = {
-  display: "block",
-  marginTop: "2px",
-  color: "#0f172a",
-  fontSize: "23px",
-};
-
-const panelStyle: CSSProperties = {
-  padding: "24px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "18px",
-  background: "#ffffff",
-};
-
-const sectionHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "16px",
-  flexWrap: "wrap",
-  marginBottom: "18px",
-};
-
-const sectionTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#0f172a",
-  fontSize: "19px",
-};
-
-const selectedTicketTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#0f172a",
-  fontSize: "21px",
-};
-
-const sectionTextStyle: CSSProperties = {
-  margin: "5px 0 0",
-  color: "#64748b",
-  fontSize: "13px",
-  lineHeight: 1.6,
-};
-
-const searchGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns:
-    "minmax(260px, 1fr) minmax(170px, 220px) minmax(170px, 220px) auto auto",
-  gap: "10px",
-  alignItems: "center",
-};
-
-const searchInputWrapStyle: CSSProperties = {
-  position: "relative",
-};
-
-const searchIconStyle: CSSProperties = {
-  position: "absolute",
-  left: "12px",
-  top: "50%",
-  transform: "translateY(-50%)",
-  pointerEvents: "none",
-};
-
-const searchInputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "11px 12px 11px 38px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#0f172a",
-  outline: "none",
-  fontFamily: "inherit",
-};
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "11px 12px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#0f172a",
-  outline: "none",
-  fontFamily: "inherit",
-};
-
-const primaryButtonStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  padding: "11px 16px",
-  border: 0,
-  borderRadius: "10px",
-  background: "#15803d",
-  color: "#ffffff",
-  fontWeight: 800,
-  cursor: "pointer",
-};
-
-const secondaryButtonStyle: CSSProperties = {
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "8px",
-  padding: "10px 14px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#334155",
-  fontWeight: 750,
-  cursor: "pointer",
-};
-
-const searchResultNoteStyle: CSSProperties = {
-  marginTop: "12px",
-  color: "#64748b",
-  fontSize: "12px",
-};
-
-const errorStyle: CSSProperties = {
-  marginTop: "14px",
-  padding: "13px 15px",
-  border: "1px solid #fecaca",
-  borderRadius: "11px",
-  background: "#fef2f2",
-  color: "#991b1b",
-  fontSize: "13px",
-  fontWeight: 650,
-};
-
-const successStyle: CSSProperties = {
-  marginTop: "14px",
-  padding: "13px 15px",
-  border: "1px solid #bbf7d0",
-  borderRadius: "11px",
-  background: "#f0fdf4",
-  color: "#166534",
-  fontSize: "13px",
-  fontWeight: 650,
-};
-
-const loadingStateStyle: CSSProperties = {
-  minHeight: "180px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  gap: "10px",
-  color: "#64748b",
-};
-
-const emptyStateStyle: CSSProperties = {
-  minHeight: "180px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  flexDirection: "column",
-  gap: "7px",
-  border: "1px dashed #cbd5e1",
-  borderRadius: "13px",
-  color: "#64748b",
-  textAlign: "center",
-};
-
-const queueListStyle: CSSProperties = {
-  display: "grid",
-  gap: "12px",
-};
-
-const queueCardStyle: CSSProperties = {
-  width: "100%",
-  padding: "16px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "13px",
-  background: "#ffffff",
-  textAlign: "left",
-  fontFamily: "inherit",
-  cursor: "pointer",
-};
-
-const queueCardSelectedStyle: CSSProperties = {
-  border: "2px solid #15803d",
-  background: "#f8fff9",
-  boxShadow: "0 7px 20px rgba(21, 128, 61, 0.07)",
-};
-
-const queueCardTopStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  gap: "12px",
-  flexWrap: "wrap",
-};
-
-const ticketTitleStyle: CSSProperties = {
-  color: "#15803d",
-  fontSize: "14px",
-  fontWeight: 850,
-  overflowWrap: "anywhere",
-};
-
-const ticketSubtitleStyle: CSSProperties = {
-  marginTop: "4px",
-  color: "#0f172a",
-  fontSize: "13px",
-  fontWeight: 750,
-};
-
-const statusGroupStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "7px",
-  flexWrap: "wrap",
-};
-
-const queueInfoGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(145px, 1fr))",
-  gap: "10px",
-  marginTop: "14px",
-};
-
-const queueInfoStyle: CSSProperties = {
-  minWidth: 0,
-};
-
-const queueInfoLabelStyle: CSSProperties = {
-  display: "block",
-  color: "#64748b",
-  fontSize: "10px",
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: ".04em",
-};
-
-const queueInfoValueStyle: CSSProperties = {
-  display: "block",
-  marginTop: "3px",
-  color: "#334155",
-  fontSize: "12px",
-  fontWeight: 700,
-  overflowWrap: "anywhere",
-};
-
-const studentCardStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "12px",
-  marginBottom: "16px",
-  padding: "15px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "12px",
-  background: "#f8fafc",
-};
-
-const studentIconStyle: CSSProperties = {
-  width: "42px",
-  height: "42px",
-  flex: "0 0 42px",
-  display: "flex",
-  alignItems: "center",
-  justifyContent: "center",
-  borderRadius: "50%",
-  background: "#dcfce7",
-  color: "#15803d",
-};
-
-const studentNameStyle: CSSProperties = {
-  display: "block",
-  color: "#0f172a",
-};
-
-const studentNumberStyle: CSSProperties = {
-  display: "block",
-  marginTop: "3px",
-  color: "#64748b",
-  fontSize: "12px",
-};
-
-const detailsGridStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-  gap: "12px",
-};
-
-const infoBoxStyle: CSSProperties = {
-  minWidth: 0,
-  padding: "11px 13px",
-  border: "1px solid #e2e8f0",
-  borderRadius: "10px",
-  background: "#f8fafc",
-};
-
-const infoLabelStyle: CSSProperties = {
-  marginBottom: "4px",
-  color: "#64748b",
-  fontSize: "10px",
-  fontWeight: 800,
-  textTransform: "uppercase",
-  letterSpacing: ".04em",
-};
-
-const infoValueStyle: CSSProperties = {
-  color: "#0f172a",
-  fontSize: "13px",
-  fontWeight: 750,
-  overflowWrap: "anywhere",
-};
-
-const purposeStyle: CSSProperties = {
-  marginTop: "14px",
-  padding: "13px 14px",
-  borderRadius: "10px",
-  background: "#f8fafc",
-};
-
-const purposeLabelStyle: CSSProperties = {
-  marginBottom: "4px",
-  color: "#64748b",
-  fontSize: "10px",
-  fontWeight: 800,
-  textTransform: "uppercase",
-};
-
-const purposeTextStyle: CSSProperties = {
-  color: "#334155",
-  fontSize: "13px",
-};
-
-const paymentHeaderStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "9px",
-  marginBottom: "17px",
-};
-
-const paymentTitleStyle: CSSProperties = {
-  margin: 0,
-  color: "#0f172a",
-  fontSize: "19px",
-};
-
-const paidCardStyle: CSSProperties = {
-  padding: "17px",
-  border: "1px solid #bbf7d0",
-  borderRadius: "12px",
-  background: "#f0fdf4",
-};
-
-const paidHeadingStyle: CSSProperties = {
-  display: "flex",
-  alignItems: "center",
-  gap: "8px",
-  marginBottom: "14px",
-  color: "#166534",
-  fontWeight: 800,
-};
-
-const paymentFormStyle: CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-  gap: "16px",
-};
-
-const labelStyle: CSSProperties = {
-  display: "grid",
-  gap: "7px",
-  color: "#334155",
-  fontSize: "13px",
-  fontWeight: 700,
-};
-
-const paymentActionStyle: CSSProperties = {
-  gridColumn: "1 / -1",
-  display: "flex",
-  justifyContent: "flex-end",
-};
-
-const warningStyle: CSSProperties = {
-  marginTop: "14px",
-  padding: "12px 14px",
-  border: "1px solid #fde68a",
-  borderRadius: "10px",
-  background: "#fffbeb",
-  color: "#92400e",
-  fontSize: "13px",
-};
-
-const spinnerStyle: CSSProperties = {};
+function FieldLabel({
+  label,
+  children,
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <label className="finance-requests__field">
+      <span>{label}</span>
+      {children}
+    </label>
+  );
+}

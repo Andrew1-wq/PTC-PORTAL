@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 
-import type { CSSProperties, FormEvent } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -167,60 +167,32 @@ function formatDate(value: string | null | undefined) {
   });
 }
 
-function paymentBadgeStyle(status: string): CSSProperties {
+function getPaymentBadgeClass(status: string) {
   if (status === "Paid") {
-    return {
-      color: "#166534",
-      background: "#dcfce7",
-      border: "1px solid #bbf7d0",
-    };
+    return "finance-dashboard__status-badge--paid";
   }
 
   if (status === "Pending Payment") {
-    return {
-      color: "#92400e",
-      background: "#fef3c7",
-      border: "1px solid #fde68a",
-    };
+    return "finance-dashboard__status-badge--pending";
   }
 
-  return {
-    color: "#991b1b",
-    background: "#fee2e2",
-    border: "1px solid #fecaca",
-  };
+  return "finance-dashboard__status-badge--danger";
 }
 
-function registrarBadgeStyle(status: string): CSSProperties {
+function getRegistrarBadgeClass(status: string) {
   if (status === "Done") {
-    return {
-      color: "#166534",
-      background: "#dcfce7",
-      border: "1px solid #bbf7d0",
-    };
+    return "finance-dashboard__status-badge--paid";
   }
 
   if (status === "Processing") {
-    return {
-      color: "#1d4ed8",
-      background: "#dbeafe",
-      border: "1px solid #bfdbfe",
-    };
+    return "finance-dashboard__status-badge--processing";
   }
 
   if (status === "Ready for Processing") {
-    return {
-      color: "#6d28d9",
-      background: "#ede9fe",
-      border: "1px solid #ddd6fe",
-    };
+    return "finance-dashboard__status-badge--ready";
   }
 
-  return {
-    color: "#475569",
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-  };
+  return "finance-dashboard__status-badge--neutral";
 }
 
 // ============================================================
@@ -637,14 +609,17 @@ export default function FinanceDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="finance-dashboard">
+      <main className="finance-dashboard">
         {/* ===================================================
             HERO
         =================================================== */}
 
         <section className="finance-dashboard__hero">
-          <div>
-            <p className="finance-dashboard__eyebrow">Finance Office</p>
+          <div className="finance-dashboard__hero-copy">
+            <div className="finance-dashboard__eyebrow">
+              <WalletCards size={16} aria-hidden="true" />
+              Finance Office
+            </div>
 
             <h1>Finance Dashboard</h1>
 
@@ -654,7 +629,9 @@ export default function FinanceDashboard() {
             </p>
           </div>
 
-          <ReceiptText size={42} aria-hidden="true" />
+          <div className="finance-dashboard__hero-icon" aria-hidden="true">
+            <ReceiptText size={28} strokeWidth={1.9} />
+          </div>
         </section>
 
         {/* ===================================================
@@ -665,39 +642,51 @@ export default function FinanceDashboard() {
           className="finance-dashboard__cards"
           aria-label="Finance summary"
         >
-          <article className="finance-dashboard__card">
-            <Clock3 size={24} aria-hidden="true" />
+          <article className="finance-dashboard__card finance-dashboard__card--pending">
+            <div className="finance-dashboard__card-icon">
+              <Clock3 size={21} aria-hidden="true" />
+            </div>
 
-            <div>
+            <div className="finance-dashboard__card-copy">
               <span>Pending Tickets</span>
 
               <strong>
                 {dashboardLoading ? "..." : summary.pending_tickets}
               </strong>
+
+              <small>Tickets awaiting payment</small>
             </div>
           </article>
 
-          <article className="finance-dashboard__card">
-            <CheckCircle2 size={24} aria-hidden="true" />
+          <article className="finance-dashboard__card finance-dashboard__card--completed">
+            <div className="finance-dashboard__card-icon">
+              <CheckCircle2 size={21} aria-hidden="true" />
+            </div>
 
-            <div>
+            <div className="finance-dashboard__card-copy">
               <span>Completed Today</span>
 
               <strong>
                 {dashboardLoading ? "..." : summary.completed_today}
               </strong>
+
+              <small>Payments completed today</small>
             </div>
           </article>
 
-          <article className="finance-dashboard__card">
-            <FileCheck2 size={24} aria-hidden="true" />
+          <article className="finance-dashboard__card finance-dashboard__card--registrar">
+            <div className="finance-dashboard__card-icon">
+              <FileCheck2 size={21} aria-hidden="true" />
+            </div>
 
-            <div>
+            <div className="finance-dashboard__card-copy">
               <span>Waiting for Registrar</span>
 
               <strong>
                 {dashboardLoading ? "..." : summary.waiting_for_registrar}
               </strong>
+
+              <small>Paid tickets forwarded for action</small>
             </div>
           </article>
         </section>
@@ -706,18 +695,13 @@ export default function FinanceDashboard() {
             CASHIER TICKET SEARCH
         =================================================== */}
 
-        <section className="finance-dashboard__panel">
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "16px",
-              flexWrap: "wrap",
-              marginBottom: "18px",
-            }}
-          >
+        <section className="finance-dashboard__panel finance-dashboard__panel--lookup">
+          <div className="finance-dashboard__panel-header">
             <div>
+              <span className="finance-dashboard__section-kicker">
+                Ticket Processing
+              </span>
+
               <h2>Cashier Ticket Lookup</h2>
 
               <p>Enter the Finance ticket number presented by the student.</p>
@@ -725,100 +709,65 @@ export default function FinanceDashboard() {
 
             <button
               type="button"
+              className="finance-dashboard__refresh-button"
               onClick={() => void loadDashboard()}
               disabled={dashboardLoading}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "7px",
-                padding: "9px 12px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "9px",
-                background: "#ffffff",
-                color: "#334155",
-                fontWeight: 700,
-                cursor: dashboardLoading ? "wait" : "pointer",
-              }}
             >
-              <RefreshCcw size={15} />
-              Refresh
+              <RefreshCcw
+                size={15}
+                className={
+                  dashboardLoading ? "finance-dashboard__spin" : undefined
+                }
+              />
+              {dashboardLoading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
           <form
+            className="finance-dashboard__lookup-form"
             onSubmit={handleTicketSearch}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "minmax(0, 1fr) auto",
-              gap: "10px",
-            }}
           >
-            <input
-              type="text"
-              value={ticketNumber}
-              onChange={(event) =>
-                setTicketNumber(event.target.value.toUpperCase())
-              }
-              placeholder="Example: FIN-COR-2026-000001"
-              disabled={searching}
-              style={{
-                width: "100%",
-                boxSizing: "border-box",
-                padding: "12px 14px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                outline: "none",
-                fontSize: "14px",
-                fontWeight: 600,
-              }}
-            />
+            <div className="finance-dashboard__search-field">
+              <Search size={17} aria-hidden="true" />
+
+              <input
+                type="text"
+                value={ticketNumber}
+                onChange={(event) =>
+                  setTicketNumber(event.target.value.toUpperCase())
+                }
+                placeholder="Example: FIN-COR-2026-000001"
+                disabled={searching}
+                aria-label="Finance ticket number"
+              />
+            </div>
 
             <button
               type="submit"
+              className="finance-dashboard__primary-button"
               disabled={searching}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                minWidth: "120px",
-                padding: "11px 16px",
-                border: 0,
-                borderRadius: "10px",
-                background: searching ? "#86a993" : "#15803d",
-                color: "#ffffff",
-                fontWeight: 800,
-                cursor: searching ? "wait" : "pointer",
-              }}
             >
               {searching ? (
                 <>
-                  <Loader2 size={17} />
+                  <Loader2
+                    size={17}
+                    className="finance-dashboard__spin"
+                  />
                   Searching...
                 </>
               ) : (
                 <>
                   <Search size={17} />
-                  Search
+                  Search Ticket
                 </>
               )}
             </button>
           </form>
 
-          {/* MESSAGES */}
-
           {errorMessage && (
             <div
-              style={{
-                marginTop: "14px",
-                padding: "12px 14px",
-                border: "1px solid #fecaca",
-                borderRadius: "10px",
-                background: "#fef2f2",
-                color: "#991b1b",
-                fontSize: "13px",
-                fontWeight: 650,
-              }}
+              className="finance-dashboard__message finance-dashboard__message--error"
+              role="alert"
             >
               {errorMessage}
             </div>
@@ -826,16 +775,8 @@ export default function FinanceDashboard() {
 
           {successMessage && (
             <div
-              style={{
-                marginTop: "14px",
-                padding: "12px 14px",
-                border: "1px solid #bbf7d0",
-                borderRadius: "10px",
-                background: "#f0fdf4",
-                color: "#166534",
-                fontSize: "13px",
-                fontWeight: 650,
-              }}
+              className="finance-dashboard__message finance-dashboard__message--success"
+              role="status"
             >
               {successMessage}
             </div>
@@ -848,122 +789,50 @@ export default function FinanceDashboard() {
 
         {ticket && (
           <>
-            <section className="finance-dashboard__panel">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "flex-start",
-                  gap: "16px",
-                  flexWrap: "wrap",
-                  marginBottom: "20px",
-                }}
-              >
+            <section className="finance-dashboard__panel finance-dashboard__panel--ticket">
+              <div className="finance-dashboard__ticket-header">
                 <div>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      color: "#15803d",
-                      fontSize: "12px",
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                    }}
-                  >
+                  <div className="finance-dashboard__ticket-eyebrow">
                     <ReceiptText size={16} />
                     Finance Ticket
                   </div>
 
-                  <h2
-                    style={{
-                      marginTop: "6px",
-                    }}
-                  >
-                    {ticket.ticket_number}
-                  </h2>
+                  <h2>{ticket.ticket_number}</h2>
                 </div>
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                  }}
-                >
+                <div className="finance-dashboard__ticket-badges">
                   <StatusBadge
                     label={ticket.payment.payment_status}
-                    style={paymentBadgeStyle(ticket.payment.payment_status)}
+                    variantClass={getPaymentBadgeClass(
+                      ticket.payment.payment_status,
+                    )}
                   />
 
                   <StatusBadge
                     label={ticket.registrar.status}
-                    style={registrarBadgeStyle(ticket.registrar.status)}
+                    variantClass={getRegistrarBadgeClass(
+                      ticket.registrar.status,
+                    )}
                   />
                 </div>
               </div>
 
-              {/* STUDENT */}
-
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "12px",
-                  padding: "16px",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "12px",
-                  background: "#f8fafc",
-                  marginBottom: "16px",
-                }}
-              >
+              <div className="finance-dashboard__student-card">
                 <div
-                  style={{
-                    width: "42px",
-                    height: "42px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    borderRadius: "50%",
-                    background: "#dcfce7",
-                    color: "#15803d",
-                  }}
+                  className="finance-dashboard__student-avatar"
+                  aria-hidden="true"
                 >
                   <UserRound size={21} />
                 </div>
 
-                <div>
-                  <strong
-                    style={{
-                      display: "block",
-                      color: "#0f172a",
-                    }}
-                  >
-                    {ticket.student.student_name}
-                  </strong>
-
-                  <span
-                    style={{
-                      display: "block",
-                      marginTop: "3px",
-                      color: "#64748b",
-                      fontSize: "12px",
-                    }}
-                  >
-                    {ticket.student.student_number}
-                  </span>
+                <div className="finance-dashboard__student-copy">
+                  <span>Student</span>
+                  <strong>{ticket.student.student_name}</strong>
+                  <small>{ticket.student.student_number}</small>
                 </div>
               </div>
 
-              {/* INFORMATION GRID */}
-
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-                  gap: "12px",
-                }}
-              >
+              <div className="finance-dashboard__info-grid">
                 <InfoBox
                   label="Transaction"
                   value={ticket.transaction.transaction_name}
@@ -991,11 +860,13 @@ export default function FinanceDashboard() {
                 <InfoBox
                   label="Amount Due"
                   value={formatMoney(ticket.payment.amount_due)}
+                  emphasized
                 />
 
                 <InfoBox
                   label="Amount Paid"
                   value={formatMoney(ticket.payment.amount_paid)}
+                  emphasized
                 />
 
                 <InfoBox
@@ -1020,34 +891,9 @@ export default function FinanceDashboard() {
               </div>
 
               {ticket.document_request?.purpose && (
-                <div
-                  style={{
-                    marginTop: "14px",
-                    padding: "13px 14px",
-                    borderRadius: "10px",
-                    background: "#f8fafc",
-                  }}
-                >
-                  <div
-                    style={{
-                      marginBottom: "4px",
-                      color: "#64748b",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                      textTransform: "uppercase",
-                    }}
-                  >
-                    Purpose
-                  </div>
-
-                  <div
-                    style={{
-                      color: "#334155",
-                      fontSize: "13px",
-                    }}
-                  >
-                    {ticket.document_request.purpose}
-                  </div>
+                <div className="finance-dashboard__purpose-box">
+                  <span>Purpose</span>
+                  <p>{ticket.document_request.purpose}</p>
                 </div>
               )}
             </section>
@@ -1056,39 +902,32 @@ export default function FinanceDashboard() {
                 PAYMENT FORM
             ================================================= */}
 
-            <section className="finance-dashboard__panel">
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "10px",
-                  marginBottom: "18px",
-                }}
-              >
-                <WalletCards size={22} color="#15803d" />
+            <section className="finance-dashboard__panel finance-dashboard__panel--payment">
+              <div className="finance-dashboard__payment-heading">
+                <div
+                  className="finance-dashboard__payment-heading-icon"
+                  aria-hidden="true"
+                >
+                  <WalletCards size={21} />
+                </div>
 
                 <div>
+                  <span className="finance-dashboard__section-kicker">
+                    Cashier Action
+                  </span>
                   <h2>Payment</h2>
-
                   <p>Record the student's payment for this transaction.</p>
                 </div>
               </div>
 
               {ticket.payment.payment_status === "Pending Payment" ? (
                 <form
+                  className="finance-dashboard__payment-form"
                   onSubmit={handlePayment}
-                  style={{
-                    display: "grid",
-
-                    gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))",
-
-                    gap: "14px",
-                  }}
                 >
-                  {/* AMOUNT DUE */}
-
                   <FieldLabel label="Amount Due">
                     <input
+                      className="finance-dashboard__input"
                       type="number"
                       min="0.01"
                       step="0.01"
@@ -1096,129 +935,81 @@ export default function FinanceDashboard() {
                       onChange={(event) => {
                         setAmountDue(event.target.value);
 
-                        /*
-                         * If the ticket
-                         * originally had
-                         * no amount due,
-                         * help cashier by
-                         * keeping amount
-                         * paid equal.
-                         */
                         if (ticket.payment.amount_due === null) {
                           setAmountPaid(event.target.value);
                         }
                       }}
                       disabled={paying || ticket.payment.amount_due !== null}
-                      style={inputStyle}
                     />
                   </FieldLabel>
 
-                  {/* AMOUNT PAID */}
-
                   <FieldLabel label="Amount Paid">
                     <input
+                      className="finance-dashboard__input"
                       type="number"
                       min="0.01"
                       step="0.01"
                       value={amountPaid}
                       onChange={(event) => setAmountPaid(event.target.value)}
                       disabled={paying}
-                      style={inputStyle}
                     />
                   </FieldLabel>
 
-                  {/* PAYMENT METHOD */}
-
                   <FieldLabel label="Payment Method">
                     <select
+                      className="finance-dashboard__input"
                       value={paymentMethod}
                       onChange={(event) =>
                         setPaymentMethod(event.target.value as PaymentMethod)
                       }
                       disabled={paying}
-                      style={inputStyle}
                     >
                       <option value="Cash">Cash</option>
-
                       <option value="GCash">GCash</option>
-
                       <option value="Bank">Bank</option>
-
                       <option value="Online">Online</option>
                     </select>
                   </FieldLabel>
 
-                  {/* RECEIPT */}
-
                   <FieldLabel label="Receipt Number">
                     <input
+                      className="finance-dashboard__input"
                       type="text"
                       value={receiptNumber}
-                      onChange={(event) => setReceiptNumber(event.target.value)}
+                      onChange={(event) =>
+                        setReceiptNumber(event.target.value)
+                      }
                       placeholder="Example: OR-000001"
                       disabled={paying}
-                      style={inputStyle}
                     />
                   </FieldLabel>
 
-                  {/* REMARKS */}
+                  <label className="finance-dashboard__field finance-dashboard__field--full">
+                    <span>Finance Remarks</span>
 
-                  <label
-                    style={{
-                      gridColumn: "1 / -1",
-                      display: "grid",
-                      gap: "7px",
-                      color: "#334155",
-                      fontSize: "13px",
-                      fontWeight: 700,
-                    }}
-                  >
-                    Finance Remarks
                     <textarea
+                      className="finance-dashboard__input finance-dashboard__textarea"
                       rows={3}
                       maxLength={500}
                       value={remarks}
                       onChange={(event) => setRemarks(event.target.value)}
                       placeholder="Optional payment remarks..."
                       disabled={paying}
-                      style={{
-                        ...inputStyle,
-                        resize: "vertical",
-                        fontFamily: "inherit",
-                      }}
                     />
                   </label>
 
-                  {/* BUTTON */}
-
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      display: "flex",
-                      justifyContent: "flex-end",
-                    }}
-                  >
+                  <div className="finance-dashboard__form-actions">
                     <button
                       type="submit"
+                      className="finance-dashboard__primary-button finance-dashboard__primary-button--payment"
                       disabled={paying}
-                      style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        gap: "8px",
-                        minWidth: "190px",
-                        padding: "11px 18px",
-                        border: 0,
-                        borderRadius: "10px",
-                        background: paying ? "#86a993" : "#15803d",
-                        color: "#ffffff",
-                        fontWeight: 800,
-                        cursor: paying ? "wait" : "pointer",
-                      }}
                     >
                       {paying ? (
                         <>
-                          <Loader2 size={17} />
+                          <Loader2
+                            size={17}
+                            className="finance-dashboard__spin"
+                          />
                           Processing...
                         </>
                       ) : (
@@ -1231,34 +1022,13 @@ export default function FinanceDashboard() {
                   </div>
                 </form>
               ) : (
-                <div
-                  style={{
-                    padding: "18px",
-                    border: "1px solid #bbf7d0",
-                    borderRadius: "12px",
-                    background: "#f0fdf4",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      color: "#166534",
-                    }}
-                  >
+                <div className="finance-dashboard__paid-state">
+                  <div className="finance-dashboard__paid-state-title">
                     <CheckCircle2 size={22} />
-
                     <strong>Payment already completed</strong>
                   </div>
 
-                  <p
-                    style={{
-                      margin: "8px 0 0",
-                      color: "#166534",
-                      fontSize: "13px",
-                    }}
-                  >
+                  <p>
                     This transaction has already been paid and is currently{" "}
                     <strong>{ticket.registrar.status}</strong> on the Registrar
                     side.
@@ -1273,17 +1043,29 @@ export default function FinanceDashboard() {
             CONNECTION STATUS
         =================================================== */}
 
-        <section className="finance-dashboard__panel">
-          <h2>Finance role connected</h2>
+        <section className="finance-dashboard__panel finance-dashboard__panel--connection">
+          <div className="finance-dashboard__connection-status">
+            <span className="finance-dashboard__connection-dot" />
+            <div>
+              <span className="finance-dashboard__section-kicker">
+                Workflow Status
+              </span>
+              <h2>Finance role connected</h2>
+              <p>{statusMessage}</p>
+            </div>
+          </div>
 
-          <p>{statusMessage}</p>
-
-          <p className="finance-dashboard__flow">
-            Student / Faculty verification → Finance ticket → payment completed
-            → Registrar action.
-          </p>
+          <div className="finance-dashboard__workflow">
+            <span>Student / Faculty verification</span>
+            <strong>→</strong>
+            <span>Finance ticket</span>
+            <strong>→</strong>
+            <span>Payment completed</span>
+            <strong>→</strong>
+            <span>Registrar action</span>
+          </div>
         </section>
-      </div>
+      </main>
     </DashboardLayout>
   );
 }
@@ -1292,61 +1074,37 @@ export default function FinanceDashboard() {
 // SMALL COMPONENTS
 // ============================================================
 
-function InfoBox({ label, value }: { label: string; value: string }) {
+function InfoBox({
+  label,
+  value,
+  emphasized = false,
+}: {
+  label: string;
+  value: string;
+  emphasized?: boolean;
+}) {
   return (
     <div
-      style={{
-        padding: "11px 13px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "10px",
-        background: "#f8fafc",
-      }}
+      className={`finance-dashboard__info-box ${
+        emphasized ? "finance-dashboard__info-box--emphasized" : ""
+      }`}
     >
-      <div
-        style={{
-          marginBottom: "4px",
-          color: "#64748b",
-          fontSize: "10px",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: ".04em",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          color: "#0f172a",
-          fontSize: "13px",
-          fontWeight: 750,
-          overflowWrap: "anywhere",
-        }}
-      >
-        {value}
-      </div>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
 function StatusBadge({
   label,
-  style,
+  variantClass,
 }: {
   label: string;
-  style: CSSProperties;
+  variantClass: string;
 }) {
   return (
     <span
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "5px 9px",
-        borderRadius: "999px",
-        fontSize: "11px",
-        fontWeight: 800,
-        ...style,
-      }}
+      className={`finance-dashboard__status-badge ${variantClass}`}
     >
       {label}
     </span>
@@ -1358,32 +1116,12 @@ function FieldLabel({
   children,
 }: {
   label: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <label
-      style={{
-        display: "grid",
-        gap: "7px",
-        color: "#334155",
-        fontSize: "13px",
-        fontWeight: 700,
-      }}
-    >
-      {label}
-
+    <label className="finance-dashboard__field">
+      <span>{label}</span>
       {children}
     </label>
   );
 }
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  boxSizing: "border-box",
-  padding: "11px 12px",
-  border: "1px solid #cbd5e1",
-  borderRadius: "10px",
-  background: "#ffffff",
-  color: "#0f172a",
-  outline: "none",
-};
