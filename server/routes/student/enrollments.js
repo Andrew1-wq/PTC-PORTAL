@@ -1506,7 +1506,6 @@ router.get("/current", async (req, res) => {
   }
 });
 
-
 // =====================================================
 // GET STUDENT OFFICIAL SCHEDULE
 //
@@ -1624,11 +1623,7 @@ router.get("/schedule", async (req, res) => {
     const studentResponse = {
       student_id: studentId,
       student_number: student.student_number,
-      student_name: [
-        student.first_name,
-        student.middle_name,
-        student.last_name,
-      ]
+      student_name: [student.first_name, student.middle_name, student.last_name]
         .filter(Boolean)
         .join(" "),
       course: {
@@ -1756,8 +1751,7 @@ router.get("/schedule", async (req, res) => {
         },
 
         faculty: {
-          faculty_id:
-            row.faculty_id !== null ? Number(row.faculty_id) : null,
+          faculty_id: row.faculty_id !== null ? Number(row.faculty_id) : null,
           faculty_name: row.faculty_name || null,
         },
 

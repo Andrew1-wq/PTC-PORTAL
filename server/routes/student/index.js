@@ -4,6 +4,7 @@ import enrollmentRoutes from "./enrollments.js";
 import academicRoutes from "./academicRecords.js";
 import profileRoutes from "./profile.js";
 import documentRequestRoutes from "./documentRequests.js";
+import transactionRoutes from "./transactions.js";
 
 console.log("✅ STUDENT INDEX ROUTER LOADED");
 console.log("✅ STUDENT ACADEMIC RECORD ROUTER REGISTERED");
@@ -16,5 +17,6 @@ router.use("/enrollments", enrollmentRoutes);
 router.use("/academic-records", academicRoutes);
 router.use("/profile", profileRoutes);
 router.use("/document-requests", documentRequestRoutes);
+router.use("/transactions", transactionRoutes);
 
 export default router;
