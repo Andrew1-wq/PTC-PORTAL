@@ -20,10 +20,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/StudentTransactions.css";
 
-const STUDENT_TRANSACTIONS_API =
-  "http://localhost:3000/api/student/transactions";
+const STUDENT_TRANSACTIONS_API = apiUrl("/api/student/transactions");
 
 type PaymentStatus =
   | "Pending Payment"
@@ -518,7 +518,11 @@ export default function MyTransactions() {
         {loading && (
           <section className="my-transactions__state-card" aria-live="polite">
             <div className="my-transactions__state-content">
-              <RefreshCcw className="is-spinning" size={28} aria-hidden="true" />
+              <RefreshCcw
+                className="is-spinning"
+                size={28}
+                aria-hidden="true"
+              />
               <strong>Loading your transactions...</strong>
               <span>Please wait while we retrieve your finance records.</span>
             </div>
@@ -548,7 +552,10 @@ export default function MyTransactions() {
               const academicPeriod = documentRequest?.academic_period;
 
               return (
-                <article className="my-transactions__ticket" key={item.ticket_id}>
+                <article
+                  className="my-transactions__ticket"
+                  key={item.ticket_id}
+                >
                   <div className="my-transactions__ticket-main">
                     <div className="my-transactions__ticket-toprow">
                       <div className="my-transactions__ticket-identity">
@@ -569,9 +576,7 @@ export default function MyTransactions() {
                           <div className="my-transactions__ticket-title-row">
                             <h3>{item.transaction.transaction_name}</h3>
                             <span className="my-transactions__workflow-badge">
-                              {getWorkflowLabel(
-                                item.transaction.workflow_type,
-                              )}
+                              {getWorkflowLabel(item.transaction.workflow_type)}
                             </span>
                           </div>
 
@@ -810,9 +815,8 @@ export default function MyTransactions() {
               <p>
                 Pending Payment means payment has not yet been completed. Paid
                 means Finance has confirmed the payment. Document-related
-                transactions may continue to Registrar processing after
-                payment. Finance-only transactions do not require Registrar
-                processing.
+                transactions may continue to Registrar processing after payment.
+                Finance-only transactions do not require Registrar processing.
               </p>
             </div>
           </section>

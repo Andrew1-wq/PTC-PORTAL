@@ -13,10 +13,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/announcementDetailsFaculty.css";
 
-const API_BASE_URL = "http://localhost:3000";
-const FILE_BASE_URL = "http://localhost:3000";
+const ANNOUNCEMENTS_API_URL = apiUrl("/api/announcements");
 
 interface Attachment {
   file_id: number;
@@ -74,16 +74,16 @@ function formatAuthor(value: string | null | undefined) {
   return value?.trim() || "PTC Administration";
 }
 
-function includesFacultyAudience(
-  recipients: Recipient[] | undefined,
-) {
-  return Array.isArray(recipients) &&
+function includesFacultyAudience(recipients: Recipient[] | undefined) {
+  return (
+    Array.isArray(recipients) &&
     recipients.some(
       (recipient) =>
         String(recipient.role_name || "")
           .trim()
           .toLowerCase() === "faculty",
-    );
+    )
+  );
 }
 
 function formatFileSize(bytes: number) {
@@ -107,7 +107,7 @@ function formatFileSize(bytes: number) {
 function buildFileUrl(path: string) {
   const normalized = path.replace(/\\/g, "/").replace(/^\/+/, "");
 
-  return `${FILE_BASE_URL}/${normalized}`;
+  return apiUrl(normalized);
 }
 
 export default function AnnouncementDF() {
@@ -158,7 +158,7 @@ export default function AnnouncementDF() {
         }
 
         const response = await authService.authFetch(
-          `${API_BASE_URL}/api/announcements/${announcementId}`,
+          `${ANNOUNCEMENTS_API_URL}/${announcementId}`,
           {
             method: "GET",
             signal: controller.signal,
@@ -193,18 +193,14 @@ export default function AnnouncementDF() {
 
         if (response.status === 403) {
           const message =
-            "announcement_id" in data
-              ? undefined
-              : data.message || data.error;
+            "announcement_id" in data ? undefined : data.message || data.error;
 
           throw new Error(message || "Faculty access is required.");
         }
 
         if (!response.ok) {
           const message =
-            "announcement_id" in data
-              ? undefined
-              : data.message || data.error;
+            "announcement_id" in data ? undefined : data.message || data.error;
 
           throw new Error(message || "Announcement could not be loaded.");
         }
@@ -254,7 +250,7 @@ export default function AnnouncementDF() {
 
         if (requestError instanceof TypeError) {
           setError(
-            "Unable to connect to the announcement server. Make sure the backend is running on port 3000.",
+            "Unable to connect to the announcement server. Please make sure the backend server is running.",
           );
           return;
         }

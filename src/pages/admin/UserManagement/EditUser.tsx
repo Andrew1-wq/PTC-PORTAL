@@ -12,9 +12,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/AdminEditUser.css";
 
-const API_BASE_URL = "http://localhost:3000/api/users";
+const API_BASE_URL = apiUrl("/api/users");
 
 const USER_ROLES = [
   "Admin",

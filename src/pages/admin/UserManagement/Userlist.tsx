@@ -18,9 +18,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/AdminUserList.css";
 
-const API_BASE_URL = "http://localhost:3000/api/users";
+const API_BASE_URL = apiUrl("/api/users");
 
 type User = {
   user_id: number;
@@ -578,8 +579,7 @@ export default function UserList() {
                   </tr>
                 ) : (
                   filteredUsers.map((currentUser) => {
-                    const actionLoading =
-                      actionUserId === currentUser.user_id;
+                    const actionLoading = actionUserId === currentUser.user_id;
                     const roleClass = normalizeRoleClass(currentUser.role);
                     const initial =
                       currentUser.username?.trim().charAt(0).toUpperCase() ||

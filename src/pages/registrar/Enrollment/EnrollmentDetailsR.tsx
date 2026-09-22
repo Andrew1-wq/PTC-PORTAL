@@ -3,9 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/EnrollmementDetailsR.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/enrollments";
+const API_BASE_URL = apiUrl("/api/registrar/enrollments");
 
 // =====================================================
 // TYPES
@@ -4508,13 +4509,8 @@ export default function EnrollmentDetailsR() {
 
         <section className="enrollment-details-header">
           <div className="enrollment-details-identity">
-            <div
-              className="enrollment-details-avatar"
-              aria-hidden="true"
-            >
-              {enrollment.student.first_name
-                ?.charAt(0)
-                .toUpperCase() || "S"}
+            <div className="enrollment-details-avatar" aria-hidden="true">
+              {enrollment.student.first_name?.charAt(0).toUpperCase() || "S"}
             </div>
 
             <div className="enrollment-details-identity-copy">
@@ -4527,9 +4523,7 @@ export default function EnrollmentDetailsR() {
 
                 <div className="enrollment-header-badges">
                   <span
-                    className={getStatusClass(
-                      enrollment.enrollment_status,
-                    )}
+                    className={getStatusClass(enrollment.enrollment_status)}
                   >
                     {enrollment.enrollment_status}
                   </span>
@@ -4561,16 +4555,12 @@ export default function EnrollmentDetailsR() {
 
             <div>
               <span>Academic Year</span>
-              <strong>
-                {enrollment.academic_period.academic_year}
-              </strong>
+              <strong>{enrollment.academic_period.academic_year}</strong>
             </div>
 
             <div>
               <span>Semester</span>
-              <strong>
-                {enrollment.academic_period.semester_name}
-              </strong>
+              <strong>{enrollment.academic_period.semester_name}</strong>
             </div>
           </div>
         </section>

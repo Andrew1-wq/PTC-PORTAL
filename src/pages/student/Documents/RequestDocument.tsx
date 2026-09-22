@@ -14,10 +14,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/StudentRequestDocument.css";
 
-const DOCUMENT_REQUEST_API =
-  "http://localhost:3000/api/student/document-requests";
+const DOCUMENT_REQUEST_API = apiUrl("/api/student/document-requests");
 
 type DocumentType = "COR" | "COG";
 
@@ -474,7 +474,9 @@ export default function RequestDocument() {
 
           <form className="request-document-form" onSubmit={handleSubmit}>
             <label className="request-document-field">
-              <span className="request-document-field__label">Document Type</span>
+              <span className="request-document-field__label">
+                Document Type
+              </span>
               <select
                 value={documentType}
                 onChange={(event) =>

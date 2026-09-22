@@ -18,10 +18,11 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/AdminAnnouncementDetails.css";
 
-const API_BASE_URL = "http://localhost:3000/api/announcement-management";
-const FILE_BASE_URL = "http://localhost:3000";
+const API_BASE_URL = apiUrl("/api/announcement-management");
+const FILE_BASE_URL = "API_BASE_URL";
 
 type Recipient = {
   role_id: number;
@@ -518,8 +519,9 @@ export default function AnnouncementDetails() {
                       <span className="admin-announcement-details-view__attachment-copy">
                         <strong>{file.original_name}</strong>
                         <small>
-                          {[file.mime_type, fileSize].filter(Boolean).join(" · ") ||
-                            "Attachment"}
+                          {[file.mime_type, fileSize]
+                            .filter(Boolean)
+                            .join(" · ") || "Attachment"}
                         </small>
                       </span>
 

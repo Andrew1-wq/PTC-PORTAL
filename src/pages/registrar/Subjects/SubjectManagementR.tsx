@@ -17,11 +17,12 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import SubjectModal, { type Subject } from "./Subjectmodal";
 import DeleteSubjectModal from "./DeleteSubjectmodal";
 import "../../../styles/SubjectManagementR2.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/subjects";
+const API_BASE_URL = apiUrl("/api/registrar/subjects");
 
 interface SubjectsResponse {
   success: boolean;
@@ -200,8 +201,7 @@ export default function SubjectManagementR() {
       (summary, subject) => ({
         units: summary.units + Number(subject.units || 0),
         lecture: summary.lecture + Number(subject.lecture_hours || 0),
-        laboratory:
-          summary.laboratory + Number(subject.laboratory_hours || 0),
+        laboratory: summary.laboratory + Number(subject.laboratory_hours || 0),
       }),
       { units: 0, lecture: 0, laboratory: 0 },
     );
@@ -443,7 +443,11 @@ export default function SubjectManagementR() {
               <div className="registrar-subject-management__active-filter">
                 <Search size={14} aria-hidden="true" />
                 Search: <strong>{debouncedSearch}</strong>
-                <button type="button" onClick={clearSearch} aria-label="Clear search">
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  aria-label="Clear search"
+                >
                   <X size={13} aria-hidden="true" />
                 </button>
               </div>
@@ -469,7 +473,10 @@ export default function SubjectManagementR() {
               </button>
             </div>
           ) : loading ? (
-            <div className="registrar-subject-management__table-wrap" aria-busy="true">
+            <div
+              className="registrar-subject-management__table-wrap"
+              aria-busy="true"
+            >
               <table className="registrar-subject-management__table">
                 <thead>
                   <tr>
@@ -484,12 +491,24 @@ export default function SubjectManagementR() {
                 <tbody>
                   {Array.from({ length: 6 }).map((_, index) => (
                     <tr key={`subject-skeleton-${index}`}>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--subject" /></td>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--short" /></td>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--medium" /></td>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--wide" /></td>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--medium" /></td>
-                      <td><span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--actions" /></td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--subject" />
+                      </td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--short" />
+                      </td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--medium" />
+                      </td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--wide" />
+                      </td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--medium" />
+                      </td>
+                      <td>
+                        <span className="registrar-subject-management__skeleton registrar-subject-management__skeleton--actions" />
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -501,7 +520,9 @@ export default function SubjectManagementR() {
                 <BookOpen size={25} aria-hidden="true" />
               </span>
               <div>
-                <h3>{debouncedSearch ? "No matching subjects" : "No subjects yet"}</h3>
+                <h3>
+                  {debouncedSearch ? "No matching subjects" : "No subjects yet"}
+                </h3>
                 <p>
                   {debouncedSearch
                     ? "No subject matches the current search. Clear it or try another code, name, or description."
@@ -559,19 +580,29 @@ export default function SubjectManagementR() {
                         <td>
                           <span className="registrar-subject-management__units-badge">
                             {formatNumber(Number(subject.units || 0))}
-                            <small>{Number(subject.units) === 1 ? " unit" : " units"}</small>
+                            <small>
+                              {Number(subject.units) === 1 ? " unit" : " units"}
+                            </small>
                           </span>
                         </td>
                         <td>
                           <div className="registrar-subject-management__hours">
                             <span>
                               <Clock3 size={14} aria-hidden="true" />
-                              <strong>{formatNumber(Number(subject.lecture_hours || 0))}</strong>
+                              <strong>
+                                {formatNumber(
+                                  Number(subject.lecture_hours || 0),
+                                )}
+                              </strong>
                               Lecture
                             </span>
                             <span>
                               <FlaskConical size={14} aria-hidden="true" />
-                              <strong>{formatNumber(Number(subject.laboratory_hours || 0))}</strong>
+                              <strong>
+                                {formatNumber(
+                                  Number(subject.laboratory_hours || 0),
+                                )}
+                              </strong>
                               Laboratory
                             </span>
                           </div>
@@ -620,8 +651,11 @@ export default function SubjectManagementR() {
               {totalPages > 0 && (
                 <footer className="registrar-subject-management__pagination">
                   <p>
-                    Showing <strong>{startItem}–{endItem}</strong> of{" "}
-                    <strong>{totalSubjects}</strong> subjects
+                    Showing{" "}
+                    <strong>
+                      {startItem}–{endItem}
+                    </strong>{" "}
+                    of <strong>{totalSubjects}</strong> subjects
                   </p>
 
                   <div className="registrar-subject-management__pagination-controls">
@@ -654,7 +688,9 @@ export default function SubjectManagementR() {
                     <button
                       type="button"
                       onClick={() => goToPage(page + 1)}
-                      disabled={page === totalPages || totalPages === 0 || loading}
+                      disabled={
+                        page === totalPages || totalPages === 0 || loading
+                      }
                     >
                       Next
                     </button>

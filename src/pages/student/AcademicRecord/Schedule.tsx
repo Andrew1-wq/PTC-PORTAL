@@ -1,13 +1,8 @@
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import { useNavigate } from "react-router-dom";
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import "../../../styles/StudentSchedule.css";
 
 import FullCalendar from "@fullcalendar/react";
@@ -25,8 +20,7 @@ import {
   X,
 } from "lucide-react";
 
-const SCHEDULE_API_URL =
-  "http://localhost:3000/api/student/enrollments/schedule";
+const SCHEDULE_API_URL = apiUrl("/api/student/enrollments/schedule");
 
 interface Holiday {
   date: string;
@@ -267,9 +261,7 @@ function formatMinutesForDisplay(totalMinutes: number): string {
   return `${hour12}:${String(minute).padStart(2, "0")} ${meridiem}`;
 }
 
-function parseScheduleTimeRange(
-  value: string | null,
-): {
+function parseScheduleTimeRange(value: string | null): {
   startTime: string;
   endTime: string;
   startMinutes: number;
@@ -319,8 +311,9 @@ export default function StudentSchedule() {
 
   const [holidays, setHolidays] = useState<Holiday[]>([]);
 
-  const [scheduleData, setScheduleData] =
-    useState<ScheduleResponse | null>(null);
+  const [scheduleData, setScheduleData] = useState<ScheduleResponse | null>(
+    null,
+  );
 
   const [scheduleLoading, setScheduleLoading] = useState(true);
   const [scheduleError, setScheduleError] = useState("");
@@ -384,9 +377,7 @@ export default function StudentSchedule() {
         const data = responseData as ScheduleResponse;
 
         if (!data.success || !Array.isArray(data.subjects)) {
-          throw new Error(
-            data.message || "Invalid Student schedule response.",
-          );
+          throw new Error(data.message || "Invalid Student schedule response.");
         }
 
         setScheduleData(data);
@@ -484,9 +475,7 @@ export default function StudentSchedule() {
 
     scheduledSubjects.forEach((subject) => {
       const days = parseScheduleDays(subject.offering.schedule_days);
-      const parsedTime = parseScheduleTimeRange(
-        subject.offering.schedule_time,
-      );
+      const parsedTime = parseScheduleTimeRange(subject.offering.schedule_time);
 
       if (!parsedTime) {
         return;
@@ -535,9 +524,7 @@ export default function StudentSchedule() {
 
     scheduledSubjects.forEach((subject) => {
       const daysOfWeek = parseScheduleDays(subject.offering.schedule_days);
-      const parsedTime = parseScheduleTimeRange(
-        subject.offering.schedule_time,
-      );
+      const parsedTime = parseScheduleTimeRange(subject.offering.schedule_time);
 
       if (daysOfWeek.length === 0 || !parsedTime) {
         return;
@@ -595,8 +582,8 @@ export default function StudentSchedule() {
 
   const totalWeeklyMeetings = weeklyMeetings.length;
   const activeSection =
-    scheduledSubjects.find((subject) => subject.section.section_name)
-      ?.section.section_name || "Not assigned";
+    scheduledSubjects.find((subject) => subject.section.section_name)?.section
+      .section_name || "Not assigned";
 
   const handlePreviousMonth = () => {
     const calendarApi = calendarRef.current?.getApi();
@@ -737,7 +724,10 @@ export default function StudentSchedule() {
           </div>
         </section>
 
-        <section className="schedule-summary-grid" aria-label="Schedule summary">
+        <section
+          className="schedule-summary-grid"
+          aria-label="Schedule summary"
+        >
           <div className="schedule-summary-card">
             <span className="schedule-summary-icon">
               <BookOpen size={19} />
@@ -790,9 +780,7 @@ export default function StudentSchedule() {
             <div>
               <span className="schedule-section-kicker">OFFICIAL CLASSES</span>
               <h2>
-                {viewMode === "month"
-                  ? "Monthly Calendar"
-                  : "Weekly Schedule"}
+                {viewMode === "month" ? "Monthly Calendar" : "Weekly Schedule"}
               </h2>
             </div>
 
@@ -838,17 +826,15 @@ export default function StudentSchedule() {
             </div>
           )}
 
-          {!scheduleLoading &&
-            !scheduleError &&
-            !scheduleData?.enrollment && (
-              <div className="schedule-state">
-                <strong>No approved enrollment yet</strong>
-                <p>
-                  Your official class schedule will appear after Registrar
-                  approval.
-                </p>
-              </div>
-            )}
+          {!scheduleLoading && !scheduleError && !scheduleData?.enrollment && (
+            <div className="schedule-state">
+              <strong>No approved enrollment yet</strong>
+              <p>
+                Your official class schedule will appear after Registrar
+                approval.
+              </p>
+            </div>
+          )}
 
           {!scheduleLoading &&
             !scheduleError &&
@@ -937,16 +923,11 @@ export default function StudentSchedule() {
                               }
                             >
                               <span className="weekly-class-time">
-                                {formatMinutesForDisplay(
-                                  meeting.startMinutes,
-                                )}{" "}
-                                –{" "}
-                                {formatMinutesForDisplay(meeting.endMinutes)}
+                                {formatMinutesForDisplay(meeting.startMinutes)}{" "}
+                                – {formatMinutesForDisplay(meeting.endMinutes)}
                               </span>
 
-                              <strong>
-                                {meeting.subject.subject_code}
-                              </strong>
+                              <strong>{meeting.subject.subject_code}</strong>
 
                               <span className="weekly-class-name">
                                 {meeting.subject.subject_name}
@@ -977,9 +958,7 @@ export default function StudentSchedule() {
               <h3>Holidays This Month</h3>
             </div>
 
-            <span className="section-count">
-              {currentMonthHolidays.length}
-            </span>
+            <span className="section-count">{currentMonthHolidays.length}</span>
           </div>
 
           {holidays.length === 0 ? (
@@ -1016,9 +995,7 @@ export default function StudentSchedule() {
               <h3>Subject Legend</h3>
             </div>
 
-            <span className="section-count">
-              {scheduledSubjects.length}
-            </span>
+            <span className="section-count">{scheduledSubjects.length}</span>
           </div>
 
           <div className="legend-items">
@@ -1152,10 +1129,7 @@ export default function StudentSchedule() {
                   This schedule comes from your approved official enrollment.
                 </span>
 
-                <button
-                  type="button"
-                  onClick={() => setSelectedSubject(null)}
-                >
+                <button type="button" onClick={() => setSelectedSubject(null)}>
                   Close
                 </button>
               </div>

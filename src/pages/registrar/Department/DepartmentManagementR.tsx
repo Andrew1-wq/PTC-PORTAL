@@ -14,11 +14,12 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import DepartmentModal from "./DepartmentModal";
 import type { Department } from "./DepartmentModal";
 import "../../../styles/DepartmentManagementR.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/departments";
+const API_BASE_URL = apiUrl("/api/registrar/departments");
 
 interface DepartmentResponse {
   success: boolean;

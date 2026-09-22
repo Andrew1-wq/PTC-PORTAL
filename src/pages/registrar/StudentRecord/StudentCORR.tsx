@@ -14,8 +14,9 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/students";
+const API_BASE_URL = apiUrl("/api/registrar/students");
 
 // ============================================================
 // TYPES

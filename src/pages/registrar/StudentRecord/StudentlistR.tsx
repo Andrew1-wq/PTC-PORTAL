@@ -16,9 +16,10 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/RegistrarStudentlist.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/students";
+const API_BASE_URL = apiUrl("/api/registrar/students");
 
 interface Student {
   student_id: number;

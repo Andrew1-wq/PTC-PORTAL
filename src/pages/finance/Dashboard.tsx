@@ -20,7 +20,7 @@ import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
 import "../../styles/FinanceDashboard.css";
 
-const FINANCE_DASHBOARD_API = "http://localhost:3000/api/finance/dashboard";
+import { apiUrl } from "../../services/api";
 
 const FINANCE_TICKETS_API = "http://localhost:3000/api/finance/tickets";
 
@@ -287,12 +287,15 @@ export default function FinanceDashboard() {
     try {
       setDashboardLoading(true);
 
-      const response = await authService.authFetch(FINANCE_DASHBOARD_API, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
+      const response = await authService.authFetch(
+        apiUrl("/api/finance/dashboard"),
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json",
+          },
         },
-      });
+      );
 
       if (response.status === 401) {
         authService.logout();
@@ -749,10 +752,7 @@ export default function FinanceDashboard() {
             >
               {searching ? (
                 <>
-                  <Loader2
-                    size={17}
-                    className="finance-dashboard__spin"
-                  />
+                  <Loader2 size={17} className="finance-dashboard__spin" />
                   Searching...
                 </>
               ) : (
@@ -976,9 +976,7 @@ export default function FinanceDashboard() {
                       className="finance-dashboard__input"
                       type="text"
                       value={receiptNumber}
-                      onChange={(event) =>
-                        setReceiptNumber(event.target.value)
-                      }
+                      onChange={(event) => setReceiptNumber(event.target.value)}
                       placeholder="Example: OR-000001"
                       disabled={paying}
                     />
@@ -1103,9 +1101,7 @@ function StatusBadge({
   variantClass: string;
 }) {
   return (
-    <span
-      className={`finance-dashboard__status-badge ${variantClass}`}
-    >
+    <span className={`finance-dashboard__status-badge ${variantClass}`}>
       {label}
     </span>
   );

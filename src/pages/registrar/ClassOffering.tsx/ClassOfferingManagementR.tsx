@@ -17,9 +17,8 @@ import {
 } from "lucide-react";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
-
 import { authService } from "../../../services/auth.service";
-
+import { apiUrl } from "../../../services/api";
 import "../../../styles/ClassOfferingManagementR.css";
 
 import OfferingSetupFilters, {
@@ -54,7 +53,7 @@ import PrepareSectionSubjectsModal from "./PrepareSectionSubjectsModal";
 // API
 // =====================================================
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/offerings";
+const API_BASE_URL = apiUrl("/api/registrar/offerings");
 
 // =====================================================
 // SAFE JSON

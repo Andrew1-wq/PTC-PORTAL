@@ -16,11 +16,12 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import AddCourseModal from "./AddCourseModal";
 import EditCourseModal from "./EditCourseModal";
 import "../../../styles/CoursemanagementR.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/courses";
+const API_BASE_URL = apiUrl("/api/registrar/courses");
 
 interface Course {
   course_id: number;

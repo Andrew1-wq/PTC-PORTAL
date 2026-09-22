@@ -1,5 +1,6 @@
-const API_BASE_URL = "http://localhost:3000";
+import { API_BASE_URL } from "./api";
 
+export { API_BASE_URL };
 // ======================
 // User Roles
 // ======================
@@ -39,7 +40,6 @@ export interface ResendOtpResponse {
   retry_after?: number;
 }
 
-
 // ======================
 // Forgot Password
 // ======================
@@ -61,7 +61,6 @@ export interface ResetPasswordResponse {
   success: boolean;
   message: string;
 }
-
 
 // ======================
 // Backend Auth User
@@ -153,7 +152,6 @@ function mapBackendUser(user: BackendUser): User {
   };
 }
 
-
 const LOGIN_COOLDOWN_UNTIL_KEY = "login_cooldown_until";
 
 function saveLoginCooldownState(lockedUntil: number): void {
@@ -164,8 +162,7 @@ function saveLoginCooldownState(lockedUntil: number): void {
 }
 
 function getLoginCooldownRemainingState(): number {
-  const storedUntil =
-    sessionStorage.getItem(LOGIN_COOLDOWN_UNTIL_KEY);
+  const storedUntil = sessionStorage.getItem(LOGIN_COOLDOWN_UNTIL_KEY);
 
   if (!storedUntil) {
     return 0;
@@ -178,10 +175,7 @@ function getLoginCooldownRemainingState(): number {
     return 0;
   }
 
-  const remaining = Math.max(
-    0,
-    Math.ceil((lockedUntil - Date.now()) / 1000),
-  );
+  const remaining = Math.max(0, Math.ceil((lockedUntil - Date.now()) / 1000));
 
   if (remaining <= 0) {
     sessionStorage.removeItem(LOGIN_COOLDOWN_UNTIL_KEY);
@@ -277,8 +271,7 @@ export const authService = {
     // =====================================================
 
     if (!response.ok) {
-      const message =
-        data.error || data.message || "Login failed.";
+      const message = data.error || data.message || "Login failed.";
 
       const retryAfter =
         Number.isFinite(Number(data.retry_after)) &&
@@ -286,13 +279,8 @@ export const authService = {
           ? Number(data.retry_after)
           : 0;
 
-      if (
-        (response.status === 429 || data.locked === true) &&
-        retryAfter > 0
-      ) {
-        saveLoginCooldownState(
-          Date.now() + retryAfter * 1000,
-        );
+      if ((response.status === 429 || data.locked === true) && retryAfter > 0) {
+        saveLoginCooldownState(Date.now() + retryAfter * 1000);
       }
 
       throw new Error(message);
@@ -354,9 +342,7 @@ export const authService = {
         );
       }
 
-      throw new Error(
-        data.error || data.message || "Unable to resend OTP.",
-      );
+      throw new Error(data.error || data.message || "Unable to resend OTP.");
     }
 
     this.savePendingUsername(cleanUsername);
@@ -367,9 +353,7 @@ export const authService = {
         ? Number(data.cooldown_seconds)
         : 60;
 
-    this.saveOtpResendAvailableAt(
-      Date.now() + cooldownSeconds * 1000,
-    );
+    this.saveOtpResendAvailableAt(Date.now() + cooldownSeconds * 1000);
 
     return data;
   },
@@ -511,30 +495,25 @@ export const authService = {
   // requestId returned
   // =====================================================
 
-  async forgotPassword(
-    username: string,
-  ): Promise<ForgotPasswordResponse> {
+  async forgotPassword(username: string): Promise<ForgotPasswordResponse> {
     const cleanUsername = username.trim();
 
     if (!cleanUsername) {
       throw new Error("Username is required.");
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/auth/forgot-password`,
-      {
-        method: "POST",
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
+      method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-
-        body: JSON.stringify({
-          username: cleanUsername,
-        }),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+
+      body: JSON.stringify({
+        username: cleanUsername,
+      }),
+    });
 
     const data: ForgotPasswordResponse & {
       error?: string;
@@ -586,9 +565,7 @@ export const authService = {
     }
 
     if (!/^\d{6}$/.test(cleanOtp)) {
-      throw new Error(
-        "Verification code must be 6 digits.",
-      );
+      throw new Error("Verification code must be 6 digits.");
     }
 
     const response = await fetch(
@@ -621,9 +598,7 @@ export const authService = {
     }
 
     if (!data.verified) {
-      throw new Error(
-        "Password reset verification was not completed.",
-      );
+      throw new Error("Password reset verification was not completed.");
     }
 
     if (!data.resetToken) {
@@ -646,9 +621,7 @@ export const authService = {
   // The frontend must replace the old requestId.
   // =====================================================
 
-  async resendResetOtp(
-    requestId: string,
-  ): Promise<ForgotPasswordResponse> {
+  async resendResetOtp(requestId: string): Promise<ForgotPasswordResponse> {
     const cleanRequestId = requestId.trim();
 
     if (!cleanRequestId) {
@@ -678,16 +651,12 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(
-        data.error ||
-          data.message ||
-          "Unable to resend the verification code.",
+        data.error || data.message || "Unable to resend the verification code.",
       );
     }
 
     if (!data.requestId) {
-      throw new Error(
-        "New password reset request ID was not returned.",
-      );
+      throw new Error("New password reset request ID was not returned.");
     }
 
     return data;
@@ -726,9 +695,7 @@ export const authService = {
     }
 
     if (!cleanResetToken) {
-      throw new Error(
-        "Password reset authorization is missing.",
-      );
+      throw new Error("Password reset authorization is missing.");
     }
 
     if (!newPassword) {
@@ -736,28 +703,23 @@ export const authService = {
     }
 
     if (newPassword.length < 8) {
-      throw new Error(
-        "Password must be at least 8 characters long.",
-      );
+      throw new Error("Password must be at least 8 characters long.");
     }
 
-    const response = await fetch(
-      `${API_BASE_URL}/auth/forgot-password/reset`,
-      {
-        method: "POST",
+    const response = await fetch(`${API_BASE_URL}/auth/forgot-password/reset`, {
+      method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-
-        body: JSON.stringify({
-          requestId: cleanRequestId,
-          resetToken: cleanResetToken,
-          newPassword,
-        }),
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
-    );
+
+      body: JSON.stringify({
+        requestId: cleanRequestId,
+        resetToken: cleanResetToken,
+        newPassword,
+      }),
+    });
 
     const data: ResetPasswordResponse & {
       error?: string;
@@ -765,16 +727,12 @@ export const authService = {
 
     if (!response.ok) {
       throw new Error(
-        data.error ||
-          data.message ||
-          "Unable to reset the password.",
+        data.error || data.message || "Unable to reset the password.",
       );
     }
 
     return data;
   },
-
-
 
   // =====================================================
   // DEVELOPMENT LOGIN
@@ -1180,5 +1138,3 @@ export const authService = {
     return routes[role];
   },
 };
-
-export { API_BASE_URL };

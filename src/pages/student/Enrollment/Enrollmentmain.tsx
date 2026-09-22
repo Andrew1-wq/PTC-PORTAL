@@ -1,12 +1,13 @@
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useState, type KeyboardEvent } from "react";
 import { BookOpenCheck } from "lucide-react";
 
 import "../../../styles/Enrollmentmain.css";
 
-const API_BASE_URL = "http://localhost:3000/api/student/enrollments";
+const API_BASE_URL = apiUrl("/api/student/enrollments");
 
 // ============================================================
 // TYPES
@@ -463,13 +464,13 @@ export default function Enrollmentmain() {
   // Only one large section can be open at a time.
   // ============================================================
 
-type EnrollmentSectionKey =
-  | "official"
-  | "regular"
-  | "retake"
-  | "carryover"
-  | "blocked"
-  | "completed";
+  type EnrollmentSectionKey =
+    | "official"
+    | "regular"
+    | "retake"
+    | "carryover"
+    | "blocked"
+    | "completed";
 
   const [expandedSection, setExpandedSection] =
     useState<EnrollmentSectionKey | null>(null);
@@ -1565,8 +1566,8 @@ type EnrollmentSectionKey =
                   <strong>Awaiting Registrar placement</strong>
 
                   <p>
-                    This {enrollmentType} subject is part of your enrollment, but
-                    its official section/offering has not been assigned yet.
+                    This {enrollmentType} subject is part of your enrollment,
+                    but its official section/offering has not been assigned yet.
                   </p>
 
                   <small>
@@ -2307,7 +2308,6 @@ type EnrollmentSectionKey =
                 aria-expanded={expandedSection === "official"}
                 onClick={() => toggleEnrollmentSection("official")}
                 onKeyDown={(event) => handleSectionKeyDown(event, "official")}
-                
               >
                 <div>
                   <span className="enrollment-eyebrow">
@@ -2360,7 +2360,8 @@ type EnrollmentSectionKey =
                         </strong>{" "}
                         {officialSummary.placed_subjects} of{" "}
                         {officialSummary.total_subjects} subject
-                        {officialSummary.total_subjects !== 1 ? "s" : ""} placed.
+                        {officialSummary.total_subjects !== 1 ? "s" : ""}{" "}
+                        placed.
                         <br />
                         <small>
                           Official load: {officialSummary.total_units} units.
@@ -2377,8 +2378,8 @@ type EnrollmentSectionKey =
                         <strong>No enrolled subjects found</strong>
 
                         <p>
-                          The enrollment exists, but no active enrollment subjects
-                          were returned.
+                          The enrollment exists, but no active enrollment
+                          subjects were returned.
                         </p>
                       </div>
                     </div>
@@ -2406,7 +2407,6 @@ type EnrollmentSectionKey =
             aria-expanded={expandedSection === "regular"}
             onClick={() => toggleEnrollmentSection("regular")}
             onKeyDown={(event) => handleSectionKeyDown(event, "regular")}
-            
           >
             <div>
               <span className="enrollment-eyebrow">Academic Eligibility</span>
@@ -2443,8 +2443,8 @@ type EnrollmentSectionKey =
                     <strong>No Regular subjects available</strong>
 
                     <p>
-                      There are no Regular curriculum subjects currently eligible
-                      for this term.
+                      There are no Regular curriculum subjects currently
+                      eligible for this term.
                     </p>
                   </div>
                 </div>
@@ -2475,10 +2475,7 @@ type EnrollmentSectionKey =
               tabIndex={0}
               aria-expanded={expandedSection === "carryover"}
               onClick={() => toggleEnrollmentSection("carryover")}
-              onKeyDown={(event) =>
-                handleSectionKeyDown(event, "carryover")
-              }
-              
+              onKeyDown={(event) => handleSectionKeyDown(event, "carryover")}
             >
               <div>
                 <span className="enrollment-eyebrow">
@@ -2530,7 +2527,6 @@ type EnrollmentSectionKey =
             aria-expanded={expandedSection === "retake"}
             onClick={() => toggleEnrollmentSection("retake")}
             onKeyDown={(event) => handleSectionKeyDown(event, "retake")}
-            
           >
             <div>
               <span className="enrollment-eyebrow">Retake Eligibility</span>
@@ -2598,7 +2594,6 @@ type EnrollmentSectionKey =
               aria-expanded={expandedSection === "blocked"}
               onClick={() => toggleEnrollmentSection("blocked")}
               onKeyDown={(event) => handleSectionKeyDown(event, "blocked")}
-              
             >
               <div>
                 <span className="enrollment-eyebrow">Not Yet Eligible</span>
@@ -2648,7 +2643,6 @@ type EnrollmentSectionKey =
               aria-expanded={expandedSection === "completed"}
               onClick={() => toggleEnrollmentSection("completed")}
               onKeyDown={(event) => handleSectionKeyDown(event, "completed")}
-              
             >
               <div>
                 <span className="enrollment-eyebrow">Academic Record</span>

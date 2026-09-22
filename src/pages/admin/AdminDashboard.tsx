@@ -20,9 +20,13 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
-import "../styles/dashboard.css";
+import { apiUrl } from "../../services/api";
+import "../../styles/dashboard.css";
 
-const API_BASE_URL = "http://localhost:3000";
+const USERS_API_URL = apiUrl("/api/users");
+const STUDENTS_API_URL = apiUrl("/api/students");
+const ACTIVITY_LOGS_API_URL = apiUrl("/api/activity-logs");
+const ANNOUNCEMENTS_API_URL = apiUrl("/api/announcement-management");
 
 type DataSource = "users" | "students" | "activity" | "announcements";
 
@@ -67,7 +71,14 @@ interface Announcement {
 
 type SourceErrors = Partial<Record<DataSource, string>>;
 
-const ROLE_ORDER = ["Admin", "Registrar", "Program Head", "Faculty", "Student"];
+const ROLE_ORDER = [
+  "Admin",
+  "Registrar",
+  "Program Head",
+  "Faculty",
+  "Finance",
+  "Student",
+];
 
 function getResponseMessage(payload: unknown, fallback: string) {
   if (!payload || Array.isArray(payload) || typeof payload !== "object") {
@@ -212,6 +223,13 @@ function truncate(value: string | null | undefined, limit: number) {
   return `${clean.slice(0, limit).trim()}…`;
 }
 
+function getAdminDisplayName(user: ReturnType<typeof authService.getSession>) {
+  if (!user) return "Administrator";
+
+  const username = String(user.username || "").trim();
+  return username || "Administrator";
+}
+
 export default function AdminDashboard() {
   const navigate = useNavigate();
 
@@ -219,6 +237,7 @@ export default function AdminDashboard() {
   const token = authService.getToken();
   const authenticated = Boolean(user && token);
   const userRole = user?.role;
+  const displayName = getAdminDisplayName(user);
 
   const [users, setUsers] = useState<PortalUser[]>([]);
   const [students, setStudents] = useState<StudentRecord[]>([]);
@@ -260,22 +279,22 @@ export default function AdminDashboard() {
 
       const requests = [
         fetchCollection<PortalUser>(
-          `${API_BASE_URL}/api/users`,
+          USERS_API_URL,
           ["users", "data"],
           controller.signal,
         ),
         fetchCollection<StudentRecord>(
-          `${API_BASE_URL}/api/students`,
+          STUDENTS_API_URL,
           ["students", "data"],
           controller.signal,
         ),
         fetchCollection<ActivityLog>(
-          `${API_BASE_URL}/api/activity-logs`,
+          ACTIVITY_LOGS_API_URL,
           ["logs", "data"],
           controller.signal,
         ),
         fetchCollection<Announcement>(
-          `${API_BASE_URL}/api/announcement-management`,
+          ANNOUNCEMENTS_API_URL,
           ["announcements", "data"],
           controller.signal,
         ),
@@ -369,10 +388,7 @@ export default function AdminDashboard() {
     void loadDashboard(true);
   }, [authenticated, userRole, loadDashboard]);
 
-  const activeUsers = useMemo(
-    () => users.filter(isActiveUser).length,
-    [users],
-  );
+  const activeUsers = useMemo(() => users.filter(isActiveUser).length, [users]);
 
   const inactiveUsers = Math.max(users.length - activeUsers, 0);
 
@@ -529,7 +545,7 @@ export default function AdminDashboard() {
               </span>
               <span>
                 <small>Signed in as</small>
-                <strong>{user.username}</strong>
+                <strong>{displayName}</strong>
               </span>
             </div>
 
@@ -576,7 +592,9 @@ export default function AdminDashboard() {
             </span>
             <span className="admin-dashboard__stat-copy">
               <small>Total Accounts</small>
-              <strong>{loading ? "…" : metricValue("users", users.length)}</strong>
+              <strong>
+                {loading ? "…" : metricValue("users", users.length)}
+              </strong>
               <span>
                 {sourceErrors.users
                   ? "Account data unavailable"
@@ -596,7 +614,9 @@ export default function AdminDashboard() {
             </span>
             <span className="admin-dashboard__stat-copy">
               <small>Active Accounts</small>
-              <strong>{loading ? "…" : metricValue("users", activeUsers)}</strong>
+              <strong>
+                {loading ? "…" : metricValue("users", activeUsers)}
+              </strong>
               <span>
                 {sourceErrors.users
                   ? "Account status unavailable"
@@ -850,7 +870,9 @@ export default function AdminDashboard() {
                   Communications
                 </span>
                 <h2>Recent Announcements</h2>
-                <p>Latest portal announcements available to the administrator.</p>
+                <p>
+                  Latest portal announcements available to the administrator.
+                </p>
               </div>
 
               <button
@@ -885,7 +907,9 @@ export default function AdminDashboard() {
                 <div className="admin-dashboard__empty">
                   <Megaphone size={22} />
                   <strong>No announcements yet</strong>
-                  <p>Create an announcement when portal communication is needed.</p>
+                  <p>
+                    Create an announcement when portal communication is needed.
+                  </p>
                 </div>
               ) : (
                 recentAnnouncements.map((announcement) => (

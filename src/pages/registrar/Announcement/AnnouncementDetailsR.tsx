@@ -19,14 +19,14 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/announcementDetailR.css";
 
 // =====================================================
 // API
 // =====================================================
 
-const API_BASE_URL = "http://localhost:3000";
-const FILE_BASE_URL = "http://localhost:3000";
+const ANNOUNCEMENT_API = apiUrl("/api/announcement-management");
 
 // =====================================================
 // TYPES
@@ -151,7 +151,7 @@ export default function AnnouncementDetailR() {
           throw new Error("Invalid announcement ID.");
         }
 
-        const url = `${API_BASE_URL}/api/announcement-management/${announcementId}`;
+        const url = `${ANNOUNCEMENT_API}/${announcementId}`;
 
         console.log("GET REGISTRAR ANNOUNCEMENT DETAIL:", url);
 
@@ -319,7 +319,10 @@ export default function AnnouncementDetailR() {
         </header>
 
         {loading && (
-          <div className="registrar-announcement-detail__loading" aria-live="polite">
+          <div
+            className="registrar-announcement-detail__loading"
+            aria-live="polite"
+          >
             <div className="registrar-announcement-detail__skeleton-grid">
               {[1, 2, 3, 4].map((item) => (
                 <div
@@ -336,7 +339,10 @@ export default function AnnouncementDetailR() {
         )}
 
         {!loading && error && (
-          <section className="registrar-announcement-detail__error" role="alert">
+          <section
+            className="registrar-announcement-detail__error"
+            role="alert"
+          >
             <div className="registrar-announcement-detail__error-icon">
               <CircleOff size={24} />
             </div>
@@ -422,7 +428,8 @@ export default function AnnouncementDetailR() {
                     <h2>{announcement.title}</h2>
                     <div className="registrar-announcement-detail__byline">
                       <UserRound size={15} />
-                      Created by <strong>{announcement.created_by || "Unknown"}</strong>
+                      Created by{" "}
+                      <strong>{announcement.created_by || "Unknown"}</strong>
                     </div>
                   </div>
 
@@ -488,11 +495,11 @@ export default function AnnouncementDetailR() {
                   {announcement.attachments.length > 0 ? (
                     <div className="registrar-announcement-detail__attachment-list">
                       {announcement.attachments.map((file) => {
-                        const normalizedPath = file.file_path.replace(/\\/g, "/");
-                        const attachmentUrl = `${FILE_BASE_URL}/${normalizedPath.replace(
-                          /^\/+/,
-                          "",
-                        )}`;
+                        const normalizedPath = file.file_path
+                          .replace(/\\/g, "/")
+                          .replace(/^\/+/, "");
+
+                        const attachmentUrl = apiUrl(normalizedPath);
 
                         return (
                           <a

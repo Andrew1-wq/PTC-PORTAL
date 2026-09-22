@@ -21,10 +21,12 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/EnrollmentManagementR.css";
 
-const API_BASE_URL = "http://localhost:3000/api/registrar/enrollments";
-const COURSES_API_URL = "http://localhost:3000/api/registrar/courses";
+const API_BASE_URL = apiUrl("/api/registrar/enrollments");
+
+const COURSES_API_URL = apiUrl("/api/registrar/courses");
 const ENROLLMENT_PERIOD_API_URL = `${API_BASE_URL}/period`;
 const PAGE_SIZE = 10;
 
@@ -152,8 +154,12 @@ const getStudentInitials = (enrollment: Enrollment) => {
 };
 
 const getStudentName = (enrollment: Enrollment) => {
-  const { first_name, middle_name, last_name, student_name } = enrollment.student;
-  const name = [first_name, middle_name, last_name].filter(Boolean).join(" ").trim();
+  const { first_name, middle_name, last_name, student_name } =
+    enrollment.student;
+  const name = [first_name, middle_name, last_name]
+    .filter(Boolean)
+    .join(" ")
+    .trim();
   return name || student_name || "Unnamed Student";
 };
 
@@ -219,7 +225,9 @@ export default function EnrollmentManagementR() {
   const [semester, setSemester] = useState("All");
 
   const [courseCatalog, setCourseCatalog] = useState<CourseOption[]>([]);
-  const [academicYearCatalog, setAcademicYearCatalog] = useState<AcademicYearOption[]>([]);
+  const [academicYearCatalog, setAcademicYearCatalog] = useState<
+    AcademicYearOption[]
+  >([]);
   const [semesterCatalog, setSemesterCatalog] = useState<SemesterOption[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
@@ -272,7 +280,8 @@ export default function EnrollmentManagementR() {
         ]);
 
         if (courseResult.status === "fulfilled" && courseResult.value.ok) {
-          const courseData = (await courseResult.value.json()) as CourseResponse;
+          const courseData =
+            (await courseResult.value.json()) as CourseResponse;
           if (courseData.success) {
             const items = Array.isArray(courseData.data)
               ? courseData.data
@@ -284,21 +293,34 @@ export default function EnrollmentManagementR() {
         }
 
         if (periodResult.status === "fulfilled" && periodResult.value.ok) {
-          const periodData = (await periodResult.value.json()) as PeriodResponse;
+          const periodData =
+            (await periodResult.value.json()) as PeriodResponse;
           if (periodData.success) {
             setAcademicYearCatalog(
-              Array.isArray(periodData.academic_years) ? periodData.academic_years : [],
+              Array.isArray(periodData.academic_years)
+                ? periodData.academic_years
+                : [],
             );
             setSemesterCatalog(
               Array.isArray(periodData.semesters)
-                ? periodData.semesters.filter((item) => [1, 2].includes(Number(item.semester_id)))
+                ? periodData.semesters.filter((item) =>
+                    [1, 2].includes(Number(item.semester_id)),
+                  )
                 : [],
             );
           }
         }
       } catch (metadataError) {
-        if (!(metadataError instanceof DOMException && metadataError.name === "AbortError")) {
-          console.warn("Enrollment filter metadata could not be loaded:", metadataError);
+        if (
+          !(
+            metadataError instanceof DOMException &&
+            metadataError.name === "AbortError"
+          )
+        ) {
+          console.warn(
+            "Enrollment filter metadata could not be loaded:",
+            metadataError,
+          );
         }
       }
     };
@@ -445,7 +467,9 @@ export default function EnrollmentManagementR() {
       new Set(
         enrollments
           .map((item) => item.student.year_level)
-          .filter((value): value is number => value !== null && value !== undefined),
+          .filter(
+            (value): value is number => value !== null && value !== undefined,
+          ),
       ),
     )
       .sort((a, b) => a - b)
@@ -530,7 +554,8 @@ export default function EnrollmentManagementR() {
   );
 
   const placementCompleteCount = useMemo(
-    () => enrollments.filter((item) => item.placement.placement_complete).length,
+    () =>
+      enrollments.filter((item) => item.placement.placement_complete).length,
     [enrollments],
   );
 
@@ -546,10 +571,13 @@ export default function EnrollmentManagementR() {
     const filters: Array<{ key: string; label: string }> = [];
 
     if (search) filters.push({ key: "search", label: `Search: “${search}”` });
-    if (status !== "All") filters.push({ key: "status", label: `Status: ${status}` });
+    if (status !== "All")
+      filters.push({ key: "status", label: `Status: ${status}` });
 
     if (course !== "All") {
-      const selected = courseOptions.find((item) => String(item.course_id) === course);
+      const selected = courseOptions.find(
+        (item) => String(item.course_id) === course,
+      );
       filters.push({
         key: "course",
         label: `Course: ${selected?.course_code || course}`,
@@ -661,7 +689,8 @@ export default function EnrollmentManagementR() {
     [currentPage, totalPages],
   );
 
-  const rangeStart = totalEnrollments === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
+  const rangeStart =
+    totalEnrollments === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(currentPage * PAGE_SIZE, totalEnrollments);
 
   if (!authenticated || !user || userRole !== "Registrar") return null;
@@ -704,7 +733,9 @@ export default function EnrollmentManagementR() {
             >
               <RefreshCw
                 size={16}
-                className={loading ? "registrar-enrollment-management__spin" : ""}
+                className={
+                  loading ? "registrar-enrollment-management__spin" : ""
+                }
                 aria-hidden="true"
               />
               Refresh
@@ -722,7 +753,9 @@ export default function EnrollmentManagementR() {
             </span>
             <div>
               <p>Matching Enrollments</p>
-              <strong>{loading ? "—" : totalEnrollments.toLocaleString()}</strong>
+              <strong>
+                {loading ? "—" : totalEnrollments.toLocaleString()}
+              </strong>
               <small>Across the current filters</small>
             </div>
           </article>
@@ -735,7 +768,9 @@ export default function EnrollmentManagementR() {
               <p>On This Page</p>
               <strong>{loading ? "—" : enrollments.length}</strong>
               <small>
-                {loading ? "Loading enrollment load" : `${pageSubjectCount} subjects · ${pageUnitCount} units`}
+                {loading
+                  ? "Loading enrollment load"
+                  : `${pageSubjectCount} subjects · ${pageUnitCount} units`}
               </small>
             </div>
           </article>
@@ -772,15 +807,17 @@ export default function EnrollmentManagementR() {
               </div>
               <h2>Enrollment Review Queue</h2>
               <p>
-                Pending enrollments are shown by default. Use the filters to review
-                historical or already processed records.
+                Pending enrollments are shown by default. Use the filters to
+                review historical or already processed records.
               </p>
             </div>
 
             <div className="registrar-enrollment-management__result-meta">
               <span>{totalEnrollments.toLocaleString()} results</span>
               <span aria-hidden="true">•</span>
-              <span>Page {currentPage} of {totalPages}</span>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
             </div>
           </div>
 
@@ -821,7 +858,9 @@ export default function EnrollmentManagementR() {
               <span>Status</span>
               <select
                 value={status}
-                onChange={(event) => handleFilterChange(setStatus, event.target.value)}
+                onChange={(event) =>
+                  handleFilterChange(setStatus, event.target.value)
+                }
               >
                 <option value="All">All Statuses</option>
                 <option value="Draft">Draft</option>
@@ -836,7 +875,9 @@ export default function EnrollmentManagementR() {
               <span>Course</span>
               <select
                 value={course}
-                onChange={(event) => handleFilterChange(setCourse, event.target.value)}
+                onChange={(event) =>
+                  handleFilterChange(setCourse, event.target.value)
+                }
               >
                 <option value="All">All Courses</option>
                 {courseOptions.map((item) => (
@@ -852,11 +893,15 @@ export default function EnrollmentManagementR() {
               <span>Year Level</span>
               <select
                 value={year}
-                onChange={(event) => handleFilterChange(setYear, event.target.value)}
+                onChange={(event) =>
+                  handleFilterChange(setYear, event.target.value)
+                }
               >
                 <option value="All">All Years</option>
                 {yearOptions.map((item) => (
-                  <option key={item} value={item}>Year {item}</option>
+                  <option key={item} value={item}>
+                    Year {item}
+                  </option>
                 ))}
               </select>
             </label>
@@ -865,11 +910,15 @@ export default function EnrollmentManagementR() {
               <span>Section</span>
               <select
                 value={section}
-                onChange={(event) => handleFilterChange(setSection, event.target.value)}
+                onChange={(event) =>
+                  handleFilterChange(setSection, event.target.value)
+                }
               >
                 <option value="All">All Sections</option>
                 {sectionOptions.map((item) => (
-                  <option key={item.id} value={item.id}>{item.label}</option>
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
                 ))}
               </select>
             </label>
@@ -878,7 +927,9 @@ export default function EnrollmentManagementR() {
               <span>Academic Year</span>
               <select
                 value={academicYear}
-                onChange={(event) => handleFilterChange(setAcademicYear, event.target.value)}
+                onChange={(event) =>
+                  handleFilterChange(setAcademicYear, event.target.value)
+                }
               >
                 <option value="All">All Academic Years</option>
                 {academicYearOptions.map((item) => (
@@ -886,7 +937,8 @@ export default function EnrollmentManagementR() {
                     key={item.academic_year_id}
                     value={String(item.academic_year_id)}
                   >
-                    {item.academic_year}{item.is_current ? " (Current)" : ""}
+                    {item.academic_year}
+                    {item.is_current ? " (Current)" : ""}
                   </option>
                 ))}
               </select>
@@ -900,13 +952,18 @@ export default function EnrollmentManagementR() {
                   const value = event.target.value;
                   handleFilterChange(
                     setSemester,
-                    value === "All" || [1, 2].includes(Number(value)) ? value : "All",
+                    value === "All" || [1, 2].includes(Number(value))
+                      ? value
+                      : "All",
                   );
                 }}
               >
                 <option value="All">All Semesters</option>
                 {semesterOptions.map((item) => (
-                  <option key={item.semester_id} value={String(item.semester_id)}>
+                  <option
+                    key={item.semester_id}
+                    value={String(item.semester_id)}
+                  >
                     {item.semester_name}
                   </option>
                 ))}
@@ -956,14 +1013,19 @@ export default function EnrollmentManagementR() {
                   <th>Placement</th>
                   <th>Academic Load</th>
                   <th>Status</th>
-                  <th className="registrar-enrollment-management__actions-heading">Review</th>
+                  <th className="registrar-enrollment-management__actions-heading">
+                    Review
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {loading &&
                   Array.from({ length: 6 }).map((_, index) => (
-                    <tr key={`skeleton-${index}`} className="registrar-enrollment-management__skeleton-row">
+                    <tr
+                      key={`skeleton-${index}`}
+                      className="registrar-enrollment-management__skeleton-row"
+                    >
                       {Array.from({ length: 7 }).map((__, cellIndex) => (
                         <td key={cellIndex}>
                           <span className="registrar-enrollment-management__skeleton" />
@@ -972,151 +1034,189 @@ export default function EnrollmentManagementR() {
                     </tr>
                   ))}
 
-                {!loading && !error && enrollments.map((enrollment) => {
-                  const placementTotal = Number(enrollment.total_subjects || 0);
-                  const placed = Number(enrollment.placement.placed_subjects || 0);
-                  const progress = placementTotal > 0
-                    ? Math.min(100, Math.round((placed / placementTotal) * 100))
-                    : 0;
-                  const statusTone = getStatusTone(enrollment.enrollment_status);
+                {!loading &&
+                  !error &&
+                  enrollments.map((enrollment) => {
+                    const placementTotal = Number(
+                      enrollment.total_subjects || 0,
+                    );
+                    const placed = Number(
+                      enrollment.placement.placed_subjects || 0,
+                    );
+                    const progress =
+                      placementTotal > 0
+                        ? Math.min(
+                            100,
+                            Math.round((placed / placementTotal) * 100),
+                          )
+                        : 0;
+                    const statusTone = getStatusTone(
+                      enrollment.enrollment_status,
+                    );
 
-                  return (
-                    <tr key={enrollment.enrollment_id}>
-                      <td>
-                        <div className="registrar-enrollment-management__student">
-                          <span className="registrar-enrollment-management__avatar">
-                            {getStudentInitials(enrollment)}
-                          </span>
-                          <div className="registrar-enrollment-management__student-copy">
-                            <strong title={getStudentName(enrollment)}>
-                              {getStudentName(enrollment)}
+                    return (
+                      <tr key={enrollment.enrollment_id}>
+                        <td>
+                          <div className="registrar-enrollment-management__student">
+                            <span className="registrar-enrollment-management__avatar">
+                              {getStudentInitials(enrollment)}
+                            </span>
+                            <div className="registrar-enrollment-management__student-copy">
+                              <strong title={getStudentName(enrollment)}>
+                                {getStudentName(enrollment)}
+                              </strong>
+                              <span>{enrollment.student.student_number}</span>
+                              <small>
+                                Enrollment #{enrollment.enrollment_id}
+                                {enrollment.student.username
+                                  ? ` · @${enrollment.student.username}`
+                                  : ""}
+                              </small>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="registrar-enrollment-management__program">
+                            <span className="registrar-enrollment-management__course-code">
+                              {enrollment.course.course_code || "No Course"}
+                            </span>
+                            <strong title={enrollment.course.course_name || ""}>
+                              {enrollment.course.course_name ||
+                                "Course not assigned"}
                             </strong>
-                            <span>{enrollment.student.student_number}</span>
                             <small>
-                              Enrollment #{enrollment.enrollment_id}
-                              {enrollment.student.username ? ` · @${enrollment.student.username}` : ""}
+                              {enrollment.student.year_level
+                                ? `Year ${enrollment.student.year_level}`
+                                : "Year level not assigned"}
                             </small>
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td>
-                        <div className="registrar-enrollment-management__program">
-                          <span className="registrar-enrollment-management__course-code">
-                            {enrollment.course.course_code || "No Course"}
-                          </span>
-                          <strong title={enrollment.course.course_name || ""}>
-                            {enrollment.course.course_name || "Course not assigned"}
-                          </strong>
-                          <small>
-                            {enrollment.student.year_level
-                              ? `Year ${enrollment.student.year_level}`
-                              : "Year level not assigned"}
-                          </small>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="registrar-enrollment-management__period">
-                          <span className="registrar-enrollment-management__cell-icon">
-                            <CalendarDays size={15} aria-hidden="true" />
-                          </span>
-                          <div>
-                            <strong>{enrollment.academic_period.academic_year}</strong>
-                            <span>{enrollment.academic_period.semester_name}</span>
-                            <small>Submitted {formatDate(enrollment.created_at)}</small>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="registrar-enrollment-management__placement">
-                          <div className="registrar-enrollment-management__placement-topline">
+                        <td>
+                          <div className="registrar-enrollment-management__period">
                             <span className="registrar-enrollment-management__cell-icon">
-                              <MapPin size={15} aria-hidden="true" />
+                              <CalendarDays size={15} aria-hidden="true" />
                             </span>
-                            <strong title={enrollment.placement.section_names.join(", ")}>
-                              {enrollment.section.section_name || "Not Assigned"}
-                            </strong>
+                            <div>
+                              <strong>
+                                {enrollment.academic_period.academic_year}
+                              </strong>
+                              <span>
+                                {enrollment.academic_period.semester_name}
+                              </span>
+                              <small>
+                                Submitted {formatDate(enrollment.created_at)}
+                              </small>
+                            </div>
                           </div>
+                        </td>
 
-                          <div className="registrar-enrollment-management__progress" aria-hidden="true">
-                            <span style={{ width: `${progress}%` }} />
-                          </div>
+                        <td>
+                          <div className="registrar-enrollment-management__placement">
+                            <div className="registrar-enrollment-management__placement-topline">
+                              <span className="registrar-enrollment-management__cell-icon">
+                                <MapPin size={15} aria-hidden="true" />
+                              </span>
+                              <strong
+                                title={enrollment.placement.section_names.join(
+                                  ", ",
+                                )}
+                              >
+                                {enrollment.section.section_name ||
+                                  "Not Assigned"}
+                              </strong>
+                            </div>
 
-                          <div className="registrar-enrollment-management__placement-meta">
-                            <span>{placed}/{placementTotal} subjects placed</span>
-                            <span
-                              className={`registrar-enrollment-management__placement-status ${
-                                enrollment.placement.placement_complete
-                                  ? "registrar-enrollment-management__placement-status--complete"
-                                  : "registrar-enrollment-management__placement-status--needs"
-                              }`}
+                            <div
+                              className="registrar-enrollment-management__progress"
+                              aria-hidden="true"
                             >
-                              {enrollment.placement.placement_complete
-                                ? "Complete"
-                                : enrollment.placement.unplaced_subjects > 0
-                                  ? `${enrollment.placement.unplaced_subjects} unplaced`
-                                  : "Not placed"}
+                              <span style={{ width: `${progress}%` }} />
+                            </div>
+
+                            <div className="registrar-enrollment-management__placement-meta">
+                              <span>
+                                {placed}/{placementTotal} subjects placed
+                              </span>
+                              <span
+                                className={`registrar-enrollment-management__placement-status ${
+                                  enrollment.placement.placement_complete
+                                    ? "registrar-enrollment-management__placement-status--complete"
+                                    : "registrar-enrollment-management__placement-status--needs"
+                                }`}
+                              >
+                                {enrollment.placement.placement_complete
+                                  ? "Complete"
+                                  : enrollment.placement.unplaced_subjects > 0
+                                    ? `${enrollment.placement.unplaced_subjects} unplaced`
+                                    : "Not placed"}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="registrar-enrollment-management__load">
+                            <div>
+                              <strong>{enrollment.total_subjects}</strong>
+                              <span>Subjects</span>
+                            </div>
+                            <div>
+                              <strong>
+                                {Number(enrollment.total_units || 0)}
+                              </strong>
+                              <span>Units</span>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td>
+                          <div className="registrar-enrollment-management__status-cell">
+                            <span
+                              className={`registrar-enrollment-management__status registrar-enrollment-management__status--${statusTone}`}
+                            >
+                              {enrollment.enrollment_status}
                             </span>
+
+                            {enrollment.approval.approved_by_username && (
+                              <small>
+                                By @{enrollment.approval.approved_by_username}
+                                {enrollment.approval.approved_at
+                                  ? ` · ${formatDate(enrollment.approval.approved_at)}`
+                                  : ""}
+                              </small>
+                            )}
+
+                            {!enrollment.approval.approved_by_username &&
+                              enrollment.remarks && (
+                                <small title={enrollment.remarks}>
+                                  {enrollment.remarks}
+                                </small>
+                              )}
                           </div>
-                        </div>
-                      </td>
+                        </td>
 
-                      <td>
-                        <div className="registrar-enrollment-management__load">
-                          <div>
-                            <strong>{enrollment.total_subjects}</strong>
-                            <span>Subjects</span>
+                        <td>
+                          <div className="registrar-enrollment-management__row-actions">
+                            <button
+                              type="button"
+                              className="registrar-enrollment-management__review-button"
+                              onClick={() =>
+                                navigate(
+                                  `/registrar/enrollment/${enrollment.enrollment_id}`,
+                                )
+                              }
+                              aria-label={`Review enrollment for ${getStudentName(enrollment)}`}
+                            >
+                              <Eye size={15} aria-hidden="true" />
+                              Review
+                            </button>
                           </div>
-                          <div>
-                            <strong>{Number(enrollment.total_units || 0)}</strong>
-                            <span>Units</span>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="registrar-enrollment-management__status-cell">
-                          <span
-                            className={`registrar-enrollment-management__status registrar-enrollment-management__status--${statusTone}`}
-                          >
-                            {enrollment.enrollment_status}
-                          </span>
-
-                          {enrollment.approval.approved_by_username && (
-                            <small>
-                              By @{enrollment.approval.approved_by_username}
-                              {enrollment.approval.approved_at
-                                ? ` · ${formatDate(enrollment.approval.approved_at)}`
-                                : ""}
-                            </small>
-                          )}
-
-                          {!enrollment.approval.approved_by_username && enrollment.remarks && (
-                            <small title={enrollment.remarks}>{enrollment.remarks}</small>
-                          )}
-                        </div>
-                      </td>
-
-                      <td>
-                        <div className="registrar-enrollment-management__row-actions">
-                          <button
-                            type="button"
-                            className="registrar-enrollment-management__review-button"
-                            onClick={() =>
-                              navigate(`/registrar/enrollment/${enrollment.enrollment_id}`)
-                            }
-                            aria-label={`Review enrollment for ${getStudentName(enrollment)}`}
-                          >
-                            <Eye size={15} aria-hidden="true" />
-                            Review
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
 
@@ -1170,8 +1270,12 @@ export default function EnrollmentManagementR() {
           {!loading && !error && totalEnrollments > 0 && (
             <div className="registrar-enrollment-management__pagination">
               <p>
-                Showing <strong>{rangeStart}–{rangeEnd}</strong> of{" "}
-                <strong>{totalEnrollments.toLocaleString()}</strong> enrollments
+                Showing{" "}
+                <strong>
+                  {rangeStart}–{rangeEnd}
+                </strong>{" "}
+                of <strong>{totalEnrollments.toLocaleString()}</strong>{" "}
+                enrollments
               </p>
 
               <div className="registrar-enrollment-management__pagination-controls">
@@ -1179,7 +1283,9 @@ export default function EnrollmentManagementR() {
                   type="button"
                   className="registrar-enrollment-management__page-button registrar-enrollment-management__page-button--wide"
                   disabled={currentPage <= 1}
-                  onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                  onClick={() =>
+                    setCurrentPage((page) => Math.max(1, page - 1))
+                  }
                 >
                   <ChevronLeft size={15} aria-hidden="true" />
                   Previous

@@ -16,10 +16,8 @@ import {
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
+import { apiUrl } from "../../../services/api";
 import "../../../styles/announcementDetailsStudent.css";
-
-const API_BASE_URL = "http://localhost:3000";
-const FILE_BASE_URL = "http://localhost:3000";
 
 interface Attachment {
   file_id: number;
@@ -84,7 +82,9 @@ function includesStudentAudience(recipients: Recipient[] | undefined) {
     Array.isArray(recipients) &&
     recipients.some(
       (recipient) =>
-        String(recipient.role_name || "").trim().toLowerCase() === "student",
+        String(recipient.role_name || "")
+          .trim()
+          .toLowerCase() === "student",
     )
   );
 }
@@ -124,7 +124,9 @@ function formatFileSize(bytes: number) {
 }
 
 function formatFileType(mimeType: string) {
-  const value = String(mimeType || "").trim().toLowerCase();
+  const value = String(mimeType || "")
+    .trim()
+    .toLowerCase();
 
   if (!value) {
     return "File";
@@ -156,7 +158,7 @@ function formatFileType(mimeType: string) {
 function buildFileUrl(path: string) {
   const normalized = path.replace(/\\/g, "/").replace(/^\/+/, "");
 
-  return `${FILE_BASE_URL}/${normalized}`;
+  return apiUrl(normalized);
 }
 
 export default function AnnouncementDetailsS() {
@@ -207,7 +209,7 @@ export default function AnnouncementDetailsS() {
         }
 
         const response = await authService.authFetch(
-          `${API_BASE_URL}/api/announcements/${announcementId}`,
+          apiUrl(`/api/announcements/${announcementId}`),
           {
             method: "GET",
             signal: controller.signal,
@@ -242,18 +244,14 @@ export default function AnnouncementDetailsS() {
 
         if (response.status === 403) {
           const message =
-            "announcement_id" in data
-              ? undefined
-              : data.message || data.error;
+            "announcement_id" in data ? undefined : data.message || data.error;
 
           throw new Error(message || "Student access is required.");
         }
 
         if (!response.ok) {
           const message =
-            "announcement_id" in data
-              ? undefined
-              : data.message || data.error;
+            "announcement_id" in data ? undefined : data.message || data.error;
 
           throw new Error(message || "Announcement could not be loaded.");
         }
@@ -474,9 +472,7 @@ export default function AnnouncementDetailsS() {
 
                     <div>
                       <small>Audience</small>
-                      <strong>
-                        {formatAudience(announcement.recipients)}
-                      </strong>
+                      <strong>{formatAudience(announcement.recipients)}</strong>
                     </div>
                   </div>
 

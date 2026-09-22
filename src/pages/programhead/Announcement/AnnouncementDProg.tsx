@@ -3,7 +3,8 @@ import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 
-import { authService, API_BASE_URL } from "../../../services/auth.service";
+import { authService } from "../../../services/auth.service";
+import { API_BASE_URL } from "../../../services/api";
 
 import "../../../styles/announcementStudent.css";
 

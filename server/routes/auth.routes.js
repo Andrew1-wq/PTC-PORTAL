@@ -1251,16 +1251,20 @@ router.post("/forgot-password/reset", async (req, res) => {
         `,
       [requestId],
     );
+    // ========================================
+    // 16. INVALIDATE LOGIN OTP
+    //
+    // If the user's password was reset,
+    // invalidate any pending login OTP.
+    // ========================================
 
-    /*
-        If the user previously logged in and an
-        OTP is still waiting inside otp_codes,
-        invalidate it after the password changes.
-      */
-
-    // Login OTP cleanup skipped.
-    // This portal does not use otp_codes table.
-
+    await connection.execute(
+      `
+  DELETE FROM otp_codes
+  WHERE user_id = ?
+  `,
+      [resetRequest.user_id],
+    );
     /*
         Invalidate any other password reset
         requests that may exist for this user.
@@ -1517,22 +1521,53 @@ router.post("/login", async (req, res) => {
         error: "Your account has been deactivated.",
       });
     }
+    // ==========================================
+    // GENERATE LOGIN OTP
+    // ==========================================
 
-    // Generate OTP
-    const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
 
-    // Remove any existing OTP for this user
-    await db.execute("DELETE FROM otp_codes WHERE user_id = ?", [user.user_id]);
+    // ==========================================
+    // HASH OTP BEFORE DATABASE STORAGE
+    // ==========================================
 
-    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // ==========================================
+    // REMOVE OLD OTP
+    // ==========================================
 
     await db.execute(
       `
-      INSERT INTO otp_codes
-      (user_id, otp_code, expires_at)
-      VALUES (?, ?, ?)
-      `,
-      [user.user_id, otp, expiresAt],
+  DELETE FROM otp_codes
+  WHERE user_id = ?
+  `,
+      [user.user_id],
+    );
+
+    // ==========================================
+    // OTP EXPIRATION
+    // ==========================================
+
+    const expiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+
+    // ==========================================
+    // STORE ONLY HASH
+    //
+    // Never store the actual six-digit OTP.
+    // ==========================================
+
+    await db.execute(
+      `
+  INSERT INTO otp_codes
+  (
+    user_id,
+    otp_hash,
+    expires_at
+  )
+  VALUES (?, ?, ?)
+  `,
+      [user.user_id, otpHash, expiresAt],
     );
 
     const info = await transporter.sendMail({
@@ -1683,19 +1718,38 @@ router.post(["/resend-otp", "/auth/resend-otp"], async (req, res) => {
     // ==========================================
     // 4. Create a fresh OTP
     // ==========================================
+    // ==========================================
+    // CREATE NEW OTP
+    // ==========================================
 
-    const otp = crypto.randomInt(100000, 999999).toString();
+    const otp = crypto.randomInt(100000, 1000000).toString();
+
+    // ==========================================
+    // HASH NEW OTP
+    // ==========================================
+
+    const otpHash = await bcrypt.hash(otp, 10);
+
+    // ==========================================
+    // NEW EXPIRATION
+    // ==========================================
+
     const newExpiresAt = new Date(Date.now() + OTP_EXPIRY_MS);
+
+    // ==========================================
+    // STORE HASH
+    // ==========================================
 
     await db.execute(
       `
-      UPDATE otp_codes
-      SET
-        otp_code = ?,
-        expires_at = ?
-      WHERE user_id = ?
-      `,
-      [otp, newExpiresAt, user.user_id],
+ UPDATE otp_codes
+SET
+  otp_hash = ?,
+  expires_at = ?,
+  attempt_count = 0
+WHERE user_id = ?
+  `,
+      [otpHash, newExpiresAt, user.user_id],
     );
 
     // ==========================================
@@ -1787,13 +1841,14 @@ router.post("/verify-otp", async (req, res) => {
 
     const [otpRows] = await db.execute(
       `
-      SELECT
-        otp_code,
-        expires_at
-      FROM otp_codes
-      WHERE user_id = ?
-      LIMIT 1
-      `,
+ SELECT
+  otp_hash,
+  expires_at,
+  attempt_count
+FROM otp_codes
+WHERE user_id = ?
+LIMIT 1
+  `,
       [user.user_id],
     );
 
@@ -1804,6 +1859,26 @@ router.post("/verify-otp", async (req, res) => {
     }
 
     const storedOtp = otpRows[0];
+    // ==========================================
+    // 4. CHECK OTP ATTEMPT LIMIT
+    // ==========================================
+
+    const MAX_OTP_ATTEMPTS = 5;
+
+    if (Number(storedOtp.attempt_count) >= MAX_OTP_ATTEMPTS) {
+      await db.execute(
+        `
+    DELETE FROM otp_codes
+    WHERE user_id = ?
+    `,
+        [user.user_id],
+      );
+
+      return res.status(429).json({
+        success: false,
+        error: "Maximum OTP attempts reached. Please login again.",
+      });
+    }
 
     // ==========================================
     // 4. Check expiration
@@ -1824,12 +1899,59 @@ router.post("/verify-otp", async (req, res) => {
     }
 
     // ==========================================
-    // 5. Compare OTP
+    // COMPARE OTP AGAINST BCRYPT HASH
     // ==========================================
 
-    if (String(storedOtp.otp_code) !== String(otp)) {
+    const otpMatches = await bcrypt.compare(otp, storedOtp.otp_hash);
+
+    if (!otpMatches) {
+      // ========================================
+      // INCREASE FAILED OTP ATTEMPTS
+      // ========================================
+
+      const newAttemptCount = Number(storedOtp.attempt_count) + 1;
+
+      await db.execute(
+        `
+    UPDATE otp_codes
+    SET attempt_count = ?
+    WHERE user_id = ?
+    `,
+        [newAttemptCount, user.user_id],
+      );
+
+      const attemptsRemaining = Math.max(MAX_OTP_ATTEMPTS - newAttemptCount, 0);
+
+      // ========================================
+      // FIFTH FAILED ATTEMPT
+      // ========================================
+
+      if (attemptsRemaining === 0) {
+        await db.execute(
+          `
+      DELETE FROM otp_codes
+      WHERE user_id = ?
+      `,
+          [user.user_id],
+        );
+
+        return res.status(429).json({
+          success: false,
+          error: "Maximum OTP attempts reached. Please login again.",
+          attempts_remaining: 0,
+        });
+      }
+
       return res.status(400).json({
-        error: "Invalid OTP.",
+        success: false,
+
+        error:
+          `Invalid OTP. ` +
+          `${attemptsRemaining} attempt${
+            attemptsRemaining === 1 ? "" : "s"
+          } remaining.`,
+
+        attempts_remaining: attemptsRemaining,
       });
     }
 
@@ -1935,21 +2057,47 @@ router.post("/verify-otp", async (req, res) => {
 // =======================
 // CURRENT AUTHENTICATED USER
 // =======================
+
 router.get("/me", authenticate, async (req, res) => {
   try {
+    // ==========================================
+    // AUTHENTICATED USER
+    //
+    // authenticate middleware already:
+    // - verifies the JWT
+    // - reloads the user from the database
+    // - checks active status
+    // - checks verified status
+    // - attaches the trusted user to req.user
+    // ==========================================
+
+    const user = req.user;
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required.",
+      });
+    }
+
+    // ==========================================
+    // RETURN CURRENT USER
+    // ==========================================
+
     return res.json({
       success: true,
 
       user: {
         user_id: Number(user.user_id),
+
         username: user.username,
+
         email: user.email,
+
         role_id: Number(user.role_id),
 
-        // Frontend canonical role field
         role: user.role_name,
 
-        // Keep DB/API field too
         role_name: user.role_name,
       },
     });
@@ -1958,6 +2106,7 @@ router.get("/me", authenticate, async (req, res) => {
 
     return res.status(500).json({
       success: false,
+
       message: "Failed to load authenticated user.",
     });
   }
