@@ -11,6 +11,9 @@ import OtpAuth from "../pages/auth/Otp";
 import About from "../components/Forms/about";
 import Programs from "../components/Forms/programs";
 import Contact from "../components/Forms/contact";
+import ForgotPassword from "../pages/auth/ForgotPassword";
+import VerifyResetOtp from "../pages/auth/VerifyResetOtp";
+import ResetPassword from "../pages/auth/ResetPassword";
 
 // Student pages
 import StudentDashboard from "../pages/student/Dashboard";
@@ -254,6 +257,20 @@ export default function AppRoutes() {
 
         <Route path="/login" element={<LoginAuth />} />
         <Route path="/otp" element={<OtpAuth />} />
+        <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+        <Route
+          path="/forgot-password/verify"
+          element={<VerifyResetOtp />}
+        />
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+
+
 
         {/* ── Student: Solo links ── */}
         <Route
