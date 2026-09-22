@@ -2,12 +2,20 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
-import { authService } from "../../../services/auth.service";
+
+import { authService, API_BASE_URL } from "../../../services/auth.service";
 
 import "../../../styles/announcementStudent.css";
 
-const API_BASE_URL = "http://localhost:3000";
-const FILE_BASE_URL = "http://localhost:3000";
+// =====================================================
+// FILE BASE URL
+// =====================================================
+
+const FILE_BASE_URL = API_BASE_URL;
+
+// =====================================================
+// TYPES
+// =====================================================
 
 interface Attachment {
   file_id: number;
@@ -26,12 +34,29 @@ interface Announcement {
   expiry_date: string | null;
   attachments: Attachment[];
 }
+
+// =====================================================
+// COMPONENT
+// =====================================================
+
 export default function AnnouncementProgD() {
   const navigate = useNavigate();
 
-  const { id } = useParams<{ id: string }>();
+  const { id } = useParams<{
+    id: string;
+  }>();
+
+  // =====================================================
+  // AUTH SESSION
+  // =====================================================
 
   const [user] = useState(() => authService.getSession());
+
+  const [token] = useState(() => authService.getToken());
+
+  // =====================================================
+  // STATE
+  // =====================================================
 
   const [announcement, setAnnouncement] = useState<Announcement | null>(null);
 
@@ -39,65 +64,204 @@ export default function AnnouncementProgD() {
 
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    async function load() {
-      try {
-        if (!user) {
-          throw new Error("User session not found.");
-        }
+  // =====================================================
+  // LOAD ANNOUNCEMENT
+  // =====================================================
 
-        if (user.role !== "Program Head") {
-          navigate("/login");
+  useEffect(() => {
+    const controller = new AbortController();
+
+    async function loadAnnouncement() {
+      try {
+        setLoading(true);
+        setError("");
+
+        // =================================================
+        // AUTHENTICATION CHECK
+        // =================================================
+
+        if (!user || !token) {
+          authService.logout();
+
+          navigate("/login", {
+            replace: true,
+          });
 
           return;
         }
 
-        const response = await fetch(
-          `${API_BASE_URL}/api/announcements/${id}?role_id=${user.role_id}`,
+        // =================================================
+        // ROLE CHECK
+        // =================================================
+
+        if (user.role !== "Program Head") {
+          navigate(authService.getDashboardRoute(user.role), {
+            replace: true,
+          });
+
+          return;
+        }
+
+        // =================================================
+        // ANNOUNCEMENT ID VALIDATION
+        // =================================================
+
+        const announcementId = Number(id);
+
+        if (!Number.isInteger(announcementId) || announcementId <= 0) {
+          throw new Error("Invalid announcement ID.");
+        }
+
+        // =================================================
+        // LOAD PROTECTED ANNOUNCEMENT
+        //
+        // authFetch automatically adds:
+        //
+        // Authorization: Bearer <JWT>
+        //
+        // Do NOT send role_id manually.
+        // Backend gets the authenticated role from req.user.
+        // =================================================
+
+        const response = await authService.authFetch(
+          `${API_BASE_URL}/api/announcements/${announcementId}`,
+          {
+            method: "GET",
+
+            headers: {
+              Accept: "application/json",
+            },
+
+            signal: controller.signal,
+          },
         );
+
+        // =================================================
+        // RESPONSE
+        // =================================================
 
         const data = await response.json();
 
-        console.log("PROGRAM HEAD DETAIL:", data);
+        console.log("PROGRAM HEAD ANNOUNCEMENT DETAIL:", data);
 
-        if (!response.ok) {
-          throw new Error(data.error || "Announcement not found.");
+        // =================================================
+        // UNAUTHORIZED
+        //
+        // authFetch already deletes the invalid token
+        // when status = 401.
+        // =================================================
+
+        if (response.status === 401) {
+          navigate("/login", {
+            replace: true,
+          });
+
+          return;
         }
 
-        setAnnouncement(data);
+        // =================================================
+        // OTHER API ERROR
+        // =================================================
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || data.message || "Announcement not found.",
+          );
+        }
+
+        // =================================================
+        // SAVE ANNOUNCEMENT
+        // =================================================
+
+        setAnnouncement(data as Announcement);
       } catch (err) {
+        // =================================================
+        // IGNORE ABORT
+        // =================================================
+
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+
+        console.error("PROGRAM HEAD ANNOUNCEMENT ERROR:", err);
+
         if (err instanceof Error) {
           setError(err.message);
         } else {
-          setError("Something went wrong.");
+          setError("Something went wrong while loading the announcement.");
         }
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     }
 
-    load();
-  }, [id, user, navigate]);
+    loadAnnouncement();
+
+    // =====================================================
+    // CLEANUP
+    // =====================================================
+
+    return () => {
+      controller.abort();
+    };
+  }, [id, user, token, navigate]);
+
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <DashboardLayout>
       <div className="announcementD-student">
-        <button className="back-button" onClick={() => navigate(-1)}>
+        {/* ============================================= */}
+        {/* BACK BUTTON */}
+        {/* ============================================= */}
+
+        <button
+          type="button"
+          className="back-button"
+          onClick={() => navigate(-1)}
+        >
           ← Back
         </button>
 
+        {/* ============================================= */}
+        {/* LOADING */}
+        {/* ============================================= */}
+
         {loading && <p>Loading announcement...</p>}
 
-        {error && <p className="error">{error}</p>}
+        {/* ============================================= */}
+        {/* ERROR */}
+        {/* ============================================= */}
 
-        {announcement && (
+        {!loading && error && <p className="error">{error}</p>}
+
+        {/* ============================================= */}
+        {/* ANNOUNCEMENT */}
+        {/* ============================================= */}
+
+        {!loading && !error && announcement && (
           <div className="announcement-details-card">
+            {/* ======================================= */}
+            {/* TITLE */}
+            {/* ======================================= */}
+
             <h1>{announcement.title}</h1>
 
+            {/* ======================================= */}
+            {/* CREATED BY */}
+            {/* ======================================= */}
+
             <p>
-              Posted by:
-              <strong> {announcement.created_by}</strong>
+              Posted by: <strong>{announcement.created_by}</strong>
             </p>
+
+            {/* ======================================= */}
+            {/* PUBLISH DATE */}
+            {/* ======================================= */}
 
             <p>
               Published: {new Date(announcement.publish_date).toLocaleString()}
@@ -105,31 +269,57 @@ export default function AnnouncementProgD() {
 
             <hr />
 
+            {/* ======================================= */}
+            {/* CONTENT */}
+            {/* ======================================= */}
+
             <div className="announcement-content">{announcement.content}</div>
 
-            {announcement.attachments?.length > 0 && (
-              <div>
-                <hr />
+            {/* ======================================= */}
+            {/* ATTACHMENTS */}
+            {/* ======================================= */}
 
-                <h3>Attachments</h3>
+            {announcement.attachments &&
+              announcement.attachments.length > 0 && (
+                <div>
+                  <hr />
 
-                <div className="attachment-list">
-                  {announcement.attachments.map((file) => (
-                    <div key={file.file_id} className="attachment-item">
-                      📄{" "}
-                      <a
-                        href={`${FILE_BASE_URL}/${file.file_path.replace(/\\/g, "/")}`}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {file.original_name}
-                      </a>
-                      <span> ({(file.file_size / 1024).toFixed(1)} KB)</span>
-                    </div>
-                  ))}
+                  <h3>Attachments</h3>
+
+                  <div className="attachment-list">
+                    {announcement.attachments.map((file) => {
+                      // Convert:
+                      //
+                      // uploads\files\example.pdf
+                      //
+                      // into:
+                      //
+                      // uploads/files/example.pdf
+
+                      const normalizedPath = file.file_path
+                        .replace(/\\/g, "/")
+                        .replace(/^\/+/, "");
+
+                      return (
+                        <div key={file.file_id} className="attachment-item">
+                          📄{" "}
+                          <a
+                            href={`${FILE_BASE_URL}/${normalizedPath}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            {file.original_name}
+                          </a>
+                          <span>
+                            {" "}
+                            ({(file.file_size / 1024).toFixed(1)} KB)
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
           </div>
         )}
       </div>
