@@ -598,9 +598,15 @@ export default function LoginForm() {
               FORGOT PASSWORD
           ======================================== */}
 
-          <div className={styles.authlinks}>
-            <a href="#">Forgot password?</a>
-          </div>
+            <div className={styles.authlinks}>
+              <button
+                type="button"
+                onClick={() => navigate("/forgot-password")}
+                disabled={loading}
+              >
+                Forgot password?
+              </button>
+            </div>
 
           {/* ========================================
               DEVELOPMENT LOGIN

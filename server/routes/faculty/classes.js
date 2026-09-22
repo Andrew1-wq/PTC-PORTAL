@@ -27,6 +27,10 @@
 // - Official student count includes APPROVED
 //   enrollments only.
 // =====================================================
+import {
+  calculateGrade,
+  gradePolicyFields,
+} from "../../services/gradingPolicy.service.js";
 
 import express from "express";
 import db from "../../db.js";
@@ -1993,22 +1997,13 @@ router.get("/:offeringId/students", async (req, res) => {
 // - We do NOT create grade rows during GET.
 //
 // =====================================================
-
 router.get("/:offeringId/gradebook", async (req, res) => {
   try {
-    // =================================================
-    // AUTHENTICATED FACULTY
-    // =================================================
-
     const faculty = await getAuthenticatedFaculty(req, res);
 
     if (!faculty) {
       return;
     }
-
-    // =================================================
-    // VALIDATE OFFERING ID
-    // =================================================
 
     const offeringId = Number(req.params.offeringId);
 
@@ -2018,10 +2013,6 @@ router.get("/:offeringId/gradebook", async (req, res) => {
         message: "Invalid offering ID.",
       });
     }
-
-    // =================================================
-    // VERIFY CLASS OWNERSHIP
-    // =================================================
 
     const [offeringRows] = await db.execute(
       `
@@ -2033,80 +2024,50 @@ router.get("/:offeringId/gradebook", async (req, res) => {
           so.faculty_id,
           so.academic_year_id,
           so.semester_id,
-
           so.schedule_days,
           so.schedule_time,
           so.max_students,
-
           so.status AS offering_status,
           so.created_at,
-
           ss.status AS section_subject_status,
-
           sub.subject_code,
           sub.subject_name,
           sub.units,
           sub.lecture_hours,
           sub.laboratory_hours,
-
           sec.section_name,
           sec.year_level,
-
           c.course_id,
           c.course_code,
           c.course_name,
-
           ay.academic_year,
           ay.is_current AS academic_year_is_current,
-
           sem.semester_name,
-
           r.room_id,
           r.room_code,
           r.room_name
-
       FROM subject_offerings so
-
       INNER JOIN section_subjects ss
-          ON ss.section_subject_id =
-             so.section_subject_id
-
+          ON ss.section_subject_id = so.section_subject_id
       INNER JOIN subjects sub
-          ON sub.subject_id =
-             so.subject_id
-
+          ON sub.subject_id = so.subject_id
       INNER JOIN sections sec
-          ON sec.section_id =
-             so.section_id
-
+          ON sec.section_id = so.section_id
       INNER JOIN courses c
-          ON c.course_id =
-             sec.course_id
-
+          ON c.course_id = sec.course_id
       INNER JOIN academic_years ay
-          ON ay.academic_year_id =
-             so.academic_year_id
-
+          ON ay.academic_year_id = so.academic_year_id
       INNER JOIN semesters sem
-          ON sem.semester_id =
-             so.semester_id
-
+          ON sem.semester_id = so.semester_id
       LEFT JOIN rooms r
-          ON r.room_id =
-             so.room_id
-
+          ON r.room_id = so.room_id
       WHERE
           so.offering_id = ?
           AND so.faculty_id = ?
-
       LIMIT 1
       `,
       [offeringId, faculty.faculty_id],
     );
-
-    // =================================================
-    // NOT FOUND / NOT OWNED
-    // =================================================
 
     if (offeringRows.length === 0) {
       return res.status(404).json({
@@ -2117,10 +2078,6 @@ router.get("/:offeringId/gradebook", async (req, res) => {
 
     const offering = offeringRows[0];
 
-    // =================================================
-    // CANCELLED OFFERING
-    // =================================================
-
     if (offering.offering_status === "Cancelled") {
       return res.status(409).json({
         success: false,
@@ -2128,112 +2085,62 @@ router.get("/:offeringId/gradebook", async (req, res) => {
       });
     }
 
-    // =================================================
-    // GET OFFICIAL STUDENTS + GRADES
-    // =================================================
-    //
-    // IMPORTANT:
-    //
-    // We allow:
-    //
-    // Enrolled
-    // Completed
-    // Failed
-    // Incomplete
-    //
-    // because when a grade becomes Approved, your
-    // database trigger changes enrollment_subjects.status
-    // from Enrolled into one of those final statuses.
-    //
-    // If we filtered only status = 'Enrolled', an
-    // approved student would disappear from the
-    // gradebook after approval.
-    //
-    // Dropped / Withdrawn students are excluded.
-    //
-    // =================================================
-
     const [rows] = await db.execute(
       `
       SELECT
           es.enrollment_subject_id,
           es.enrollment_id,
           es.status AS enrollment_subject_status,
-
           e.student_id,
           e.enrollment_status,
-
           s.student_number,
           s.first_name,
           s.middle_name,
           s.last_name,
-
           u.email,
-
           g.grade_id,
           g.faculty_id AS grade_faculty_id,
-
-          g.prelim_grade,
           g.midterm_grade,
           g.final_grade,
           g.final_rating,
-
+          g.grading_policy,
+          g.grading_outcome,
+          g.outcome_reason,
+          g.overall_percentage,
           g.remarks,
           g.grade_status,
-
           g.submitted_at,
-
           g.reviewed_by,
           reviewer.username AS reviewed_by_username,
-
           g.reviewed_at,
           g.review_remarks,
-
           g.created_at AS grade_created_at,
           g.updated_at AS grade_updated_at
-
       FROM enrollment_subjects es
-
       INNER JOIN enrollments e
-          ON e.enrollment_id =
-             es.enrollment_id
-
+          ON e.enrollment_id = es.enrollment_id
       INNER JOIN students s
-          ON s.student_id =
-             e.student_id
-
+          ON s.student_id = e.student_id
       LEFT JOIN users u
-          ON u.user_id =
-             s.user_id
-
+          ON u.user_id = s.user_id
       LEFT JOIN grades g
-          ON g.enrollment_subject_id =
-             es.enrollment_subject_id
-
+          ON g.enrollment_subject_id = es.enrollment_subject_id
       LEFT JOIN users reviewer
-          ON reviewer.user_id =
-             g.reviewed_by
-
+          ON reviewer.user_id = g.reviewed_by
       WHERE
           es.offering_id = ?
-
           AND es.subject_id = ?
-
           AND es.section_id = ?
-
           AND e.academic_year_id = ?
-
           AND e.semester_id = ?
-
           AND e.enrollment_status = 'Approved'
-
           AND es.status IN (
               'Enrolled',
               'Completed',
               'Failed',
-              'Incomplete'
+              'Incomplete',
+              'Unofficial Drop'
           )
-
       ORDER BY
           s.last_name ASC,
           s.first_name ASC,
@@ -2249,26 +2156,16 @@ router.get("/:offeringId/gradebook", async (req, res) => {
       ],
     );
 
-    // =================================================
-    // FORMAT STUDENTS
-    // =================================================
-
     const students = rows.map((row) => {
       const hasGrade = row.grade_id !== null;
 
       return {
         enrollment_subject_id: row.enrollment_subject_id,
-
         enrollment_id: row.enrollment_id,
-
         student_id: row.student_id,
-
         student_number: row.student_number,
-
         first_name: row.first_name,
-
         middle_name: row.middle_name,
-
         last_name: row.last_name,
 
         full_name: [row.first_name, row.middle_name, row.last_name]
@@ -2276,19 +2173,13 @@ router.get("/:offeringId/gradebook", async (req, res) => {
           .join(" "),
 
         email: row.email,
-
         enrollment_status: row.enrollment_status,
-
         subject_status: row.enrollment_subject_status,
 
         grade: hasGrade
           ? {
               grade_id: row.grade_id,
-
               faculty_id: row.grade_faculty_id,
-
-              prelim_grade:
-                row.prelim_grade !== null ? Number(row.prelim_grade) : null,
 
               midterm_grade:
                 row.midterm_grade !== null ? Number(row.midterm_grade) : null,
@@ -2296,36 +2187,28 @@ router.get("/:offeringId/gradebook", async (req, res) => {
               final_grade:
                 row.final_grade !== null ? Number(row.final_grade) : null,
 
+              ...gradePolicyFields(row),
+
               final_rating:
                 row.final_rating !== null ? Number(row.final_rating) : null,
 
               remarks: row.remarks,
-
               grade_status: row.grade_status,
-
               submitted_at: row.submitted_at,
 
               review: {
                 reviewed_by: row.reviewed_by,
-
                 reviewed_by_username: row.reviewed_by_username,
-
                 reviewed_at: row.reviewed_at,
-
                 review_remarks: row.review_remarks,
               },
 
               created_at: row.grade_created_at,
-
               updated_at: row.grade_updated_at,
             }
           : null,
       };
     });
-
-    // =================================================
-    // GRADEBOOK SUMMARY
-    // =================================================
 
     const summary = {
       total_students: students.length,
@@ -2350,91 +2233,65 @@ router.get("/:offeringId/gradebook", async (req, res) => {
       ).length,
     };
 
-    // =================================================
-    // RESPONSE
-    // =================================================
-
     return res.status(200).json({
       success: true,
 
       faculty: {
         faculty_id: faculty.faculty_id,
-
         employee_number: faculty.employee_number,
-
         faculty_name: faculty.faculty_name,
       },
 
       class: {
         offering_id: offering.offering_id,
-
         section_subject_id: offering.section_subject_id,
-
         offering_status: offering.offering_status,
-
         section_subject_status: offering.section_subject_status,
 
         subject: {
           subject_id: offering.subject_id,
-
           subject_code: offering.subject_code,
-
           subject_name: offering.subject_name,
-
           units: Number(offering.units),
-
           lecture_hours: Number(offering.lecture_hours),
-
           laboratory_hours: Number(offering.laboratory_hours),
         },
 
         section: {
           section_id: offering.section_id,
-
           section_name: offering.section_name,
-
           year_level: offering.year_level,
 
           course: {
             course_id: offering.course_id,
-
             course_code: offering.course_code,
-
             course_name: offering.course_name,
           },
         },
 
         academic_period: {
           academic_year_id: offering.academic_year_id,
-
           academic_year: offering.academic_year,
-
           is_current_academic_year: Boolean(offering.academic_year_is_current),
-
           semester_id: offering.semester_id,
-
           semester_name: offering.semester_name,
         },
 
         schedule: {
           days: offering.schedule_days,
-
           time: offering.schedule_time,
         },
 
         room: offering.room_id
           ? {
               room_id: offering.room_id,
-
               room_code: offering.room_code,
-
               room_name: offering.room_name,
             }
           : null,
       },
 
       summary,
-
       students,
     });
   } catch (error) {
@@ -2450,52 +2307,17 @@ router.get("/:offeringId/gradebook", async (req, res) => {
   }
 });
 
-// =====================================================
-// SAVE FACULTY DRAFT GRADE
-// =====================================================
-//
-// PUT
-// /api/faculty/classes/:offeringId
-//                    /grades/:enrollmentSubjectId/draft
-//
-// Creates a new Draft grade or updates an existing
-// editable grade.
-//
-// Editable:
-// - Draft
-// - Returned
-//
-// Locked:
-// - Submitted
-// - Approved
-//
-// IMPORTANT:
-// faculty_id comes from authenticated Faculty.
-// enrollment_subject_id comes from the URL.
-// student/subject/enrollment identity is derived from DB.
-//
-// =====================================================
-
 router.put(
   "/:offeringId/grades/:enrollmentSubjectId/draft",
   async (req, res) => {
     try {
-      // ===============================================
-      // AUTHENTICATED FACULTY
-      // ===============================================
-
       const faculty = await getAuthenticatedFaculty(req, res);
 
       if (!faculty) {
         return;
       }
 
-      // ===============================================
-      // VALIDATE IDS
-      // ===============================================
-
       const offeringId = Number(req.params.offeringId);
-
       const enrollmentSubjectId = Number(req.params.enrollmentSubjectId);
 
       if (!Number.isInteger(offeringId) || offeringId <= 0) {
@@ -2512,189 +2334,58 @@ router.put(
         });
       }
 
-      // ===============================================
-      // REQUEST VALUES
-      // ===============================================
+      let calculated;
 
-      const {
-        prelim_grade,
-        midterm_grade,
-        final_grade,
-        final_rating,
-        remarks,
-      } = req.body ?? {};
-
-      // ===============================================
-      // NORMALIZE OPTIONAL NUMERIC VALUES
-      // ===============================================
-
-      const normalizeNullableNumber = (value, fieldName) => {
-        if (value === null || value === undefined || value === "") {
-          return {
-            valid: true,
-            value: null,
-          };
-        }
-
-        const numericValue = Number(value);
-
-        if (!Number.isFinite(numericValue)) {
-          return {
-            valid: false,
-            message: `${fieldName} must be a valid number.`,
-          };
-        }
-
-        return {
-          valid: true,
-          value: numericValue,
-        };
-      };
-
-      const prelimResult = normalizeNullableNumber(
-        prelim_grade,
-        "Prelim grade",
-      );
-
-      if (!prelimResult.valid) {
+      try {
+        calculated = calculateGrade(req.body ?? {}, {
+          requireComplete: false,
+        });
+      } catch (error) {
         return res.status(400).json({
           success: false,
-          message: prelimResult.message,
+          message: error.message,
         });
       }
-
-      const midtermResult = normalizeNullableNumber(
-        midterm_grade,
-        "Midterm grade",
-      );
-
-      if (!midtermResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: midtermResult.message,
-        });
-      }
-
-      const finalGradeResult = normalizeNullableNumber(
-        final_grade,
-        "Final grade",
-      );
-
-      if (!finalGradeResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: finalGradeResult.message,
-        });
-      }
-
-      const finalRatingResult = normalizeNullableNumber(
-        final_rating,
-        "Final rating",
-      );
-
-      if (!finalRatingResult.valid) {
-        return res.status(400).json({
-          success: false,
-          message: finalRatingResult.message,
-        });
-      }
-
-      // ===============================================
-      // VALIDATE REMARKS
-      // ===============================================
-
-      let normalizedRemarks = null;
-
-      if (remarks !== null && remarks !== undefined && remarks !== "") {
-        const allowedRemarks = ["Passed", "Failed", "Incomplete"];
-
-        if (!allowedRemarks.includes(remarks)) {
-          return res.status(400).json({
-            success: false,
-            message: "Remarks must be Passed, Failed, Incomplete, or null.",
-          });
-        }
-
-        normalizedRemarks = remarks;
-      }
-
-      // ===============================================
-      // VERIFY CLASS + STUDENT MEMBERSHIP
-      // ===============================================
-      //
-      // This simultaneously proves:
-      //
-      // 1. offering belongs to this Faculty
-      // 2. enrollment subject belongs to this offering
-      // 3. enrollment is Approved
-      // 4. subject is currently Enrolled
-      //
-      // ===============================================
 
       const [membershipRows] = await db.execute(
         `
-          SELECT
-              so.offering_id,
-              so.faculty_id,
-              so.status AS offering_status,
-
-              sub.subject_id,
-              sub.subject_code,
-              sub.subject_name,
-
-              sec.section_id,
-              sec.section_name,
-
-              es.enrollment_subject_id,
-              es.enrollment_id,
-              es.status
-                  AS enrollment_subject_status,
-
-              e.student_id,
-              e.enrollment_status,
-
-              s.student_number,
-              s.first_name,
-              s.middle_name,
-              s.last_name
-
-          FROM subject_offerings so
-
-          INNER JOIN subjects sub
-              ON sub.subject_id =
-                 so.subject_id
-
-          INNER JOIN sections sec
-              ON sec.section_id =
-                 so.section_id
-
-          INNER JOIN enrollment_subjects es
-              ON es.offering_id =
-                 so.offering_id
-
-              AND es.subject_id =
-                  so.subject_id
-
-              AND es.section_id =
-                  so.section_id
-
-          INNER JOIN enrollments e
-              ON e.enrollment_id =
-                 es.enrollment_id
-
-          INNER JOIN students s
-              ON s.student_id =
-                 e.student_id
-
-          WHERE
-              so.offering_id = ?
-
-              AND so.faculty_id = ?
-
-              AND es.enrollment_subject_id = ?
-
-          LIMIT 1
-          `,
+        SELECT
+            so.offering_id,
+            so.faculty_id,
+            so.status AS offering_status,
+            sub.subject_id,
+            sub.subject_code,
+            sub.subject_name,
+            sec.section_id,
+            sec.section_name,
+            es.enrollment_subject_id,
+            es.enrollment_id,
+            es.status AS enrollment_subject_status,
+            e.student_id,
+            e.enrollment_status,
+            s.student_number,
+            s.first_name,
+            s.middle_name,
+            s.last_name
+        FROM subject_offerings so
+        INNER JOIN subjects sub
+            ON sub.subject_id = so.subject_id
+        INNER JOIN sections sec
+            ON sec.section_id = so.section_id
+        INNER JOIN enrollment_subjects es
+            ON es.offering_id = so.offering_id
+            AND es.subject_id = so.subject_id
+            AND es.section_id = so.section_id
+        INNER JOIN enrollments e
+            ON e.enrollment_id = es.enrollment_id
+        INNER JOIN students s
+            ON s.student_id = e.student_id
+        WHERE
+            so.offering_id = ?
+            AND so.faculty_id = ?
+            AND es.enrollment_subject_id = ?
+        LIMIT 1
+        `,
         [offeringId, faculty.faculty_id, enrollmentSubjectId],
       );
 
@@ -2708,20 +2399,12 @@ router.put(
 
       const membership = membershipRows[0];
 
-      // ===============================================
-      // OFFERING MUST NOT BE CANCELLED
-      // ===============================================
-
       if (membership.offering_status === "Cancelled") {
         return res.status(409).json({
           success: false,
           message: "Grades cannot be saved for a cancelled class.",
         });
       }
-
-      // ===============================================
-      // ENROLLMENT MUST BE APPROVED
-      // ===============================================
 
       if (membership.enrollment_status !== "Approved") {
         return res.status(409).json({
@@ -2730,66 +2413,31 @@ router.put(
         });
       }
 
-      // ===============================================
-      // CHECK EXISTING GRADE
-      // ===============================================
-      //
-      // IMPORTANT:
-      //
-      // We must check the existing grade BEFORE checking
-      // enrollment_subject_status.
-      //
-      // Why?
-      //
-      // Approved Passed grades automatically change:
-      //
-      // enrollment_subjects.status
-      // Enrolled -> Completed
-      //
-      // So if we check "Enrolled" first, an Approved grade
-      // gets the wrong error:
-      //
-      // "subject is no longer actively enrolled"
-      //
-      // Instead:
-      //
-      // Approved  -> locked
-      // Submitted -> locked
-      // Draft     -> editable only while Enrolled
-      // Returned  -> editable only while Enrolled
-      // No grade  -> creatable only while Enrolled
-      //
-      // ===============================================
-
       const [existingRows] = await db.execute(
         `
-    SELECT
-        grade_id,
-        enrollment_subject_id,
-        faculty_id,
-
-        prelim_grade,
-        midterm_grade,
-        final_grade,
-        final_rating,
-
-        remarks,
-        grade_status,
-
-        submitted_at,
-        reviewed_by,
-        reviewed_at,
-        review_remarks,
-
-        created_at,
-        updated_at
-
-    FROM grades
-
-    WHERE enrollment_subject_id = ?
-
-    LIMIT 1
-    `,
+        SELECT
+            grade_id,
+            enrollment_subject_id,
+            faculty_id,
+            midterm_grade,
+            final_grade,
+            final_rating,
+            grading_policy,
+            grading_outcome,
+            outcome_reason,
+            overall_percentage,
+            remarks,
+            grade_status,
+            submitted_at,
+            reviewed_by,
+            reviewed_at,
+            review_remarks,
+            created_at,
+            updated_at
+        FROM grades
+        WHERE enrollment_subject_id = ?
+        LIMIT 1
+        `,
         [enrollmentSubjectId],
       );
 
@@ -2798,15 +2446,7 @@ router.put(
 
       const existingGrade = existingRows.length > 0 ? existingRows[0] : null;
 
-      // ===============================================
-      // EXISTING GRADE SECURITY + STATUS LOCKS
-      // ===============================================
-
       if (existingGrade) {
-        // =============================================
-        // FACULTY OWNERSHIP CONSISTENCY
-        // =============================================
-
         if (
           existingGrade.faculty_id !== null &&
           Number(existingGrade.faculty_id) !== Number(faculty.faculty_id)
@@ -2817,20 +2457,12 @@ router.put(
           });
         }
 
-        // =============================================
-        // APPROVED IS PERMANENTLY LOCKED
-        // =============================================
-
         if (existingGrade.grade_status === "Approved") {
           return res.status(409).json({
             success: false,
             message: "This grade has already been approved and is locked.",
           });
         }
-
-        // =============================================
-        // SUBMITTED IS LOCKED FOR FACULTY
-        // =============================================
 
         if (existingGrade.grade_status === "Submitted") {
           return res.status(409).json({
@@ -2841,23 +2473,6 @@ router.put(
         }
       }
 
-      // ===============================================
-      // SUBJECT MUST STILL BE ENROLLED
-      // ===============================================
-      //
-      // We only reach this point for:
-      //
-      // - new grade
-      // - Draft
-      // - Returned
-      //
-      // Approved and Submitted already exited above.
-      //
-      // Draft/Returned editing requires an active
-      // enrollment_subject status of Enrolled.
-      //
-      // ===============================================
-
       if (membership.enrollment_subject_status !== "Enrolled") {
         return res.status(409).json({
           success: false,
@@ -2866,111 +2481,84 @@ router.put(
         });
       }
 
-      // ===============================================
-      // CREATE NEW DRAFT
-      // ===============================================
-
       if (!existingGrade) {
         const [insertResult] = await db.execute(
           `
-      INSERT INTO grades (
-          enrollment_subject_id,
-          faculty_id,
-
-          prelim_grade,
-          midterm_grade,
-          final_grade,
-          final_rating,
-
-          remarks,
-          grade_status
-      )
-      VALUES (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          'Draft'
-      )
-      `,
+    INSERT INTO grades (
+        enrollment_subject_id,
+        faculty_id,
+        grading_policy,
+        grading_outcome,
+        outcome_reason,
+        midterm_grade,
+        final_grade,
+        overall_percentage,
+        final_rating,
+        remarks,
+        grade_status
+    )
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Draft')
+    `,
           [
             enrollmentSubjectId,
             faculty.faculty_id,
-
-            prelimResult.value,
-            midtermResult.value,
-            finalGradeResult.value,
-            finalRatingResult.value,
-
-            normalizedRemarks,
+            calculated.grading_policy,
+            calculated.grading_outcome,
+            calculated.outcome_reason,
+            calculated.midterm_grade,
+            calculated.final_grade,
+            calculated.overall_percentage,
+            calculated.final_rating,
+            calculated.remarks,
           ],
         );
 
         gradeId = insertResult.insertId;
         resultingStatus = "Draft";
       } else {
-        // =============================================
-        // DRAFT OR RETURNED CAN BE EDITED
-        // =============================================
-        //
-        // Returned stays Returned while Faculty makes
-        // corrections.
-        //
-        // Allowed:
-        //
-        // Draft    -> Draft
-        // Returned -> Returned
-        //
-        // Submission is handled by the separate
-        // /submit endpoint.
-        //
-        // =============================================
-
         resultingStatus = existingGrade.grade_status;
 
-        await db.execute(
+        const [draftUpdate] = await db.execute(
           `
     UPDATE grades
-
     SET
         faculty_id = ?,
-
-        prelim_grade = ?,
+        grading_policy = ?,
+        grading_outcome = ?,
+        outcome_reason = ?,
         midterm_grade = ?,
         final_grade = ?,
+        overall_percentage = ?,
         final_rating = ?,
-
         remarks = ?,
-
         grade_status = ?
-
     WHERE grade_id = ?
+      AND grade_status IN ('Draft', 'Returned')
     `,
           [
             faculty.faculty_id,
-
-            prelimResult.value,
-            midtermResult.value,
-            finalGradeResult.value,
-            finalRatingResult.value,
-
-            normalizedRemarks,
-
+            calculated.grading_policy,
+            calculated.grading_outcome,
+            calculated.outcome_reason,
+            calculated.midterm_grade,
+            calculated.final_grade,
+            calculated.overall_percentage,
+            calculated.final_rating,
+            calculated.remarks,
             resultingStatus,
-
             existingGrade.grade_id,
           ],
         );
 
+        if (draftUpdate.affectedRows !== 1) {
+          return res.status(409).json({
+            success: false,
+            message: "Grade changed while saving. Refresh and try again.",
+          });
+        }
+
         gradeId = existingGrade.grade_id;
       }
-
-      // ===============================================
-      // READ SAVED GRADE
-      // ===============================================
 
       const [savedRows] = await db.execute(
         `
@@ -2978,37 +2566,29 @@ router.put(
             grade_id,
             enrollment_subject_id,
             faculty_id,
-
-            prelim_grade,
             midterm_grade,
             final_grade,
             final_rating,
-
+            grading_policy,
+            grading_outcome,
+            outcome_reason,
+            overall_percentage,
             remarks,
             grade_status,
-
             submitted_at,
             reviewed_by,
             reviewed_at,
             review_remarks,
-
             created_at,
             updated_at
-
         FROM grades
-
         WHERE grade_id = ?
-
         LIMIT 1
         `,
         [gradeId],
       );
 
       const saved = savedRows[0];
-
-      // ===============================================
-      // RESPONSE
-      // ===============================================
 
       return res.status(200).json({
         success: true,
@@ -3020,11 +2600,8 @@ router.put(
 
         student: {
           enrollment_subject_id: membership.enrollment_subject_id,
-
           enrollment_id: membership.enrollment_id,
-
           student_id: membership.student_id,
-
           student_number: membership.student_number,
 
           full_name: [
@@ -3041,28 +2618,20 @@ router.put(
 
           subject: {
             subject_id: membership.subject_id,
-
             subject_code: membership.subject_code,
-
             subject_name: membership.subject_name,
           },
 
           section: {
             section_id: membership.section_id,
-
             section_name: membership.section_name,
           },
         },
 
         grade: {
           grade_id: saved.grade_id,
-
           enrollment_subject_id: saved.enrollment_subject_id,
-
           faculty_id: saved.faculty_id,
-
-          prelim_grade:
-            saved.prelim_grade !== null ? Number(saved.prelim_grade) : null,
 
           midterm_grade:
             saved.midterm_grade !== null ? Number(saved.midterm_grade) : null,
@@ -3070,23 +2639,18 @@ router.put(
           final_grade:
             saved.final_grade !== null ? Number(saved.final_grade) : null,
 
+          ...gradePolicyFields(saved),
+
           final_rating:
             saved.final_rating !== null ? Number(saved.final_rating) : null,
 
           remarks: saved.remarks,
-
           grade_status: saved.grade_status,
-
           submitted_at: saved.submitted_at,
-
           reviewed_by: saved.reviewed_by,
-
           reviewed_at: saved.reviewed_at,
-
           review_remarks: saved.review_remarks,
-
           created_at: saved.created_at,
-
           updated_at: saved.updated_at,
         },
       });
@@ -3095,16 +2659,6 @@ router.put(
         "PUT /api/faculty/classes/:offeringId/grades/:enrollmentSubjectId/draft error:",
         error,
       );
-
-      // ===============================================
-      // DATABASE BUSINESS-RULE ERROR
-      // ===============================================
-      //
-      // Your grade triggers use SQLSTATE 45000.
-      //
-      // mysql2 normally exposes that as errno 1644.
-      //
-      // ===============================================
 
       if (error?.errno === 1644 || error?.sqlState === "45000") {
         return res.status(409).json({
@@ -3116,7 +2670,6 @@ router.put(
         });
       }
 
-      // Duplicate enrollment_subject_id
       if (error?.code === "ER_DUP_ENTRY") {
         return res.status(409).json({
           success: false,
@@ -3132,48 +2685,17 @@ router.put(
   },
 );
 
-// =====================================================
-// SUBMIT FACULTY GRADE
-// =====================================================
-//
-// PATCH
-// /api/faculty/classes/:offeringId
-//                    /grades/:enrollmentSubjectId/submit
-//
-// No request body is required.
-//
-// Allowed:
-//
-// Draft    -> Submitted
-// Returned -> Submitted
-//
-// Not allowed:
-//
-// Submitted -> Submitted
-// Approved  -> anything
-//
-// =====================================================
-
 router.patch(
   "/:offeringId/grades/:enrollmentSubjectId/submit",
   async (req, res) => {
     try {
-      // ===============================================
-      // AUTHENTICATED FACULTY
-      // ===============================================
-
       const faculty = await getAuthenticatedFaculty(req, res);
 
       if (!faculty) {
         return;
       }
 
-      // ===============================================
-      // VALIDATE IDS
-      // ===============================================
-
       const offeringId = Number(req.params.offeringId);
-
       const enrollmentSubjectId = Number(req.params.enrollmentSubjectId);
 
       if (!Number.isInteger(offeringId) || offeringId <= 0) {
@@ -3190,93 +2712,63 @@ router.patch(
         });
       }
 
-      // ===============================================
-      // GET GRADE + VERIFY FACULTY OWNERSHIP
-      // ===============================================
-
       const [rows] = await db.execute(
         `
         SELECT
             g.grade_id,
             g.enrollment_subject_id,
             g.faculty_id,
-
-            g.prelim_grade,
             g.midterm_grade,
             g.final_grade,
             g.final_rating,
-
+            g.grading_policy,
+            g.grading_outcome,
+            g.outcome_reason,
+            g.overall_percentage,
             g.remarks,
             g.grade_status,
-
             g.submitted_at,
             g.reviewed_by,
             g.reviewed_at,
             g.review_remarks,
-
             es.enrollment_id,
             es.status AS enrollment_subject_status,
-
             e.student_id,
             e.enrollment_status,
-
             s.student_number,
             s.first_name,
             s.middle_name,
             s.last_name,
-
             so.offering_id,
             so.faculty_id AS offering_faculty_id,
             so.status AS offering_status,
-
             sub.subject_id,
             sub.subject_code,
             sub.subject_name,
-
             sec.section_id,
             sec.section_name
-
         FROM grades g
-
         INNER JOIN enrollment_subjects es
             ON es.enrollment_subject_id =
                g.enrollment_subject_id
-
         INNER JOIN enrollments e
-            ON e.enrollment_id =
-               es.enrollment_id
-
+            ON e.enrollment_id = es.enrollment_id
         INNER JOIN students s
-            ON s.student_id =
-               e.student_id
-
+            ON s.student_id = e.student_id
         INNER JOIN subject_offerings so
-            ON so.offering_id =
-               es.offering_id
-
+            ON so.offering_id = es.offering_id
         INNER JOIN subjects sub
-            ON sub.subject_id =
-               so.subject_id
-
+            ON sub.subject_id = so.subject_id
         INNER JOIN sections sec
-            ON sec.section_id =
-               so.section_id
-
+            ON sec.section_id = so.section_id
         WHERE
             g.enrollment_subject_id = ?
-
             AND es.offering_id = ?
-
             AND so.faculty_id = ?
-
         LIMIT 1
         `,
         [enrollmentSubjectId, offeringId, faculty.faculty_id],
       );
-
-      // ===============================================
-      // GRADE / CLASS NOT FOUND
-      // ===============================================
 
       if (rows.length === 0) {
         return res.status(404).json({
@@ -3288,20 +2780,12 @@ router.patch(
 
       const grade = rows[0];
 
-      // ===============================================
-      // VERIFY OFFERING
-      // ===============================================
-
       if (grade.offering_status === "Cancelled") {
         return res.status(409).json({
           success: false,
           message: "Grades cannot be submitted for a cancelled class.",
         });
       }
-
-      // ===============================================
-      // VERIFY ENROLLMENT
-      // ===============================================
 
       if (grade.enrollment_status !== "Approved") {
         return res.status(409).json({
@@ -3310,20 +2794,12 @@ router.patch(
         });
       }
 
-      // ===============================================
-      // VERIFY GRADE FACULTY
-      // ===============================================
-
       if (Number(grade.faculty_id) !== Number(faculty.faculty_id)) {
         return res.status(403).json({
           success: false,
           message: "This grade belongs to another Faculty assignment.",
         });
       }
-
-      // ===============================================
-      // STATUS VALIDATION
-      // ===============================================
 
       if (grade.grade_status === "Submitted") {
         return res.status(409).json({
@@ -3346,10 +2822,6 @@ router.patch(
         });
       }
 
-      // ===============================================
-      // VERIFY ACTIVE SUBJECT
-      // ===============================================
-
       if (grade.enrollment_subject_status !== "Enrolled") {
         return res.status(409).json({
           success: false,
@@ -3357,130 +2829,74 @@ router.patch(
         });
       }
 
-      // ===============================================
-      // APP-LEVEL COMPLETENESS CHECK
-      // ===============================================
-      //
-      // This mirrors your database trigger so the API
-      // can return a clean message before MariaDB has
-      // to reject the operation.
-      //
-      // Incomplete:
-      //   remarks is required, but a complete numeric
-      //   grade is not required by the current DB rule.
-      //
-      // Passed / Failed:
-      //   all grades + final rating are required.
-      //
-      // ===============================================
-
-      if (grade.remarks === null) {
-        return res.status(400).json({
+      if (grade.grading_policy !== "TWO_TERM_50_50") {
+        return res.status(409).json({
           success: false,
-          message: "Grade remarks are required before submission.",
+          message:
+            "Re-enter and save Midterm and Final Term percentages before submitting this legacy draft.",
         });
       }
 
-      if (["Passed", "Failed"].includes(grade.remarks)) {
-        const missingFields = [];
-
-        if (grade.prelim_grade === null) {
-          missingFields.push("prelim_grade");
-        }
-
-        if (grade.midterm_grade === null) {
-          missingFields.push("midterm_grade");
-        }
-
-        if (grade.final_grade === null) {
-          missingFields.push("final_grade");
-        }
-
-        if (grade.final_rating === null) {
-          missingFields.push("final_rating");
-        }
-
-        if (missingFields.length > 0) {
-          return res.status(400).json({
-            success: false,
-
-            message:
-              "Complete grades and final rating are required before submission.",
-
-            missing_fields: missingFields,
-          });
-        }
+      try {
+        calculateGrade(grade, {
+          requireComplete: true,
+        });
+      } catch (error) {
+        return res.status(400).json({
+          success: false,
+          message: error.message,
+        });
       }
-
-      // ===============================================
-      // SUBMIT
-      // ===============================================
-      //
-      // Database trigger will:
-      //
-      // Draft -> Submitted
-      // Returned -> Submitted
-      //
-      // and automatically set submitted_at.
-      //
-      // On Returned -> Submitted it also clears the
-      // previous Program Head review information.
-      //
-      // ===============================================
-
-      await db.execute(
+      const [submitResult] = await db.execute(
         `
-        UPDATE grades
+  UPDATE grades
+  SET
+      grade_status = 'Submitted',
+      submitted_at = CURRENT_TIMESTAMP,
+      reviewed_by = NULL,
+      reviewed_at = NULL,
+      review_remarks = NULL
+  WHERE grade_id = ?
+    AND grade_status IN ('Draft', 'Returned')
+  `,
+        [grade.grade_id],
+      );
 
-        SET
-            grade_status = 'Submitted'
-
+      if (submitResult.affectedRows !== 1) {
+        return res.status(409).json({
+          success: false,
+          message: "Grade changed while submitting. Refresh and try again.",
+        });
+      }
+      const [updatedRows] = await db.execute(
+        `
+        SELECT
+            grade_id,
+            enrollment_subject_id,
+            faculty_id,
+            midterm_grade,
+            final_grade,
+            final_rating,
+            grading_policy,
+            grading_outcome,
+            outcome_reason,
+            overall_percentage,
+            remarks,
+            grade_status,
+            submitted_at,
+            reviewed_by,
+            reviewed_at,
+            review_remarks,
+            created_at,
+            updated_at
+        FROM grades
         WHERE grade_id = ?
+        LIMIT 1
         `,
         [grade.grade_id],
       );
 
-      // ===============================================
-      // READ UPDATED GRADE
-      // ===============================================
-
-      const [updatedRows] = await db.execute(
-        `
-          SELECT
-              grade_id,
-              enrollment_subject_id,
-              faculty_id,
-
-              prelim_grade,
-              midterm_grade,
-              final_grade,
-              final_rating,
-
-              remarks,
-              grade_status,
-
-              submitted_at,
-              reviewed_by,
-              reviewed_at,
-              review_remarks,
-
-              created_at,
-              updated_at
-
-          FROM grades
-
-          WHERE grade_id = ?
-
-          LIMIT 1
-          `,
-        [grade.grade_id],
-      );
-
       const submitted = updatedRows[0];
-
-      // ===============================================
-      // RESPONSE
-      // ===============================================
 
       return res.status(200).json({
         success: true,
@@ -3492,11 +2908,8 @@ router.patch(
 
         student: {
           enrollment_subject_id: grade.enrollment_subject_id,
-
           enrollment_id: grade.enrollment_id,
-
           student_id: grade.student_id,
-
           student_number: grade.student_number,
 
           full_name: [grade.first_name, grade.middle_name, grade.last_name]
@@ -3509,30 +2922,20 @@ router.patch(
 
           subject: {
             subject_id: grade.subject_id,
-
             subject_code: grade.subject_code,
-
             subject_name: grade.subject_name,
           },
 
           section: {
             section_id: grade.section_id,
-
             section_name: grade.section_name,
           },
         },
 
         grade: {
           grade_id: submitted.grade_id,
-
           enrollment_subject_id: submitted.enrollment_subject_id,
-
           faculty_id: submitted.faculty_id,
-
-          prelim_grade:
-            submitted.prelim_grade !== null
-              ? Number(submitted.prelim_grade)
-              : null,
 
           midterm_grade:
             submitted.midterm_grade !== null
@@ -3544,25 +2947,20 @@ router.patch(
               ? Number(submitted.final_grade)
               : null,
 
+          ...gradePolicyFields(submitted),
+
           final_rating:
             submitted.final_rating !== null
               ? Number(submitted.final_rating)
               : null,
 
           remarks: submitted.remarks,
-
           grade_status: submitted.grade_status,
-
           submitted_at: submitted.submitted_at,
-
           reviewed_by: submitted.reviewed_by,
-
           reviewed_at: submitted.reviewed_at,
-
           review_remarks: submitted.review_remarks,
-
           created_at: submitted.created_at,
-
           updated_at: submitted.updated_at,
         },
       });
@@ -3572,14 +2970,9 @@ router.patch(
         error,
       );
 
-      // ===============================================
-      // DATABASE BUSINESS RULE
-      // ===============================================
-
       if (error?.errno === 1644 || error?.sqlState === "45000") {
         return res.status(409).json({
           success: false,
-
           message:
             error.sqlMessage ||
             error.message ||

@@ -23,7 +23,6 @@ export const studentNavGroups = [
     icon: "",
     children: [
       { label: "Request Document", path: "/student/document/request" },
-      { label: "Document Release", path: "/student/document/release" },
       { label: "My transactions", path: "/student/transactions" },
     ],
   },

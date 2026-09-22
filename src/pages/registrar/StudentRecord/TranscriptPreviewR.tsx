@@ -14,6 +14,7 @@ type AcademicClassification =
   | "Passed"
   | "Incomplete"
   | "Failed"
+  | "Unofficial Drop"
   | "Credited"
   | "Unknown";
 
@@ -91,7 +92,6 @@ interface AcademicRecord {
 
   subject_status: string;
 
-  prelim_grade: number | null;
   midterm_grade: number | null;
   final_grade: number | null;
 
@@ -257,6 +257,10 @@ function classifyFinalRating(
     return "Failed";
   }
 
+  if (rating === 6) {
+    return "Unofficial Drop";
+  }
+
   return "Unknown";
 }
 
@@ -268,7 +272,8 @@ function getClassification(record: AcademicRecord): AcademicClassification {
   if (
     record.academic_result === "Passed" ||
     record.academic_result === "Incomplete" ||
-    record.academic_result === "Failed"
+    record.academic_result === "Failed" ||
+    record.academic_result === "Unofficial Drop"
   ) {
     return record.academic_result;
   }
@@ -276,7 +281,8 @@ function getClassification(record: AcademicRecord): AcademicClassification {
   if (
     record.classification === "Passed" ||
     record.classification === "Incomplete" ||
-    record.classification === "Failed"
+    record.classification === "Failed" ||
+    record.classification === "Unofficial Drop"
   ) {
     return record.classification;
   }
