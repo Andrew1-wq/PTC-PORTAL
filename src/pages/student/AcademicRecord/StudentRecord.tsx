@@ -4,12 +4,15 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
 import { GraduationCap, RefreshCcw } from "lucide-react";
+import { apiUrl } from "../../../services/api";
 
 import "../../../styles/StudentAcademicRecord.css";
 
-const API_URL = "http://localhost:3000/api/student/academic-records";
-const CURRICULUM_PROGRESS_API_URL =
-  "http://localhost:3000/api/student/academic-records/curriculum-progress";
+const API_URL = apiUrl("/api/student/academic-records");
+
+const CURRICULUM_PROGRESS_API_URL = apiUrl(
+  "/api/student/academic-records/curriculum-progress",
+);
 
 type GradeClassification =
   | "Passed"
@@ -1217,7 +1220,11 @@ export default function StudentRecord() {
             >
               <RefreshCcw
                 size={16}
-                className={loading ? "student-record-refresh-icon is-spinning" : "student-record-refresh-icon"}
+                className={
+                  loading
+                    ? "student-record-refresh-icon is-spinning"
+                    : "student-record-refresh-icon"
+                }
                 aria-hidden="true"
               />
               {loading ? "Refreshing..." : "Refresh Record"}

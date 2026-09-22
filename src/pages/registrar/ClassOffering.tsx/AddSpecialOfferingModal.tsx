@@ -9,8 +9,7 @@ import { apiUrl } from "../../../services/api";
 
 const OFFERING_API_BASE_URL = apiUrl("/api/registrar/offerings");
 
-const CURRICULUM_API_BASE_URL =
-  "http://localhost:3000/api/registrar/curriculums";
+const CURRICULUM_API_BASE_URL = apiUrl("/api/registrar/curriculums");
 
 // =====================================================
 // SUBJECT TYPES
