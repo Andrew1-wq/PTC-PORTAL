@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -19,6 +19,7 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
+import "../../styles/FinanceReports.css";
 
 const FINANCE_REPORT_API =
   "http://localhost:3000/api/finance/tickets/reports/summary";
@@ -151,9 +152,6 @@ function workflowLabel(value: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export default function FinanceReports() {
   const navigate = useNavigate();
@@ -341,104 +339,58 @@ export default function FinanceReports() {
     return null;
   }
 
+
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-          gap: "22px",
-          padding: "4px",
-        }}
-      >
+      <main className="finance-reports">
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section style={panelStyle}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  marginBottom: "8px",
-                  color: "#15803d",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
-                <BarChart3 size={16} />
-                Finance Analytics
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "28px",
-                }}
-              >
-                Finance Reports
-              </h1>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  maxWidth: "760px",
-                  color: "#64748b",
-                  lineHeight: 1.6,
-                }}
-              >
-                Review Finance ticket activity, collections, transaction
-                breakdowns, and payment methods.
-              </p>
-
-              {generatedAt && (
-                <div
-                  style={{
-                    marginTop: "8px",
-                    color: "#94a3b8",
-                    fontSize: "11px",
-                  }}
-                >
-                  Report generated: {formatDateTime(generatedAt)}
-                </div>
-              )}
+        <section className="finance-reports__hero">
+          <div className="finance-reports__hero-copy">
+            <div className="finance-reports__eyebrow">
+              <BarChart3 size={16} aria-hidden="true" />
+              Finance Analytics
             </div>
 
+            <h1>Finance Reports</h1>
+
+            <p>
+              Review Finance ticket activity, collections, transaction
+              breakdowns, payment methods, and recent daily collection trends.
+            </p>
+
+            {generatedAt && (
+              <span className="finance-reports__generated-at">
+                Report generated: {formatDateTime(generatedAt)}
+              </span>
+            )}
+          </div>
+
+          <div className="finance-reports__hero-actions">
             <button
               type="button"
+              className="finance-reports__button finance-reports__button--secondary"
               onClick={() => void loadReport(false)}
               disabled={refreshing}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                minHeight: "42px",
-                padding: "10px 14px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "10px",
-                background: "#ffffff",
-                color: "#334155",
-                fontWeight: 750,
-                cursor: refreshing ? "wait" : "pointer",
-              }}
             >
-              {refreshing ? <Loader2 size={16} /> : <RefreshCcw size={16} />}
-              Refresh Report
+              {refreshing ? (
+                <Loader2
+                  size={16}
+                  className="finance-reports__spinner"
+                  aria-hidden="true"
+                />
+              ) : (
+                <RefreshCcw size={16} aria-hidden="true" />
+              )}
+
+              {refreshing ? "Refreshing..." : "Refresh Report"}
             </button>
+
+            <div className="finance-reports__hero-icon" aria-hidden="true">
+              <BarChart3 size={28} strokeWidth={1.9} />
+            </div>
           </div>
         </section>
 
@@ -448,14 +400,8 @@ export default function FinanceReports() {
 
         {errorMessage && (
           <section
-            style={{
-              padding: "14px 16px",
-              border: "1px solid #fecaca",
-              borderRadius: "11px",
-              background: "#fef2f2",
-              color: "#991b1b",
-              fontSize: "13px",
-            }}
+            className="finance-reports__message finance-reports__message--error"
+            role="alert"
           >
             {errorMessage}
           </section>
@@ -466,25 +412,15 @@ export default function FinanceReports() {
         ================================================= */}
 
         {loading ? (
-          <section
-            style={{
-              ...panelStyle,
-              minHeight: "280px",
-              display: "grid",
-              placeItems: "center",
-            }}
-          >
-            <div
-              style={{
-                display: "grid",
-                justifyItems: "center",
-                gap: "10px",
-                color: "#64748b",
-              }}
-            >
-              <Loader2 size={28} />
-              Loading Finance reports...
-            </div>
+          <section className="finance-reports__panel finance-reports__loading">
+            <Loader2
+              size={25}
+              className="finance-reports__spinner"
+              aria-hidden="true"
+            />
+
+            <strong>Loading Finance reports...</strong>
+            <span>Please wait while the latest report data is prepared.</span>
           </section>
         ) : (
           <>
@@ -493,34 +429,31 @@ export default function FinanceReports() {
             =============================================== */}
 
             <section
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-                gap: "14px",
-              }}
+              className="finance-reports__summary-grid"
+              aria-label="Finance collection summary"
             >
               <SummaryCard
                 label="Total Collected"
                 value={formatMoney(summary.total_collected)}
-                icon={<CircleDollarSign size={21} />}
+                icon={<CircleDollarSign size={20} />}
               />
 
               <SummaryCard
                 label="Collected Today"
                 value={formatMoney(summary.collected_today)}
-                icon={<Banknote size={21} />}
+                icon={<Banknote size={20} />}
               />
 
               <SummaryCard
                 label="This Month"
                 value={formatMoney(summary.collected_this_month)}
-                icon={<CalendarDays size={21} />}
+                icon={<CalendarDays size={20} />}
               />
 
               <SummaryCard
                 label="Paid Tickets"
                 value={String(summary.paid_tickets)}
-                icon={<CheckCircle2 size={21} />}
+                icon={<CheckCircle2 size={20} />}
               />
             </section>
 
@@ -528,36 +461,44 @@ export default function FinanceReports() {
                 TICKET SUMMARY
             =============================================== */}
 
-            <section style={panelStyle}>
+            <section className="finance-reports__panel">
               <SectionTitle
                 icon={<ReceiptText size={19} />}
+                kicker="Ticket Overview"
                 title="Ticket Summary"
                 description="Current Finance ticket status across all transactions."
               />
 
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-                  gap: "12px",
-                  marginTop: "18px",
-                }}
-              >
-                <StatusBox label="Total" value={summary.total_tickets} />
+              <div className="finance-reports__status-grid">
+                <StatusBox
+                  label="Total"
+                  value={summary.total_tickets}
+                  variant="neutral"
+                />
 
                 <StatusBox
                   label="Pending Payment"
                   value={summary.pending_tickets}
+                  variant="pending"
                 />
 
-                <StatusBox label="Paid" value={summary.paid_tickets} />
+                <StatusBox
+                  label="Paid"
+                  value={summary.paid_tickets}
+                  variant="paid"
+                />
 
                 <StatusBox
                   label="Cancelled"
                   value={summary.cancelled_tickets}
+                  variant="cancelled"
                 />
 
-                <StatusBox label="Refunded" value={summary.refunded_tickets} />
+                <StatusBox
+                  label="Refunded"
+                  value={summary.refunded_tickets}
+                  variant="refunded"
+                />
               </div>
             </section>
 
@@ -565,150 +506,71 @@ export default function FinanceReports() {
                 TRANSACTION BREAKDOWN
             =============================================== */}
 
-            <section style={panelStyle}>
+            <section className="finance-reports__panel">
               <SectionTitle
                 icon={<FileText size={19} />}
+                kicker="Transaction Performance"
                 title="Collections by Transaction"
                 description="Ticket volume and collections grouped by transaction type."
               />
 
-              <div
-                style={{
-                  marginTop: "18px",
-                  display: "grid",
-                  gap: "12px",
-                }}
-              >
+              <div className="finance-reports__report-list">
                 {transactions.length === 0 ? (
                   <EmptyState text="No transaction report data available." />
                 ) : (
-                  transactions.map((item) => {
-                    const percent = Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (Number(item.total_collected) /
-                          maxTransactionCollection) *
-                          100,
-                      ),
-                    );
+                  transactions.map((item) => (
+                    <article
+                      key={item.transaction_type_id}
+                      className="finance-reports__transaction-card"
+                    >
+                      <div className="finance-reports__transaction-top">
+                        <div>
+                          <div className="finance-reports__transaction-title">
+                            <strong>{item.transaction_name}</strong>
 
-                    return (
-                      <article
-                        key={item.transaction_type_id}
-                        style={{
-                          padding: "16px",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: "13px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "15px",
-                            flexWrap: "wrap",
-                          }}
-                        >
-                          <div>
-                            <div
-                              style={{
-                                display: "flex",
-                                alignItems: "center",
-                                gap: "7px",
-                                flexWrap: "wrap",
-                              }}
-                            >
-                              <strong
-                                style={{
-                                  color: "#0f172a",
-                                  fontSize: "14px",
-                                }}
-                              >
-                                {item.transaction_name}
-                              </strong>
-
-                              <span style={badgeStyle}>
-                                {item.transaction_code}
-                              </span>
-                            </div>
-
-                            <div
-                              style={{
-                                marginTop: "5px",
-                                color: "#64748b",
-                                fontSize: "11px",
-                              }}
-                            >
-                              {workflowLabel(item.workflow_type)}
-                            </div>
+                            <span className="finance-reports__code-badge">
+                              {item.transaction_code}
+                            </span>
                           </div>
 
-                          <div
-                            style={{
-                              textAlign: "right",
-                            }}
-                          >
-                            <div
-                              style={{
-                                color: "#15803d",
-                                fontSize: "18px",
-                                fontWeight: 850,
-                              }}
-                            >
-                              {formatMoney(item.total_collected)}
-                            </div>
-
-                            <div
-                              style={{
-                                color: "#64748b",
-                                fontSize: "10px",
-                              }}
-                            >
-                              collected
-                            </div>
-                          </div>
+                          <span className="finance-reports__workflow-label">
+                            {workflowLabel(item.workflow_type)}
+                          </span>
                         </div>
 
-                        <div
-                          style={{
-                            marginTop: "13px",
-                            height: "7px",
-                            borderRadius: "999px",
-                            background: "#f1f5f9",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${percent}%`,
-                              height: "100%",
-                              borderRadius: "999px",
-                              background: "#15803d",
-                            }}
-                          />
+                        <div className="finance-reports__transaction-total">
+                          <strong>
+                            {formatMoney(item.total_collected)}
+                          </strong>
+                          <span>collected</span>
                         </div>
+                      </div>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                            gap: "8px",
-                            marginTop: "12px",
-                          }}
-                        >
-                          <MiniStat label="Total" value={item.total_tickets} />
+                      <progress
+                        className="finance-reports__progress"
+                        max={maxTransactionCollection}
+                        value={Number(item.total_collected)}
+                        aria-label={`${item.transaction_name} collection relative to highest transaction collection`}
+                      />
 
-                          <MiniStat label="Paid" value={item.paid_tickets} />
+                      <div className="finance-reports__mini-grid">
+                        <MiniStat
+                          label="Total"
+                          value={item.total_tickets}
+                        />
 
-                          <MiniStat
-                            label="Pending"
-                            value={item.pending_tickets}
-                          />
-                        </div>
-                      </article>
-                    );
-                  })
+                        <MiniStat
+                          label="Paid"
+                          value={item.paid_tickets}
+                        />
+
+                        <MiniStat
+                          label="Pending"
+                          value={item.pending_tickets}
+                        />
+                      </div>
+                    </article>
+                  ))
                 )}
               </div>
             </section>
@@ -717,202 +579,93 @@ export default function FinanceReports() {
                 PAYMENT METHODS
             =============================================== */}
 
-            <section style={panelStyle}>
+            <section className="finance-reports__panel">
               <SectionTitle
                 icon={<CreditCard size={19} />}
+                kicker="Payment Channels"
                 title="Collections by Payment Method"
                 description="Completed payments grouped by collection method."
               />
 
-              <div
-                style={{
-                  marginTop: "18px",
-                  display: "grid",
-                  gap: "12px",
-                }}
-              >
+              <div className="finance-reports__report-list">
                 {paymentMethods.length === 0 ? (
                   <EmptyState text="No completed payment methods are available yet." />
                 ) : (
-                  paymentMethods.map((item) => {
-                    const percent = Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (Number(item.total_collected) /
-                          maxPaymentMethodCollection) *
-                          100,
-                      ),
-                    );
+                  paymentMethods.map((item) => (
+                    <article
+                      key={item.payment_method}
+                      className="finance-reports__payment-method-card"
+                    >
+                      <div className="finance-reports__payment-method-top">
+                        <div>
+                          <strong>{item.payment_method}</strong>
 
-                    return (
-                      <div
-                        key={item.payment_method}
-                        style={{
-                          padding: "15px",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: "12px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            display: "flex",
-                            justifyContent: "space-between",
-                            gap: "12px",
-                          }}
-                        >
-                          <div>
-                            <strong
-                              style={{
-                                color: "#0f172a",
-                                fontSize: "13px",
-                              }}
-                            >
-                              {item.payment_method}
-                            </strong>
-
-                            <div
-                              style={{
-                                marginTop: "3px",
-                                color: "#64748b",
-                                fontSize: "11px",
-                              }}
-                            >
-                              {item.payment_count} payment
-                              {item.payment_count === 1 ? "" : "s"}
-                            </div>
-                          </div>
-
-                          <strong
-                            style={{
-                              color: "#15803d",
-                            }}
-                          >
-                            {formatMoney(item.total_collected)}
-                          </strong>
+                          <span>
+                            {item.payment_count} payment
+                            {item.payment_count === 1 ? "" : "s"}
+                          </span>
                         </div>
 
-                        <div
-                          style={{
-                            marginTop: "11px",
-                            height: "7px",
-                            borderRadius: "999px",
-                            background: "#f1f5f9",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${percent}%`,
-                              height: "100%",
-                              background: "#15803d",
-                              borderRadius: "999px",
-                            }}
-                          />
-                        </div>
+                        <strong>
+                          {formatMoney(item.total_collected)}
+                        </strong>
                       </div>
-                    );
-                  })
+
+                      <progress
+                        className="finance-reports__progress"
+                        max={maxPaymentMethodCollection}
+                        value={Number(item.total_collected)}
+                        aria-label={`${item.payment_method} collection relative to highest payment method collection`}
+                      />
+                    </article>
+                  ))
                 )}
               </div>
             </section>
 
             {/* ===============================================
-                30-DAY COLLECTION HISTORY
+                RECENT DAILY COLLECTIONS
             =============================================== */}
 
-            <section style={panelStyle}>
+            <section className="finance-reports__panel">
               <SectionTitle
                 icon={<CalendarDays size={19} />}
+                kicker="Collection History"
                 title="Recent Daily Collections"
                 description="Finance collections recorded during the latest 30 calendar days."
               />
 
-              <div
-                style={{
-                  marginTop: "18px",
-                  display: "grid",
-                  gap: "10px",
-                }}
-              >
+              <div className="finance-reports__daily-list">
                 {dailyCollections.length === 0 ? (
                   <EmptyState text="No paid transactions were recorded during the latest 30 days." />
                 ) : (
-                  dailyCollections.map((item, index) => {
-                    const percent = Math.min(
-                      100,
-                      Math.max(
-                        0,
-                        (Number(item.total_collected) / maxDailyCollection) *
-                          100,
-                      ),
-                    );
-
-                    return (
-                      <div
-                        key={`${item.payment_date}-${index}`}
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns:
-                            "140px minmax(150px, 1fr) 100px 130px",
-                          alignItems: "center",
-                          gap: "12px",
-                          padding: "12px",
-                          border: "1px solid #e2e8f0",
-                          borderRadius: "11px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            color: "#334155",
-                            fontSize: "12px",
-                            fontWeight: 750,
-                          }}
-                        >
-                          {formatDate(item.payment_date)}
-                        </div>
-
-                        <div
-                          style={{
-                            height: "7px",
-                            background: "#f1f5f9",
-                            borderRadius: "999px",
-                            overflow: "hidden",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: `${percent}%`,
-                              height: "100%",
-                              background: "#15803d",
-                              borderRadius: "999px",
-                            }}
-                          />
-                        </div>
-
-                        <div
-                          style={{
-                            color: "#64748b",
-                            fontSize: "11px",
-                            textAlign: "right",
-                          }}
-                        >
-                          {item.payment_count} payment
-                          {item.payment_count === 1 ? "" : "s"}
-                        </div>
-
-                        <strong
-                          style={{
-                            color: "#0f172a",
-                            textAlign: "right",
-                            fontSize: "13px",
-                          }}
-                        >
-                          {formatMoney(item.total_collected)}
-                        </strong>
+                  dailyCollections.map((item, index) => (
+                    <article
+                      key={`${item.payment_date}-${index}`}
+                      className="finance-reports__daily-row"
+                    >
+                      <div className="finance-reports__daily-date">
+                        <CalendarDays size={15} aria-hidden="true" />
+                        <strong>{formatDate(item.payment_date)}</strong>
                       </div>
-                    );
-                  })
+
+                      <progress
+                        className="finance-reports__progress"
+                        max={maxDailyCollection}
+                        value={Number(item.total_collected)}
+                        aria-label={`${formatDate(item.payment_date)} collection relative to highest recent daily collection`}
+                      />
+
+                      <span className="finance-reports__daily-count">
+                        {item.payment_count} payment
+                        {item.payment_count === 1 ? "" : "s"}
+                      </span>
+
+                      <strong className="finance-reports__daily-amount">
+                        {formatMoney(item.total_collected)}
+                      </strong>
+                    </article>
+                  ))
                 )}
               </div>
             </section>
@@ -922,10 +675,6 @@ export default function FinanceReports() {
     </DashboardLayout>
   );
 }
-
-// ============================================================
-// SMALL COMPONENTS
-// ============================================================
 
 function SummaryCard({
   label,
@@ -937,51 +686,13 @@ function SummaryCard({
   icon: ReactNode;
 }) {
   return (
-    <article
-      style={{
-        padding: "19px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "15px",
-        background: "#ffffff",
-        display: "flex",
-        justifyContent: "space-between",
-        gap: "12px",
-      }}
-    >
+    <article className="finance-reports__summary-card">
       <div>
-        <div
-          style={{
-            color: "#64748b",
-            fontSize: "12px",
-            fontWeight: 700,
-          }}
-        >
-          {label}
-        </div>
-
-        <div
-          style={{
-            marginTop: "5px",
-            color: "#0f172a",
-            fontSize: "23px",
-            fontWeight: 850,
-          }}
-        >
-          {value}
-        </div>
+        <span>{label}</span>
+        <strong>{value}</strong>
       </div>
 
-      <div
-        style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: "11px",
-          background: "#f0fdf4",
-          color: "#15803d",
-          display: "grid",
-          placeItems: "center",
-        }}
-      >
+      <div className="finance-reports__summary-icon">
         {icon}
       </div>
     </article>
@@ -990,174 +701,78 @@ function SummaryCard({
 
 function SectionTitle({
   icon,
+  kicker,
   title,
   description,
 }: {
   icon: ReactNode;
+  kicker: string;
   title: string;
   description: string;
 }) {
   return (
-    <div
-      style={{
-        display: "flex",
-        gap: "10px",
-        alignItems: "flex-start",
-      }}
-    >
-      <div
-        style={{
-          width: "38px",
-          height: "38px",
-          borderRadius: "10px",
-          background: "#f0fdf4",
-          color: "#15803d",
-          display: "grid",
-          placeItems: "center",
-          flexShrink: 0,
-        }}
-      >
+    <div className="finance-reports__section-title">
+      <div className="finance-reports__section-icon">
         {icon}
       </div>
 
       <div>
-        <h2
-          style={{
-            margin: 0,
-            color: "#0f172a",
-            fontSize: "18px",
-          }}
-        >
-          {title}
-        </h2>
+        <span className="finance-reports__section-kicker">
+          {kicker}
+        </span>
 
-        <p
-          style={{
-            margin: "4px 0 0",
-            color: "#64748b",
-            fontSize: "12px",
-            lineHeight: 1.5,
-          }}
-        >
-          {description}
-        </p>
+        <h2>{title}</h2>
+        <p>{description}</p>
       </div>
     </div>
   );
 }
 
-function StatusBox({ label, value }: { label: string; value: number }) {
+function StatusBox({
+  label,
+  value,
+  variant,
+}: {
+  label: string;
+  value: number;
+  variant:
+    | "neutral"
+    | "pending"
+    | "paid"
+    | "cancelled"
+    | "refunded";
+}) {
   return (
     <div
-      style={{
-        padding: "14px",
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        borderRadius: "11px",
-      }}
+      className={`finance-reports__status-box finance-reports__status-box--${variant}`}
     >
-      <div
-        style={{
-          color: "#64748b",
-          fontSize: "10px",
-          fontWeight: 800,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </div>
-
-      <div
-        style={{
-          marginTop: "5px",
-          color: "#0f172a",
-          fontSize: "21px",
-          fontWeight: 850,
-        }}
-      >
-        {value}
-      </div>
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: number }) {
+function MiniStat({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
   return (
-    <div
-      style={{
-        padding: "9px",
-        borderRadius: "9px",
-        background: "#f8fafc",
-        textAlign: "center",
-      }}
-    >
-      <div
-        style={{
-          fontSize: "9px",
-          color: "#64748b",
-          fontWeight: 800,
-          textTransform: "uppercase",
-        }}
-      >
-        {label}
-      </div>
-
-      <strong
-        style={{
-          display: "block",
-          marginTop: "3px",
-          color: "#0f172a",
-        }}
-      >
-        {value}
-      </strong>
+    <div className="finance-reports__mini-stat">
+      <span>{label}</span>
+      <strong>{value}</strong>
     </div>
   );
 }
 
 function EmptyState({ text }: { text: string }) {
   return (
-    <div
-      style={{
-        padding: "28px",
-        border: "1px dashed #cbd5e1",
-        borderRadius: "12px",
-        textAlign: "center",
-        color: "#64748b",
-        fontSize: "12px",
-      }}
-    >
-      {text}
+    <div className="finance-reports__empty-state">
+      <BarChart3 size={25} aria-hidden="true" />
+      <strong>No report data</strong>
+      <span>{text}</span>
     </div>
   );
 }
-
-// ============================================================
-// STYLES
-// ============================================================
-
-const panelStyle: CSSProperties = {
-  padding: "24px",
-
-  border: "1px solid #e2e8f0",
-
-  borderRadius: "18px",
-
-  background: "#ffffff",
-
-  boxShadow: "0 8px 24px rgba(15, 23, 42, 0.04)",
-};
-
-const badgeStyle: CSSProperties = {
-  padding: "4px 7px",
-
-  borderRadius: "999px",
-
-  background: "#f1f5f9",
-
-  color: "#475569",
-
-  fontSize: "9px",
-
-  fontWeight: 800,
-};

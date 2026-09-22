@@ -20,6 +20,7 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
+import "../../styles/FinanceCreateStudentTransaction.css";
 
 const STUDENT_SEARCH_API = "http://localhost:3000/api/finance/tickets/students";
 
@@ -140,63 +141,6 @@ function formatMoney(value: number | null | undefined) {
   }).format(Number(value));
 }
 
-// ============================================================
-// INFO BOX
-// ============================================================
-
-function InfoBox({
-  label,
-  value,
-  icon,
-}: {
-  label: string;
-  value: ReactNode;
-  icon?: ReactNode;
-}) {
-  return (
-    <div
-      style={{
-        padding: "13px 14px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "11px",
-        background: "#f8fafc",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "6px",
-          marginBottom: "5px",
-          color: "#64748b",
-          fontSize: "10px",
-          fontWeight: 800,
-          textTransform: "uppercase",
-          letterSpacing: ".05em",
-        }}
-      >
-        {icon}
-
-        {label}
-      </div>
-
-      <div
-        style={{
-          color: "#0f172a",
-          fontSize: "13px",
-          fontWeight: 750,
-          overflowWrap: "anywhere",
-        }}
-      >
-        {value}
-      </div>
-    </div>
-  );
-}
-
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export default function CreateStudentTransaction() {
   const navigate = useNavigate();
@@ -693,93 +637,35 @@ export default function CreateStudentTransaction() {
     return null;
   }
 
+
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-          gap: "22px",
-          padding: "4px",
-        }}
-      >
+      <main className="finance-create-transaction">
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section
-          style={{
-            padding: "26px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-          }}
-        >
+        <section className="finance-create-transaction__hero">
+          <div className="finance-create-transaction__hero-copy">
+            <div className="finance-create-transaction__eyebrow">
+              <WalletCards size={16} aria-hidden="true" />
+              Finance
+            </div>
+
+            <h1>Create Student Transaction</h1>
+
+            <p>
+              Assign a Finance-only transaction to a specific student. The
+              system automatically generates a Finance ticket for the new
+              transaction.
+            </p>
+          </div>
+
           <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
+            className="finance-create-transaction__hero-icon"
+            aria-hidden="true"
           >
-            <div>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  marginBottom: "8px",
-                  color: "#15803d",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
-                <WalletCards size={16} />
-                Finance
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "28px",
-                }}
-              >
-                Create Student Transaction
-              </h1>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  maxWidth: "760px",
-                  color: "#64748b",
-                  lineHeight: 1.6,
-                }}
-              >
-                Assign a Finance transaction to a specific student. The system
-                will automatically generate one Finance ticket for the
-                transaction.
-              </p>
-            </div>
-
-            <div
-              style={{
-                width: "58px",
-                height: "58px",
-                borderRadius: "16px",
-                background: "#f0fdf4",
-                color: "#15803d",
-                display: "grid",
-                placeItems: "center",
-                flexShrink: 0,
-              }}
-            >
-              <CreditCard size={31} />
-            </div>
+            <CreditCard size={28} strokeWidth={1.9} />
           </div>
         </section>
 
@@ -789,33 +675,12 @@ export default function CreateStudentTransaction() {
 
         {errorMessage && (
           <section
-            style={{
-              display: "flex",
-              alignItems: "flex-start",
-              gap: "10px",
-              padding: "15px",
-              border: "1px solid #fecaca",
-              borderRadius: "12px",
-              background: "#fef2f2",
-              color: "#991b1b",
-            }}
+            className="finance-create-transaction__message finance-create-transaction__message--error"
+            role="alert"
           >
-            <AlertCircle
-              size={19}
-              style={{
-                flexShrink: 0,
-                marginTop: "1px",
-              }}
-            />
+            <AlertCircle size={19} aria-hidden="true" />
 
-            <div
-              style={{
-                fontSize: "13px",
-                lineHeight: 1.6,
-              }}
-            >
-              {errorMessage}
-            </div>
+            <div>{errorMessage}</div>
           </section>
         )}
 
@@ -824,60 +689,24 @@ export default function CreateStudentTransaction() {
         ================================================= */}
 
         {successMessage && createdTicket && (
-          <section
-            style={{
-              padding: "22px",
-              border: "1px solid #bbf7d0",
-              borderRadius: "16px",
-              background: "#f0fdf4",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "11px",
-                marginBottom: "17px",
-              }}
-            >
-              <CheckCircle2
-                size={24}
-                color="#15803d"
-                style={{
-                  flexShrink: 0,
-                }}
-              />
+          <section className="finance-create-transaction__success-card">
+            <div className="finance-create-transaction__success-header">
+              <div className="finance-create-transaction__success-icon">
+                <CheckCircle2 size={22} aria-hidden="true" />
+              </div>
 
               <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#14532d",
-                    fontSize: "18px",
-                  }}
-                >
-                  Transaction Created
-                </h2>
+                <span className="finance-create-transaction__section-kicker">
+                  Transaction Complete
+                </span>
 
-                <p
-                  style={{
-                    margin: "5px 0 0",
-                    color: "#166534",
-                    fontSize: "13px",
-                  }}
-                >
-                  {successMessage}
-                </p>
+                <h2>Transaction Created</h2>
+
+                <p>{successMessage}</p>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-                gap: "11px",
-              }}
-            >
+            <div className="finance-create-transaction__info-grid">
               <InfoBox
                 label="Finance Ticket"
                 value={createdTicket.ticket_number}
@@ -903,28 +732,26 @@ export default function CreateStudentTransaction() {
 
               <InfoBox
                 label="Payment Status"
-                value={createdTicket.payment.payment_status}
+                value={
+                  <span className="finance-create-transaction__status finance-create-transaction__status--pending">
+                    {createdTicket.payment.payment_status}
+                  </span>
+                }
               />
 
               <InfoBox
                 label="Registrar"
-                value={createdTicket.registrar.status}
+                value={
+                  <span className="finance-create-transaction__status finance-create-transaction__status--neutral">
+                    {createdTicket.registrar.status}
+                  </span>
+                }
               />
             </div>
 
-            <div
-              style={{
-                marginTop: "15px",
-                padding: "11px 13px",
-                borderRadius: "10px",
-                background: "#dcfce7",
-                color: "#166534",
-                fontSize: "12px",
-                lineHeight: 1.6,
-              }}
-            >
+            <div className="finance-create-transaction__success-note">
               The student can now see this ticket in their{" "}
-              <strong>My Transactions</strong> page. Payment is still pending
+              <strong>My Transactions</strong> page. Payment remains pending
               until Finance receives and records the payment.
             </div>
           </section>
@@ -936,244 +763,86 @@ export default function CreateStudentTransaction() {
 
         <form
           onSubmit={handleSubmit}
-          style={{
-            display: "grid",
-            gap: "20px",
-          }}
+          className="finance-create-transaction__form"
         >
           {/* ===============================================
               STEP 1 — STUDENT
           =============================================== */}
 
-          <section
-            style={{
-              padding: "24px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "18px",
-              background: "#ffffff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginBottom: "18px",
-              }}
-            >
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "11px",
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  display: "grid",
-                  placeItems: "center",
-                  fontWeight: 850,
-                }}
-              >
-                1
-              </div>
-
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#0f172a",
-                    fontSize: "18px",
-                  }}
-                >
-                  Select Student
-                </h2>
-
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    color: "#64748b",
-                    fontSize: "13px",
-                  }}
-                >
-                  Search using the student number or student name.
-                </p>
-              </div>
-            </div>
+          <section className="finance-create-transaction__panel">
+            <StepHeader
+              step="1"
+              title="Select Student"
+              description="Search using the student number or student name."
+            />
 
             {selectedStudent ? (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  gap: "14px",
-                  padding: "16px",
-                  border: "1px solid #bbf7d0",
-                  borderRadius: "13px",
-                  background: "#f0fdf4",
-                }}
-              >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "12px",
-                  }}
-                >
-                  <div
-                    style={{
-                      width: "42px",
-                      height: "42px",
-                      borderRadius: "12px",
-                      background: "#dcfce7",
-                      color: "#15803d",
-                      display: "grid",
-                      placeItems: "center",
-                    }}
-                  >
-                    <UserRound size={21} />
+              <div className="finance-create-transaction__selected-student">
+                <div className="finance-create-transaction__selected-student-info">
+                  <div className="finance-create-transaction__student-icon">
+                    <UserRound size={20} aria-hidden="true" />
                   </div>
 
                   <div>
-                    <div
-                      style={{
-                        color: "#0f172a",
-                        fontWeight: 800,
-                      }}
-                    >
-                      {selectedStudent.student_name}
-                    </div>
-
-                    <div
-                      style={{
-                        marginTop: "3px",
-                        color: "#64748b",
-                        fontSize: "12px",
-                      }}
-                    >
-                      {selectedStudent.student_number}
-                    </div>
+                    <strong>{selectedStudent.student_name}</strong>
+                    <span>{selectedStudent.student_number}</span>
                   </div>
                 </div>
 
                 <button
                   type="button"
                   onClick={clearStudent}
-                  style={{
-                    width: "34px",
-                    height: "34px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "9px",
-                    background: "#ffffff",
-                    color: "#64748b",
-                    display: "grid",
-                    placeItems: "center",
-                    cursor: "pointer",
-                  }}
+                  className="finance-create-transaction__clear-student"
                   title="Change student"
+                  aria-label="Change selected student"
                 >
-                  <X size={16} />
+                  <X size={16} aria-hidden="true" />
                 </button>
               </div>
             ) : (
-              <div
-                style={{
-                  position: "relative",
-                }}
-              >
-                <Search
-                  size={18}
-                  color="#94a3b8"
-                  style={{
-                    position: "absolute",
-                    left: "14px",
-                    top: "14px",
-                    pointerEvents: "none",
-                  }}
-                />
-
-                <input
-                  type="search"
-                  value={studentQuery}
-                  onChange={(event) => setStudentQuery(event.target.value)}
-                  placeholder="Search student number or name..."
-                  autoComplete="off"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    minHeight: "46px",
-                    padding: "11px 44px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "11px",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    color: "#0f172a",
-                  }}
-                />
-
-                {searchingStudents && (
-                  <Loader2
+              <div className="finance-create-transaction__student-search">
+                <div className="finance-create-transaction__search-field">
+                  <Search
                     size={17}
-                    color="#64748b"
-                    style={{
-                      position: "absolute",
-                      right: "14px",
-                      top: "14px",
-                    }}
+                    className="finance-create-transaction__search-icon"
+                    aria-hidden="true"
                   />
-                )}
+
+                  <input
+                    type="search"
+                    value={studentQuery}
+                    onChange={(event) =>
+                      setStudentQuery(event.target.value)
+                    }
+                    placeholder="Search student number or name..."
+                    autoComplete="off"
+                  />
+
+                  {searchingStudents && (
+                    <Loader2
+                      size={17}
+                      className="finance-create-transaction__search-spinner"
+                      aria-hidden="true"
+                    />
+                  )}
+                </div>
 
                 {studentResults.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: "8px",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "12px",
-                      background: "#ffffff",
-                      overflow: "hidden",
-                      boxShadow: "0 12px 30px rgba(15, 23, 42, 0.09)",
-                    }}
-                  >
+                  <div className="finance-create-transaction__student-results">
                     {studentResults.map((student) => (
                       <button
                         key={student.student_id}
                         type="button"
                         onClick={() => selectStudent(student)}
-                        style={{
-                          width: "100%",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: "11px",
-                          padding: "13px 15px",
-                          border: "none",
-                          borderBottom: "1px solid #f1f5f9",
-                          background: "#ffffff",
-                          textAlign: "left",
-                          cursor: "pointer",
-                          fontFamily: "inherit",
-                        }}
+                        className="finance-create-transaction__student-result"
                       >
-                        <UserRound size={18} color="#15803d" />
+                        <div className="finance-create-transaction__student-result-icon">
+                          <UserRound size={17} aria-hidden="true" />
+                        </div>
 
                         <div>
-                          <div
-                            style={{
-                              color: "#0f172a",
-                              fontSize: "13px",
-                              fontWeight: 800,
-                            }}
-                          >
-                            {student.student_name}
-                          </div>
-
-                          <div
-                            style={{
-                              marginTop: "2px",
-                              color: "#64748b",
-                              fontSize: "11px",
-                            }}
-                          >
-                            {student.student_number}
-                          </div>
+                          <strong>{student.student_name}</strong>
+                          <span>{student.student_number}</span>
                         </div>
                       </button>
                     ))}
@@ -1181,13 +850,7 @@ export default function CreateStudentTransaction() {
                 )}
 
                 {studentSearchMessage && (
-                  <div
-                    style={{
-                      marginTop: "8px",
-                      color: "#64748b",
-                      fontSize: "12px",
-                    }}
-                  >
+                  <div className="finance-create-transaction__search-message">
                     {studentSearchMessage}
                   </div>
                 )}
@@ -1199,70 +862,16 @@ export default function CreateStudentTransaction() {
               STEP 2 — TRANSACTION
           =============================================== */}
 
-          <section
-            style={{
-              padding: "24px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "18px",
-              background: "#ffffff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginBottom: "18px",
-              }}
-            >
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "11px",
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  display: "grid",
-                  placeItems: "center",
-                  fontWeight: 850,
-                }}
-              >
-                2
-              </div>
+          <section className="finance-create-transaction__panel">
+            <StepHeader
+              step="2"
+              title="Select Transaction"
+              description="Only active manual Finance-only transaction types are available."
+            />
 
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#0f172a",
-                    fontSize: "18px",
-                  }}
-                >
-                  Select Transaction
-                </h2>
+            <label className="finance-create-transaction__field">
+              <span>Transaction Type</span>
 
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    color: "#64748b",
-                    fontSize: "13px",
-                  }}
-                >
-                  Only manual Finance-only transaction types are available.
-                </p>
-              </div>
-            </div>
-
-            <label
-              style={{
-                display: "grid",
-                gap: "7px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Transaction Type
               <select
                 value={selectedTransactionCode}
                 onChange={(event) =>
@@ -1270,17 +879,6 @@ export default function CreateStudentTransaction() {
                 }
                 disabled={loadingTypes || submitting}
                 required
-                style={{
-                  width: "100%",
-                  minHeight: "45px",
-                  padding: "10px 12px",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: "10px",
-                  background: "#ffffff",
-                  color: "#0f172a",
-                  outline: "none",
-                  fontFamily: "inherit",
-                }}
               >
                 <option value="">
                   {loadingTypes
@@ -1302,72 +900,42 @@ export default function CreateStudentTransaction() {
             </label>
 
             {selectedTransactionType && (
-              <div
-                style={{
-                  marginTop: "14px",
-                  padding: "14px",
-                  borderRadius: "11px",
-                  background: "#f8fafc",
-                  border: "1px solid #e2e8f0",
-                }}
-              >
-                <div
-                  style={{
-                    color: "#0f172a",
-                    fontSize: "13px",
-                    fontWeight: 800,
-                  }}
-                >
-                  {selectedTransactionType.transaction_name}
+              <div className="finance-create-transaction__type-preview">
+                <div className="finance-create-transaction__type-preview-header">
+                  <div>
+                    <strong>
+                      {selectedTransactionType.transaction_name}
+                    </strong>
+
+                    <span>
+                      {selectedTransactionType.transaction_code}
+                    </span>
+                  </div>
+
+                  <CreditCard size={19} aria-hidden="true" />
                 </div>
 
                 {selectedTransactionType.description && (
-                  <p
-                    style={{
-                      margin: "5px 0 0",
-                      color: "#64748b",
-                      fontSize: "12px",
-                      lineHeight: 1.55,
-                    }}
-                  >
-                    {selectedTransactionType.description}
-                  </p>
+                  <p>{selectedTransactionType.description}</p>
                 )}
 
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    flexWrap: "wrap",
-                    marginTop: "10px",
-                  }}
-                >
-                  <span
-                    style={{
-                      padding: "5px 8px",
-                      borderRadius: "999px",
-                      background: "#eff6ff",
-                      color: "#1d4ed8",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                    }}
-                  >
-                    FINANCE ONLY
+                <div className="finance-create-transaction__type-tags">
+                  <span className="finance-create-transaction__tag finance-create-transaction__tag--blue">
+                    Finance Only
                   </span>
 
-                  <span
-                    style={{
-                      padding: "5px 8px",
-                      borderRadius: "999px",
-                      background: "#f0fdf4",
-                      color: "#166534",
-                      fontSize: "10px",
-                      fontWeight: 800,
-                    }}
-                  >
+                  <span className="finance-create-transaction__tag finance-create-transaction__tag--green">
                     {selectedTransactionType.allow_amount_override
-                      ? "AMOUNT CAN BE OVERRIDDEN"
-                      : "FIXED AMOUNT"}
+                      ? "Amount Can Be Overridden"
+                      : "Fixed Amount"}
+                  </span>
+
+                  <span className="finance-create-transaction__tag finance-create-transaction__tag--neutral">
+                    {selectedTransactionType.default_amount === null
+                      ? "No Default Amount"
+                      : `Default ${formatMoney(
+                          selectedTransactionType.default_amount,
+                        )}`}
                   </span>
                 </div>
               </div>
@@ -1378,77 +946,17 @@ export default function CreateStudentTransaction() {
               STEP 3 — AMOUNT / REMARKS
           =============================================== */}
 
-          <section
-            style={{
-              padding: "24px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "18px",
-              background: "#ffffff",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                marginBottom: "18px",
-              }}
-            >
-              <div
-                style={{
-                  width: "38px",
-                  height: "38px",
-                  borderRadius: "11px",
-                  background: "#f0fdf4",
-                  color: "#15803d",
-                  display: "grid",
-                  placeItems: "center",
-                  fontWeight: 850,
-                }}
-              >
-                3
-              </div>
+          <section className="finance-create-transaction__panel">
+            <StepHeader
+              step="3"
+              title="Amount and Remarks"
+              description="Confirm the amount and add any optional Finance note before assigning the transaction."
+            />
 
-              <div>
-                <h2
-                  style={{
-                    margin: 0,
-                    color: "#0f172a",
-                    fontSize: "18px",
-                  }}
-                >
-                  Amount and Remarks
-                </h2>
+            <div className="finance-create-transaction__details-form">
+              <label className="finance-create-transaction__field">
+                <span>Amount Due</span>
 
-                <p
-                  style={{
-                    margin: "4px 0 0",
-                    color: "#64748b",
-                    fontSize: "13px",
-                  }}
-                >
-                  Confirm the amount before assigning the transaction.
-                </p>
-              </div>
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                gap: "16px",
-              }}
-            >
-              <label
-                style={{
-                  display: "grid",
-                  gap: "7px",
-                  color: "#334155",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                }}
-              >
-                Amount Due
                 <input
                   type="number"
                   min="0.01"
@@ -1462,32 +970,17 @@ export default function CreateStudentTransaction() {
                       !selectedTransactionType.allow_amount_override)
                   }
                   placeholder="Enter amount"
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    minHeight: "45px",
-                    padding: "10px 12px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "10px",
-                    background:
-                      selectedTransactionType &&
-                      !selectedTransactionType.allow_amount_override
-                        ? "#f8fafc"
-                        : "#ffffff",
-                    color: "#0f172a",
-                    outline: "none",
-                    fontFamily: "inherit",
-                  }}
+                  className={
+                    selectedTransactionType &&
+                    selectedTransactionType.default_amount !== null &&
+                    !selectedTransactionType.allow_amount_override
+                      ? "is-fixed"
+                      : ""
+                  }
                 />
+
                 {selectedTransactionType && (
-                  <span
-                    style={{
-                      color: "#64748b",
-                      fontSize: "11px",
-                      fontWeight: 500,
-                      lineHeight: 1.45,
-                    }}
-                  >
+                  <small>
                     {selectedTransactionType.default_amount === null
                       ? "No default amount is configured. Finance must enter the amount."
                       : selectedTransactionType.allow_amount_override
@@ -1497,20 +990,13 @@ export default function CreateStudentTransaction() {
                         : `Fixed configured amount: ${formatMoney(
                             selectedTransactionType.default_amount,
                           )}.`}
-                  </span>
+                  </small>
                 )}
               </label>
 
-              <label
-                style={{
-                  display: "grid",
-                  gap: "7px",
-                  color: "#334155",
-                  fontSize: "13px",
-                  fontWeight: 700,
-                }}
-              >
-                Finance Remarks
+              <label className="finance-create-transaction__field">
+                <span>Finance Remarks</span>
+
                 <textarea
                   value={remarks}
                   onChange={(event) => setRemarks(event.target.value)}
@@ -1518,18 +1004,9 @@ export default function CreateStudentTransaction() {
                   rows={4}
                   disabled={submitting}
                   placeholder="Optional remarks about this transaction..."
-                  style={{
-                    width: "100%",
-                    boxSizing: "border-box",
-                    resize: "vertical",
-                    padding: "11px 12px",
-                    border: "1px solid #cbd5e1",
-                    borderRadius: "10px",
-                    outline: "none",
-                    fontFamily: "inherit",
-                    color: "#0f172a",
-                  }}
                 />
+
+                <small>{remarks.length}/500 characters</small>
               </label>
             </div>
           </section>
@@ -1538,42 +1015,15 @@ export default function CreateStudentTransaction() {
               SUBMIT
           =============================================== */}
 
-          <section
-            style={{
-              padding: "20px",
-              border: "1px solid #e2e8f0",
-              borderRadius: "16px",
-              background: "#ffffff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: "16px",
-              flexWrap: "wrap",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "flex-start",
-                gap: "9px",
-                color: "#64748b",
-                maxWidth: "650px",
-                fontSize: "12px",
-                lineHeight: 1.55,
-              }}
-            >
-              <FileText
-                size={17}
-                color="#15803d"
-                style={{
-                  flexShrink: 0,
-                  marginTop: "1px",
-                }}
-              />
+          <section className="finance-create-transaction__submit-panel">
+            <div className="finance-create-transaction__submit-note">
+              <div className="finance-create-transaction__submit-note-icon">
+                <FileText size={17} aria-hidden="true" />
+              </div>
 
               <span>
                 Creating the transaction generates exactly one Finance ticket.
-                The payment starts as <strong>Pending Payment</strong> and
+                Payment starts as <strong>Pending Payment</strong>, while
                 Registrar remains <strong>Not Applicable</strong> because
                 manually assigned transactions are Finance-only.
               </span>
@@ -1581,39 +1031,25 @@ export default function CreateStudentTransaction() {
 
             <button
               type="submit"
+              className="finance-create-transaction__submit-button"
               disabled={
-                submitting || !selectedStudent || !selectedTransactionType
+                submitting ||
+                !selectedStudent ||
+                !selectedTransactionType
               }
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                minWidth: "210px",
-                padding: "12px 18px",
-                border: 0,
-                borderRadius: "10px",
-                background:
-                  submitting || !selectedStudent || !selectedTransactionType
-                    ? "#86a993"
-                    : "#15803d",
-                color: "#ffffff",
-                fontWeight: 800,
-                cursor: submitting
-                  ? "wait"
-                  : !selectedStudent || !selectedTransactionType
-                    ? "not-allowed"
-                    : "pointer",
-              }}
             >
               {submitting ? (
                 <>
-                  <Loader2 size={17} />
+                  <Loader2
+                    size={17}
+                    className="finance-create-transaction__spinner"
+                    aria-hidden="true"
+                  />
                   Creating...
                 </>
               ) : (
                 <>
-                  <ReceiptText size={17} />
+                  <ReceiptText size={17} aria-hidden="true" />
                   Create Transaction
                 </>
               )}
@@ -1622,5 +1058,51 @@ export default function CreateStudentTransaction() {
         </form>
       </main>
     </DashboardLayout>
+  );
+}
+
+function StepHeader({
+  step,
+  title,
+  description,
+}: {
+  step: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="finance-create-transaction__step-header">
+      <div className="finance-create-transaction__step-number">
+        {step}
+      </div>
+
+      <div>
+        <h2>{title}</h2>
+        <p>{description}</p>
+      </div>
+    </div>
+  );
+}
+
+function InfoBox({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: ReactNode;
+  icon?: ReactNode;
+}) {
+  return (
+    <div className="finance-create-transaction__info-box">
+      <div className="finance-create-transaction__info-label">
+        {icon}
+        {label}
+      </div>
+
+      <div className="finance-create-transaction__info-value">
+        {value}
+      </div>
+    </div>
   );
 }

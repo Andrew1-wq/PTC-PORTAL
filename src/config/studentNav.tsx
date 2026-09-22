@@ -5,6 +5,7 @@ export const studentNavGroups = [
     icon: "",
     children: [{ label: "Enrollment ", path: "/student/enrollment/main" }],
   },
+
   {
     id: "academic",
     label: "Academic Records",
@@ -26,6 +27,7 @@ export const studentNavGroups = [
     ],
   },
 ];
+
 export const studentSoloLinks = [
   { label: "Dashboard", path: "/student/dashboard", icon: "" },
   { label: "Announcement", path: "/student/announcement", icon: "" },

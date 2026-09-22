@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 
-import type { CSSProperties, FormEvent, ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 import { useNavigate } from "react-router-dom";
 
@@ -21,6 +21,7 @@ import {
 
 import DashboardLayout from "../../components/Layout/DashboardLayout";
 import { authService } from "../../services/auth.service";
+import "../../styles/FinanceTransactionTypes.css";
 
 const TRANSACTION_TYPES_API =
   "http://localhost:3000/api/finance/tickets/transaction-types";
@@ -124,9 +125,6 @@ function getWorkflowLabel(workflowType: string) {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-// ============================================================
-// COMPONENT
-// ============================================================
 
 export default function FinanceTransactionTypes() {
   const navigate = useNavigate();
@@ -520,91 +518,34 @@ export default function FinanceTransactionTypes() {
     return null;
   }
 
+
   return (
     <DashboardLayout>
-      <main
-        style={{
-          display: "grid",
-          gap: "22px",
-          padding: "4px",
-        }}
-      >
+      <main className="finance-transaction-types">
         {/* =================================================
             HEADER
         ================================================= */}
 
-        <section
-          style={{
-            padding: "26px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-            boxShadow: "0 8px 24px rgba(15, 23, 42, 0.05)",
-          }}
-        >
+        <section className="finance-transaction-types__hero">
+          <div className="finance-transaction-types__hero-copy">
+            <div className="finance-transaction-types__eyebrow">
+              <Settings2 size={16} aria-hidden="true" />
+              Finance Configuration
+            </div>
+
+            <h1>Transaction Types</h1>
+
+            <p>
+              Configure reusable Finance transaction types and default amounts
+              used when creating student Finance tickets.
+            </p>
+          </div>
+
           <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "20px",
-              flexWrap: "wrap",
-            }}
+            className="finance-transaction-types__hero-icon"
+            aria-hidden="true"
           >
-            <div>
-              <div
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "7px",
-                  marginBottom: "8px",
-                  color: "#15803d",
-                  fontSize: "12px",
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: ".08em",
-                }}
-              >
-                <Settings2 size={16} />
-                Finance Configuration
-              </div>
-
-              <h1
-                style={{
-                  margin: 0,
-                  color: "#0f172a",
-                  fontSize: "28px",
-                }}
-              >
-                Transaction Types
-              </h1>
-
-              <p
-                style={{
-                  margin: "8px 0 0",
-                  maxWidth: "760px",
-                  color: "#64748b",
-                  lineHeight: 1.6,
-                }}
-              >
-                Configure reusable Finance transaction types and default amounts
-                used when creating student Finance tickets.
-              </p>
-            </div>
-
-            <div
-              style={{
-                width: "58px",
-                height: "58px",
-                borderRadius: "16px",
-                background: "#f0fdf4",
-                color: "#15803d",
-                display: "grid",
-                placeItems: "center",
-              }}
-            >
-              <WalletCards size={31} />
-            </div>
+            <WalletCards size={28} strokeWidth={1.9} />
           </div>
         </section>
 
@@ -613,34 +554,31 @@ export default function FinanceTransactionTypes() {
         ================================================= */}
 
         <section
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))",
-            gap: "14px",
-          }}
+          className="finance-transaction-types__summary-grid"
+          aria-label="Transaction type summary"
         >
           <SummaryCard
             label="Total Types"
             value={summary.total}
-            icon={<ReceiptText size={21} />}
+            icon={<ReceiptText size={20} />}
           />
 
           <SummaryCard
             label="Active Types"
             value={summary.active}
-            icon={<CheckCircle2 size={21} />}
+            icon={<CheckCircle2 size={20} />}
           />
 
           <SummaryCard
             label="Manual Finance Types"
             value={summary.manual}
-            icon={<CircleDollarSign size={21} />}
+            icon={<CircleDollarSign size={20} />}
           />
 
           <SummaryCard
             label="System Workflows"
             value={summary.system_workflow}
-            icon={<ShieldCheck size={21} />}
+            icon={<ShieldCheck size={20} />}
           />
         </section>
 
@@ -650,49 +588,21 @@ export default function FinanceTransactionTypes() {
 
         {errorMessage && (
           <section
-            style={{
-              display: "flex",
-              gap: "10px",
-              padding: "14px",
-              border: "1px solid #fecaca",
-              borderRadius: "11px",
-              background: "#fef2f2",
-              color: "#991b1b",
-            }}
+            className="finance-transaction-types__message finance-transaction-types__message--error"
+            role="alert"
           >
-            <AlertCircle size={18} />
-
-            <span
-              style={{
-                fontSize: "13px",
-              }}
-            >
-              {errorMessage}
-            </span>
+            <AlertCircle size={18} aria-hidden="true" />
+            <span>{errorMessage}</span>
           </section>
         )}
 
         {successMessage && (
           <section
-            style={{
-              display: "flex",
-              gap: "10px",
-              padding: "14px",
-              border: "1px solid #bbf7d0",
-              borderRadius: "11px",
-              background: "#f0fdf4",
-              color: "#166534",
-            }}
+            className="finance-transaction-types__message finance-transaction-types__message--success"
+            role="status"
           >
-            <CheckCircle2 size={18} />
-
-            <span
-              style={{
-                fontSize: "13px",
-              }}
-            >
-              {successMessage}
-            </span>
+            <CheckCircle2 size={18} aria-hidden="true" />
+            <span>{successMessage}</span>
           </section>
         )}
 
@@ -700,73 +610,49 @@ export default function FinanceTransactionTypes() {
             CREATE NEW TYPE
         ================================================= */}
 
-        <section
-          style={{
-            padding: "24px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              gap: "10px",
-              alignItems: "center",
-              marginBottom: "18px",
-            }}
-          >
-            <Plus size={20} color="#15803d" />
+        <section className="finance-transaction-types__panel">
+          <div className="finance-transaction-types__section-header">
+            <div className="finance-transaction-types__section-icon">
+              <Plus size={19} aria-hidden="true" />
+            </div>
 
             <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "18px",
-                  color: "#0f172a",
-                }}
-              >
-                Create Transaction Type
-              </h2>
+              <span className="finance-transaction-types__section-kicker">
+                Manual Finance Setup
+              </span>
 
-              <p
-                style={{
-                  margin: "4px 0 0",
-                  fontSize: "12px",
-                  color: "#64748b",
-                }}
-              >
-                New types created here are Finance-only and may be manually
-                assigned to students.
+              <h2>Create Transaction Type</h2>
+
+              <p>
+                New transaction types created here are Finance-only and can be
+                manually assigned to students.
               </p>
             </div>
           </div>
 
           <form
             onSubmit={handleCreate}
-            style={{
-              display: "grid",
-              gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-              gap: "15px",
-            }}
+            className="finance-transaction-types__create-form"
           >
             <FieldLabel label="Transaction Code">
               <input
                 value={transactionCode}
-                onChange={(event) => setTransactionCode(event.target.value)}
+                onChange={(event) =>
+                  setTransactionCode(event.target.value)
+                }
                 placeholder="Example: ID_REPLACEMENT"
                 disabled={creating}
-                style={inputStyle}
               />
             </FieldLabel>
 
             <FieldLabel label="Transaction Name">
               <input
                 value={transactionName}
-                onChange={(event) => setTransactionName(event.target.value)}
+                onChange={(event) =>
+                  setTransactionName(event.target.value)
+                }
                 placeholder="Example: ID Replacement"
                 disabled={creating}
-                style={inputStyle}
               />
             </FieldLabel>
 
@@ -776,25 +662,15 @@ export default function FinanceTransactionTypes() {
                 min="0.01"
                 step="0.01"
                 value={defaultAmount}
-                onChange={(event) => setDefaultAmount(event.target.value)}
+                onChange={(event) =>
+                  setDefaultAmount(event.target.value)
+                }
                 placeholder="Optional"
                 disabled={creating}
-                style={inputStyle}
               />
             </FieldLabel>
 
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "9px",
-                alignSelf: "end",
-                minHeight: "45px",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
+            <label className="finance-transaction-types__checkbox-field">
               <input
                 type="checkbox"
                 checked={allowAmountOverride}
@@ -803,66 +679,51 @@ export default function FinanceTransactionTypes() {
                 }
                 disabled={creating}
               />
-              Allow amount override
+
+              <span>
+                <strong>Allow amount override</strong>
+                <small>
+                  Finance can change the configured amount when assigning
+                  this transaction.
+                </small>
+              </span>
             </label>
 
-            <label
-              style={{
-                display: "grid",
-                gap: "7px",
-                gridColumn: "1 / -1",
-                color: "#334155",
-                fontSize: "13px",
-                fontWeight: 700,
-              }}
-            >
-              Description
+            <label className="finance-transaction-types__field finance-transaction-types__field--full">
+              <span>Description</span>
+
               <textarea
                 value={description}
-                onChange={(event) => setDescription(event.target.value)}
+                onChange={(event) =>
+                  setDescription(event.target.value)
+                }
                 rows={3}
                 maxLength={255}
                 disabled={creating}
                 placeholder="Optional description..."
-                style={{
-                  ...inputStyle,
-                  resize: "vertical",
-                  fontFamily: "inherit",
-                }}
               />
+
+              <small>{description.length}/255 characters</small>
             </label>
 
-            <div
-              style={{
-                gridColumn: "1 / -1",
-                display: "flex",
-                justifyContent: "flex-end",
-              }}
-            >
+            <div className="finance-transaction-types__create-actions">
               <button
                 type="submit"
+                className="finance-transaction-types__button finance-transaction-types__button--primary"
                 disabled={creating}
-                style={{
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: "8px",
-                  padding: "11px 18px",
-                  border: 0,
-                  borderRadius: "10px",
-                  background: creating ? "#86a993" : "#15803d",
-                  color: "#ffffff",
-                  fontWeight: 800,
-                  cursor: creating ? "wait" : "pointer",
-                }}
               >
                 {creating ? (
                   <>
-                    <Loader2 size={17} />
+                    <Loader2
+                      size={17}
+                      className="finance-transaction-types__spinner"
+                      aria-hidden="true"
+                    />
                     Creating...
                   </>
                 ) : (
                   <>
-                    <Plus size={17} />
+                    <Plus size={17} aria-hidden="true" />
                     Create Type
                   </>
                 )}
@@ -872,317 +733,214 @@ export default function FinanceTransactionTypes() {
         </section>
 
         {/* =================================================
-            LIST
+            CONFIGURED TYPES
         ================================================= */}
 
-        <section
-          style={{
-            padding: "24px",
-            border: "1px solid #e2e8f0",
-            borderRadius: "18px",
-            background: "#ffffff",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "14px",
-              flexWrap: "wrap",
-              marginBottom: "18px",
-            }}
-          >
+        <section className="finance-transaction-types__panel">
+          <div className="finance-transaction-types__list-header">
             <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: "18px",
-                  color: "#0f172a",
-                }}
-              >
-                Configured Transaction Types
-              </h2>
+              <span className="finance-transaction-types__section-kicker">
+                Finance Configuration
+              </span>
 
-              <p
-                style={{
-                  margin: "5px 0 0",
-                  color: "#64748b",
-                  fontSize: "12px",
-                }}
-              >
-                System workflows and Finance-created transaction types.
+              <h2>Configured Transaction Types</h2>
+
+              <p>
+                System workflows and Finance-created transaction types available
+                in the portal.
               </p>
             </div>
 
             <button
               type="button"
+              className="finance-transaction-types__button finance-transaction-types__button--secondary"
               onClick={() => void loadTransactionTypes(false)}
               disabled={refreshing}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "7px",
-                padding: "9px 12px",
-                border: "1px solid #cbd5e1",
-                borderRadius: "9px",
-                background: "#ffffff",
-                color: "#334155",
-                fontWeight: 700,
-                cursor: refreshing ? "wait" : "pointer",
-              }}
             >
-              <RefreshCcw size={15} />
+              {refreshing ? (
+                <Loader2
+                  size={15}
+                  className="finance-transaction-types__spinner"
+                  aria-hidden="true"
+                />
+              ) : (
+                <RefreshCcw size={15} aria-hidden="true" />
+              )}
 
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
           {loading ? (
-            <div
-              style={{
-                minHeight: "170px",
-                display: "grid",
-                placeItems: "center",
-                color: "#64748b",
-              }}
-            >
-              <div
-                style={{
-                  display: "grid",
-                  justifyItems: "center",
-                  gap: "8px",
-                }}
-              >
-                <Loader2 size={25} />
-                Loading transaction types...
+            <div className="finance-transaction-types__state">
+              <Loader2
+                size={24}
+                className="finance-transaction-types__spinner"
+                aria-hidden="true"
+              />
+
+              <strong>Loading transaction types...</strong>
+              <span>Please wait while Finance configuration is loaded.</span>
+            </div>
+          ) : transactionTypes.length === 0 ? (
+            <div className="finance-transaction-types__state finance-transaction-types__state--empty">
+              <div className="finance-transaction-types__state-icon">
+                <ReceiptText size={26} aria-hidden="true" />
               </div>
+
+              <strong>No transaction types configured</strong>
+
+              <span>
+                Create a Finance transaction type above to get started.
+              </span>
             </div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gap: "13px",
-              }}
-            >
+            <div className="finance-transaction-types__list">
               {transactionTypes.map((item) => {
-                const isEditing = editingCode === item.transaction_code;
+                const isEditing =
+                  editingCode === item.transaction_code;
+
+                const isFinanceOnly =
+                  item.workflow_type === "FINANCE_ONLY";
 
                 return (
                   <article
                     key={item.transaction_type_id}
-                    style={{
-                      padding: "18px",
-                      border: "1px solid #e2e8f0",
-                      borderRadius: "14px",
-                      background: "#ffffff",
-                    }}
+                    className="finance-transaction-types__card"
                   >
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "flex-start",
-                        gap: "15px",
-                        flexWrap: "wrap",
-                      }}
-                    >
+                    <div className="finance-transaction-types__card-main">
                       <div
-                        style={{
-                          display: "flex",
-                          gap: "12px",
-                          flex: "1 1 300px",
-                        }}
+                        className={`finance-transaction-types__type-icon ${
+                          isFinanceOnly
+                            ? "finance-transaction-types__type-icon--finance"
+                            : "finance-transaction-types__type-icon--system"
+                        }`}
                       >
-                        <div
-                          style={{
-                            width: "42px",
-                            height: "42px",
-                            borderRadius: "11px",
-                            background:
-                              item.workflow_type === "FINANCE_ONLY"
-                                ? "#eff6ff"
-                                : "#f0fdf4",
-                            color:
-                              item.workflow_type === "FINANCE_ONLY"
-                                ? "#2563eb"
-                                : "#15803d",
-                            display: "grid",
-                            placeItems: "center",
-                            flexShrink: 0,
-                          }}
-                        >
-                          {item.workflow_type === "FINANCE_ONLY" ? (
-                            <CircleDollarSign size={21} />
-                          ) : (
-                            <FileText size={21} />
-                          )}
-                        </div>
-
-                        <div>
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "7px",
-                              alignItems: "center",
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            <strong
-                              style={{
-                                color: "#0f172a",
-                                fontSize: "15px",
-                              }}
-                            >
-                              {item.transaction_name}
-                            </strong>
-
-                            <span
-                              style={{
-                                padding: "4px 7px",
-                                borderRadius: "999px",
-                                background: "#f1f5f9",
-                                color: "#475569",
-                                fontSize: "10px",
-                                fontWeight: 800,
-                              }}
-                            >
-                              {item.transaction_code}
-                            </span>
-
-                            <span
-                              style={{
-                                padding: "4px 7px",
-                                borderRadius: "999px",
-                                background: item.is_active
-                                  ? "#dcfce7"
-                                  : "#fee2e2",
-                                color: item.is_active ? "#166534" : "#991b1b",
-                                fontSize: "10px",
-                                fontWeight: 800,
-                              }}
-                            >
-                              {item.is_active ? "ACTIVE" : "INACTIVE"}
-                            </span>
-                          </div>
-
-                          <p
-                            style={{
-                              margin: "6px 0 0",
-                              color: "#64748b",
-                              fontSize: "12px",
-                              lineHeight: 1.5,
-                            }}
-                          >
-                            {item.description || "No description provided."}
-                          </p>
-
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "7px",
-                              flexWrap: "wrap",
-                              marginTop: "9px",
-                            }}
-                          >
-                            <Badge>
-                              {getWorkflowLabel(item.workflow_type)}
-                            </Badge>
-
-                            {item.allow_manual_creation && (
-                              <Badge>Manual Creation</Badge>
-                            )}
-
-                            <Badge>
-                              {item.allow_amount_override
-                                ? "Amount Override Allowed"
-                                : "Fixed Amount"}
-                            </Badge>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        style={{
-                          minWidth: "210px",
-                        }}
-                      >
-                        <div
-                          style={{
-                            marginBottom: "5px",
-                            color: "#64748b",
-                            fontSize: "10px",
-                            fontWeight: 800,
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Default Amount
-                        </div>
-
-                        {isEditing ? (
-                          <div
-                            style={{
-                              display: "flex",
-                              gap: "7px",
-                            }}
-                          >
-                            <input
-                              type="number"
-                              min="0.01"
-                              step="0.01"
-                              value={editedAmount}
-                              onChange={(event) =>
-                                setEditedAmount(event.target.value)
-                              }
-                              style={{
-                                ...inputStyle,
-                                width: "130px",
-                              }}
-                            />
-
-                            <button
-                              type="button"
-                              onClick={() => void saveAmount(item)}
-                              disabled={savingAmount}
-                              style={iconButtonStyle}
-                              title="Save amount"
-                            >
-                              <Save size={16} />
-                            </button>
-                          </div>
+                        {isFinanceOnly ? (
+                          <CircleDollarSign
+                            size={20}
+                            aria-hidden="true"
+                          />
                         ) : (
-                          <div>
-                            <div
-                              style={{
-                                color: "#0f172a",
-                                fontSize: "17px",
-                                fontWeight: 850,
-                              }}
-                            >
-                              {formatMoney(item.default_amount)}
-                            </div>
-
-                            {item.is_active && (
-                              <button
-                                type="button"
-                                onClick={() => beginAmountEdit(item)}
-                                style={{
-                                  marginTop: "6px",
-                                  padding: 0,
-                                  border: "none",
-                                  background: "transparent",
-                                  color: "#15803d",
-                                  fontSize: "11px",
-                                  fontWeight: 800,
-                                  cursor: "pointer",
-                                }}
-                              >
-                                Edit Amount
-                              </button>
-                            )}
-                          </div>
+                          <FileText
+                            size={20}
+                            aria-hidden="true"
+                          />
                         )}
                       </div>
+
+                      <div className="finance-transaction-types__card-copy">
+                        <div className="finance-transaction-types__card-title-row">
+                          <strong>{item.transaction_name}</strong>
+
+                          <span className="finance-transaction-types__code-badge">
+                            {item.transaction_code}
+                          </span>
+
+                          <span
+                            className={`finance-transaction-types__status-badge ${
+                              item.is_active
+                                ? "finance-transaction-types__status-badge--active"
+                                : "finance-transaction-types__status-badge--inactive"
+                            }`}
+                          >
+                            {item.is_active ? "Active" : "Inactive"}
+                          </span>
+                        </div>
+
+                        <p>
+                          {item.description ||
+                            "No description provided."}
+                        </p>
+
+                        <div className="finance-transaction-types__badges">
+                          <Badge>
+                            {getWorkflowLabel(item.workflow_type)}
+                          </Badge>
+
+                          {item.allow_manual_creation && (
+                            <Badge>Manual Creation</Badge>
+                          )}
+
+                          <Badge>
+                            {item.allow_amount_override
+                              ? "Amount Override Allowed"
+                              : "Fixed Amount"}
+                          </Badge>
+
+                          {item.requires_grade_reference && (
+                            <Badge>Grade Reference Required</Badge>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="finance-transaction-types__amount-panel">
+                      <span className="finance-transaction-types__amount-label">
+                        Default Amount
+                      </span>
+
+                      {isEditing ? (
+                        <div className="finance-transaction-types__amount-editor">
+                          <input
+                            type="number"
+                            min="0.01"
+                            step="0.01"
+                            value={editedAmount}
+                            onChange={(event) =>
+                              setEditedAmount(event.target.value)
+                            }
+                            autoFocus
+                          />
+
+                          <button
+                            type="button"
+                            className="finance-transaction-types__save-button"
+                            onClick={() => void saveAmount(item)}
+                            disabled={savingAmount}
+                            title="Save amount"
+                            aria-label={`Save amount for ${item.transaction_name}`}
+                          >
+                            {savingAmount ? (
+                              <Loader2
+                                size={16}
+                                className="finance-transaction-types__spinner"
+                                aria-hidden="true"
+                              />
+                            ) : (
+                              <Save size={16} aria-hidden="true" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            className="finance-transaction-types__cancel-edit"
+                            onClick={() => {
+                              setEditingCode(null);
+                              setEditedAmount("");
+                            }}
+                            disabled={savingAmount}
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <div>
+                          <strong className="finance-transaction-types__amount-value">
+                            {formatMoney(item.default_amount)}
+                          </strong>
+
+                          {item.is_active && (
+                            <button
+                              type="button"
+                              className="finance-transaction-types__edit-amount"
+                              onClick={() => beginAmountEdit(item)}
+                            >
+                              Edit Amount
+                            </button>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </article>
                 );
@@ -1195,10 +953,6 @@ export default function FinanceTransactionTypes() {
   );
 }
 
-// ============================================================
-// SMALL COMPONENTS
-// ============================================================
-
 function SummaryCard({
   label,
   value,
@@ -1209,51 +963,13 @@ function SummaryCard({
   icon: ReactNode;
 }) {
   return (
-    <article
-      style={{
-        padding: "19px",
-        border: "1px solid #e2e8f0",
-        borderRadius: "15px",
-        background: "#ffffff",
-        display: "flex",
-        justifyContent: "space-between",
-        gap: "12px",
-      }}
-    >
+    <article className="finance-transaction-types__summary-card">
       <div>
-        <div
-          style={{
-            color: "#64748b",
-            fontSize: "12px",
-            fontWeight: 700,
-          }}
-        >
-          {label}
-        </div>
-
-        <div
-          style={{
-            marginTop: "5px",
-            color: "#0f172a",
-            fontSize: "24px",
-            fontWeight: 850,
-          }}
-        >
-          {value}
-        </div>
+        <span>{label}</span>
+        <strong>{value}</strong>
       </div>
 
-      <div
-        style={{
-          width: "40px",
-          height: "40px",
-          borderRadius: "11px",
-          background: "#f0fdf4",
-          color: "#15803d",
-          display: "grid",
-          placeItems: "center",
-        }}
-      >
+      <div className="finance-transaction-types__summary-icon">
         {icon}
       </div>
     </article>
@@ -1268,17 +984,8 @@ function FieldLabel({
   children: ReactNode;
 }) {
   return (
-    <label
-      style={{
-        display: "grid",
-        gap: "7px",
-        color: "#334155",
-        fontSize: "13px",
-        fontWeight: 700,
-      }}
-    >
-      {label}
-
+    <label className="finance-transaction-types__field">
+      <span>{label}</span>
       {children}
     </label>
   );
@@ -1286,64 +993,8 @@ function FieldLabel({
 
 function Badge({ children }: { children: ReactNode }) {
   return (
-    <span
-      style={{
-        padding: "4px 7px",
-        borderRadius: "999px",
-        background: "#f8fafc",
-        border: "1px solid #e2e8f0",
-        color: "#64748b",
-        fontSize: "9px",
-        fontWeight: 800,
-        textTransform: "uppercase",
-      }}
-    >
+    <span className="finance-transaction-types__badge">
       {children}
     </span>
   );
 }
-
-// ============================================================
-// SHARED STYLES
-// ============================================================
-
-const inputStyle: CSSProperties = {
-  width: "100%",
-  minHeight: "44px",
-  boxSizing: "border-box",
-
-  padding: "10px 12px",
-
-  border: "1px solid #cbd5e1",
-
-  borderRadius: "10px",
-
-  background: "#ffffff",
-
-  color: "#0f172a",
-
-  outline: "none",
-
-  fontFamily: "inherit",
-};
-
-const iconButtonStyle: CSSProperties = {
-  width: "42px",
-  minWidth: "42px",
-
-  height: "44px",
-
-  display: "grid",
-
-  placeItems: "center",
-
-  border: "none",
-
-  borderRadius: "10px",
-
-  background: "#15803d",
-
-  color: "#ffffff",
-
-  cursor: "pointer",
-};
