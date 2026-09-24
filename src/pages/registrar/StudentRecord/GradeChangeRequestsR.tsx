@@ -80,6 +80,10 @@ interface RegistrarGradeChangeRequest {
 
   original_grade: GradeSnapshot;
   proposed_grade: GradeSnapshot;
+  current_official_grade: GradeSnapshot & {
+    grading_policy: string | null;
+    grade_status: string | null;
+  };
 }
 
 interface QueueResponse {
@@ -131,7 +135,7 @@ function pick(record: Record<string, unknown>, ...keys: string[]): unknown {
 function buildGradeSnapshot(
   raw: Record<string, unknown>,
   nestedKey: string,
-  prefix: "old" | "new",
+  prefix: "old" | "new" | "current",
 ): GradeSnapshot {
   const nested = asRecord(raw[nestedKey]);
 
@@ -139,25 +143,30 @@ function buildGradeSnapshot(
     midterm_grade:
       asNumber(nested.midterm_grade) ??
       asNumber(raw[`${prefix}_midterm_grade`]),
+
     final_grade:
       asNumber(nested.final_grade) ?? asNumber(raw[`${prefix}_final_grade`]),
+
     overall_percentage:
       asNumber(nested.overall_percentage) ??
       asNumber(raw[`${prefix}_overall_percentage`]),
+
     final_rating:
       asNumber(nested.final_rating) ?? asNumber(raw[`${prefix}_final_rating`]),
+
     grading_outcome:
       asNullableString(nested.grading_outcome) ??
       asNullableString(raw[`${prefix}_grading_outcome`]),
+
     remarks:
       asNullableString(nested.remarks) ??
       asNullableString(raw[`${prefix}_remarks`]),
+
     outcome_reason:
       asNullableString(nested.outcome_reason) ??
       asNullableString(raw[`${prefix}_outcome_reason`]),
   };
 }
-
 function normalizeRequest(value: unknown): RegistrarGradeChangeRequest | null {
   const raw = asRecord(value);
   const requestId = asNumber(raw.grade_change_request_id);
@@ -263,6 +272,15 @@ function normalizeRequest(value: unknown): RegistrarGradeChangeRequest | null {
 
     original_grade: buildGradeSnapshot(raw, "original_grade", "old"),
     proposed_grade: buildGradeSnapshot(raw, "proposed_grade", "new"),
+    current_official_grade: {
+      ...buildGradeSnapshot(raw, "current_official_grade", "current"),
+      grading_policy:
+        asNullableString(asRecord(raw.current_official_grade).grading_policy) ??
+        asNullableString(raw.current_grading_policy),
+      grade_status:
+        asNullableString(asRecord(raw.current_official_grade).grade_status) ??
+        asNullableString(raw.current_grade_status),
+    },
   };
 }
 
@@ -830,7 +848,7 @@ export default function GradeChangeRequestsR() {
                           <ShieldCheck size={16} />
                         </span>
                         <div>
-                          <small>Current Official Record</small>
+                          <small>Original Request Snapshot</small>
                           <strong>Approved INC</strong>
                         </div>
                       </header>
@@ -946,6 +964,31 @@ export default function GradeChangeRequestsR() {
                         <p>{request.completion_remarks}</p>
                       </div>
                     </section>
+                  </div>
+
+                  <div className="registrar-grade-change-review-note">
+                    <ShieldCheck size={15} />
+                    <div>
+                      <strong>Current Official Grade Verification</strong>
+                      <p>
+                        Database record now shows{" "}
+                        <strong>
+                          {formatGrade(
+                            request.current_official_grade.final_rating,
+                          )}
+                          {" · "}
+                          {request.current_official_grade.remarks || "—"}
+                        </strong>
+                        {" · "}
+                        {formatPercentage(
+                          request.current_official_grade.overall_percentage,
+                        )}
+                        {" · "}
+                        {request.current_official_grade.grade_status ||
+                          "status unavailable"}
+                        .
+                      </p>
+                    </div>
                   </div>
 
                   <div className="registrar-grade-change-review-note">

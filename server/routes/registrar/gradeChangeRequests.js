@@ -472,20 +472,6 @@ router.get("/", async (req, res) => {
     });
   }
 });
-
-// =====================================================
-// PROCESS APPROVED INC COMPLETION
-//
-// PATCH
-// /api/registrar/grade-change-requests/:requestId/process
-//
-// Body:
-// {
-//   "registrar_remarks":
-//      "Approved INC completion verified."
-// }
-// =====================================================
-
 router.patch("/:requestId/process", async (req, res) => {
   let connection = null;
 
@@ -509,7 +495,6 @@ router.patch("/:requestId/process", async (req, res) => {
     if (!requestId) {
       return res.status(400).json({
         success: false,
-
         message: "Invalid grade change request ID.",
       });
     }
@@ -529,10 +514,10 @@ router.patch("/:requestId/process", async (req, res) => {
 
     connection = await db.getConnection();
 
-    // Defensive reset in case this pooled connection
-    // was previously used for INC processing.
-
+    // Defensive reset for pooled connection.
     await connection.execute("SET @allow_approved_inc_grade_change = NULL");
+
+    await connection.execute("SET @allow_approved_grade_correction = NULL");
 
     await connection.beginTransaction();
 
@@ -630,8 +615,7 @@ router.patch("/:requestId/process", async (req, res) => {
         FROM grade_change_requests gcr
 
         INNER JOIN grades g
-            ON g.grade_id =
-               gcr.grade_id
+            ON g.grade_id = gcr.grade_id
 
         INNER JOIN enrollment_subjects es
             ON es.enrollment_subject_id =
@@ -661,7 +645,7 @@ router.patch("/:requestId/process", async (req, res) => {
             gcr.grade_change_request_id = ?
 
         FOR UPDATE
-        `,
+      `,
       [requestId],
     );
 
@@ -670,26 +654,11 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(404).json({
         success: false,
-
         message: "Grade change request was not found.",
       });
     }
 
     const request = requestRows[0];
-
-    // =================================================
-    // VALIDATE REQUEST TYPE
-    // =================================================
-
-    if (request.request_type !== "INC_COMPLETION") {
-      await connection.rollback();
-
-      return res.status(409).json({
-        success: false,
-
-        message: "Only INC completion requests can be processed here.",
-      });
-    }
 
     // =================================================
     // VALIDATE REQUEST STATUS
@@ -700,7 +669,6 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
         message: `Grade change request cannot be processed because its current status is '${request.status}'.`,
       });
     }
@@ -714,9 +682,22 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
         message:
           "Program Head approval is required before Registrar processing.",
+      });
+    }
+
+    // =================================================
+    // VALIDATE REQUESTER
+    // =================================================
+
+    if (request.requested_by_role !== "Faculty") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+        message:
+          "Only Faculty-submitted grade change requests can be processed.",
       });
     }
 
@@ -729,67 +710,68 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
         message: "The student's enrollment is no longer approved.",
       });
     }
 
     // =================================================
-    // VALIDATE OFFICIAL GRADE STILL APPROVED INC
+    // CURRENT OFFICIAL GRADE VALUES
     // =================================================
+
+    const currentMidterm =
+      request.current_midterm_grade !== null
+        ? Number(request.current_midterm_grade)
+        : null;
+
+    const currentFinal =
+      request.current_final_grade !== null
+        ? Number(request.current_final_grade)
+        : null;
+
+    const currentOverall =
+      request.current_overall_percentage !== null
+        ? Number(request.current_overall_percentage)
+        : null;
 
     const currentRating =
       request.current_final_rating !== null
         ? Number(request.current_final_rating)
         : null;
 
-    if (
-      request.current_grade_status !== "Approved" ||
-      request.current_grading_outcome !== "INCOMPLETE" ||
-      request.current_remarks !== "Incomplete" ||
-      currentRating !== 4
-    ) {
-      await connection.rollback();
+    const currentPolicy = String(request.current_grading_policy || "").trim();
 
-      return res.status(409).json({
-        success: false,
+    const currentOutcome = String(request.current_grading_outcome || "").trim();
 
-        message: "The official grade is no longer an approved INC record.",
-      });
-    }
-
-    // =================================================
-    // VALIDATE CURRENT SUBJECT STATUS
-    // =================================================
-
-    if (request.enrollment_subject_status !== "Incomplete") {
-      await connection.rollback();
-
-      return res.status(409).json({
-        success: false,
-
-        message: `INC completion cannot be processed because the enrollment subject status is '${request.enrollment_subject_status}'.`,
-      });
-    }
+    const currentRemarks = String(request.current_remarks || "").trim();
 
     // =================================================
     // PROPOSED GRADE VALUES
     // =================================================
 
-    const newMidterm = Number(request.new_midterm_grade);
+    const newMidterm =
+      request.new_midterm_grade !== null
+        ? Number(request.new_midterm_grade)
+        : null;
 
-    const newFinal = Number(request.new_final_grade);
+    const newFinal =
+      request.new_final_grade !== null ? Number(request.new_final_grade) : null;
 
-    const newOverall = Number(request.new_overall_percentage);
+    const newOverall =
+      request.new_overall_percentage !== null
+        ? Number(request.new_overall_percentage)
+        : null;
 
-    const newRating = Number(request.new_final_rating);
+    const newRating =
+      request.new_final_rating !== null
+        ? Number(request.new_final_rating)
+        : null;
 
     const newRemarks = String(request.new_remarks || "").trim();
 
     const newOutcome = String(request.new_grading_outcome || "").trim();
 
     // =================================================
-    // VALIDATE NUMERIC VALUES
+    // VALIDATE PROPOSED NUMERIC VALUES
     // =================================================
 
     if (
@@ -808,13 +790,31 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
-        message: "The proposed completed grade is invalid.",
+        message: "The proposed grade is invalid.",
       });
     }
 
     // =================================================
-    // COMPLETED INC MUST BECOME NUMERIC
+    // VALIDATE 50/50 CALCULATION
+    // =================================================
+
+    const calculatedOverall =
+      Math.round((newMidterm * 0.5 + newFinal * 0.5) * 100) / 100;
+
+    if (Math.abs(calculatedOverall - newOverall) > 0.01) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+        message:
+          "The proposed overall percentage does not match the required 50% Midterm + 50% Final calculation.",
+        calculated_overall: calculatedOverall,
+        submitted_overall: newOverall,
+      });
+    }
+
+    // =================================================
+    // VALIDATE NUMERIC OUTCOME
     // =================================================
 
     if (newOutcome !== "NUMERIC") {
@@ -822,13 +822,13 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
-        message: "INC completion must produce a numeric grade.",
+        message:
+          "The proposed Registrar grade must have a NUMERIC grading outcome.",
       });
     }
 
     // =================================================
-    // RESULT MUST BE PASSED OR FAILED
+    // VALIDATE REMARKS / RATING
     // =================================================
 
     if (!["Passed", "Failed"].includes(newRemarks)) {
@@ -836,23 +836,17 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
-        message: "INC completion must result in either Passed or Failed.",
+        message:
+          "The proposed numeric grade must have either Passed or Failed remarks.",
       });
     }
-
-    // =================================================
-    // VALIDATE RATING / REMARKS CONSISTENCY
-    // =================================================
 
     if (newRemarks === "Passed" && (newRating < 1 || newRating > 3)) {
       await connection.rollback();
 
       return res.status(409).json({
         success: false,
-
-        message:
-          "A Passed INC completion must have a final rating from 1.00 to 3.00.",
+        message: "A Passed grade must have a final rating from 1.00 to 3.00.",
       });
     }
 
@@ -861,468 +855,808 @@ router.patch("/:requestId/process", async (req, res) => {
 
       return res.status(409).json({
         success: false,
-
-        message: "A Failed INC completion must have a final rating of 5.00.",
+        message: "A Failed grade must have a final rating of 5.00.",
       });
     }
 
     // =================================================
-    // DETERMINE SUBJECT STATUS
+    // REQUEST TYPE: INC COMPLETION
     // =================================================
 
-    const newEnrollmentSubjectStatus =
-      newRemarks === "Passed" ? "Completed" : "Failed";
-
-    // =================================================
-    // AUTHORIZE CONTROLLED INC UPDATE
-    //
-    // IMPORTANT:
-    // This is connection-scoped.
-    //
-    // trg_grades_before_update checks this flag.
-    // =================================================
-
-    await connection.execute("SET @allow_approved_inc_grade_change = 1");
-
-    // =================================================
-    // UPDATE OFFICIAL GRADE
-    // =================================================
-
-    const [gradeUpdateResult] = await connection.execute(
-      `
-        UPDATE grades
-
-        SET
-            midterm_grade = ?,
-            final_grade = ?,
-            overall_percentage = ?,
-            final_rating = ?,
-
-            grading_policy =
-                'TWO_TERM_50_50',
-
-            grading_outcome =
-                'NUMERIC',
-
-            outcome_reason = NULL,
-
-            remarks = ?,
-
-            grade_status =
-                'Approved'
-
-        WHERE grade_id = ?
-          AND grade_status =
-              'Approved'
-        `,
-      [
-        newMidterm,
-        newFinal,
-        newOverall,
-        newRating,
-        newRemarks,
-        request.grade_id,
-      ],
-    );
-
-    // =================================================
-    // REMOVE AUTHORIZATION IMMEDIATELY
-    // =================================================
-
-    await connection.execute("SET @allow_approved_inc_grade_change = NULL");
-
-    if (gradeUpdateResult.affectedRows !== 1) {
-      await connection.rollback();
-
-      return res.status(409).json({
-        success: false,
-
-        message: "Official grade could not be updated. Refresh and try again.",
-      });
-    }
-
-    // =================================================
-    // UPDATE ENROLLMENT SUBJECT STATUS
-    // =================================================
-
-    const [subjectUpdateResult] = await connection.execute(
-      `
-        UPDATE enrollment_subjects
-
-        SET status = ?
-
-        WHERE enrollment_subject_id = ?
-          AND status = 'Incomplete'
-        `,
-      [newEnrollmentSubjectStatus, request.enrollment_subject_id],
-    );
-
-    if (subjectUpdateResult.affectedRows !== 1) {
-      await connection.rollback();
-
-      return res.status(409).json({
-        success: false,
-
-        message: "Enrollment subject status could not be updated.",
-      });
-    }
-
-    // =================================================
-    // COMPLETE GRADE CHANGE REQUEST
-    // =================================================
-
-    const [requestUpdateResult] = await connection.execute(
-      `
-        UPDATE grade_change_requests
-
-        SET
-            status = 'Completed',
-
-            processed_by = ?,
-
-            processed_at = NOW(),
-
-            registrar_remarks = ?
-
-        WHERE
-            grade_change_request_id = ?
-
-            AND status =
-                'For Registrar Processing'
-        `,
-      [registrar.user_id, registrarRemarks || null, requestId],
-    );
-
-    if (requestUpdateResult.affectedRows !== 1) {
-      await connection.rollback();
-
-      return res.status(409).json({
-        success: false,
-
-        message: "Grade change request could not be completed.",
-      });
-    }
-
-    // =================================================
-    // AUDIT LOG
-    //
-    // Your actual audit_logs table contains:
-    //
-    // log_id
-    // user_id
-    // action
-    // table_name
-    // record_id
-    // description
-    // created_at
-    //
-    // There are NO old_value/new_value columns.
-    // =================================================
-
-    const auditDescription = JSON.stringify({
-      grade_change_request_id: requestId,
-
-      request_type: "INC_COMPLETION",
-
-      student: {
-        student_id: Number(request.student_id),
-
-        student_number: request.student_number,
-
-        full_name: [request.first_name, request.middle_name, request.last_name]
-          .filter(Boolean)
-          .join(" "),
-      },
-
-      subject: {
-        subject_id:
-          request.subject_id !== null ? Number(request.subject_id) : null,
-
-        subject_code: request.subject_code,
-
-        subject_name: request.subject_name,
-      },
-
-      old_grade: {
-        midterm_grade:
-          request.current_midterm_grade !== null
-            ? Number(request.current_midterm_grade)
-            : null,
-
-        final_grade:
-          request.current_final_grade !== null
-            ? Number(request.current_final_grade)
-            : null,
-
-        overall_percentage:
-          request.current_overall_percentage !== null
-            ? Number(request.current_overall_percentage)
-            : null,
-
-        final_rating: currentRating,
-
-        grading_policy: request.current_grading_policy,
-
-        grading_outcome: request.current_grading_outcome,
-
-        outcome_reason: request.current_outcome_reason,
-
-        remarks: request.current_remarks,
-
-        grade_status: request.current_grade_status,
-
-        enrollment_subject_status: request.enrollment_subject_status,
-      },
-
-      new_grade: {
-        midterm_grade: newMidterm,
-
-        final_grade: newFinal,
-
-        overall_percentage: newOverall,
-
-        final_rating: newRating,
-
-        grading_policy: "TWO_TERM_50_50",
-
-        grading_outcome: "NUMERIC",
-
-        outcome_reason: null,
-
-        remarks: newRemarks,
-
-        grade_status: "Approved",
-
-        enrollment_subject_status: newEnrollmentSubjectStatus,
-      },
-
-      registrar: {
-        user_id: registrar.user_id,
-
-        username: registrar.username,
-
-        remarks: registrarRemarks || null,
-      },
-    });
-
-    await connection.execute(
-      `
-      INSERT INTO audit_logs
-      (
-          user_id,
-          action,
-          table_name,
-          record_id,
-          description,
-          created_at
-      )
-
-      VALUES
-      (
-          ?,
-          ?,
-          ?,
-          ?,
-          ?,
-          NOW()
-      )
-      `,
-      [
-        registrar.user_id,
-
-        "INC COMPLETION PROCESSED",
-
-        "grades",
-
-        request.grade_id,
-
-        auditDescription,
-      ],
-    );
-
-    // =================================================
-    // OPTIONAL STRUCTURED AUDIT TRAIL
-    //
-    // Your database also has audit_trail with:
-    // old_values / new_values.
-    //
-    // We can record the official grade transition here
-    // as well.
-    // =================================================
-
-    const oldValues = JSON.stringify({
-      midterm_grade:
-        request.current_midterm_grade !== null
-          ? Number(request.current_midterm_grade)
-          : null,
-
-      final_grade:
-        request.current_final_grade !== null
-          ? Number(request.current_final_grade)
-          : null,
-
-      overall_percentage:
-        request.current_overall_percentage !== null
-          ? Number(request.current_overall_percentage)
-          : null,
-
-      final_rating: currentRating,
-
-      grading_policy: request.current_grading_policy,
-
-      grading_outcome: request.current_grading_outcome,
-
-      outcome_reason: request.current_outcome_reason,
-
-      remarks: request.current_remarks,
-
-      grade_status: request.current_grade_status,
-    });
-
-    const newValues = JSON.stringify({
-      midterm_grade: newMidterm,
-
-      final_grade: newFinal,
-
-      overall_percentage: newOverall,
-
-      final_rating: newRating,
-
-      grading_policy: "TWO_TERM_50_50",
-
-      grading_outcome: "NUMERIC",
-
-      outcome_reason: null,
-
-      remarks: newRemarks,
-
-      grade_status: "Approved",
-
-      grade_change_request_id: requestId,
-    });
-
-    await connection.execute(
-      `
-      INSERT INTO audit_trail
-      (
-          user_id,
-          table_name,
-          record_id,
-          action,
-          old_values,
-          new_values,
-          created_at
-      )
-
-      VALUES
-      (
-          ?,
-          'grades',
-          ?,
-          'UPDATE',
-          ?,
-          ?,
-          NOW()
-      )
-      `,
-      [registrar.user_id, request.grade_id, oldValues, newValues],
-    );
-
-    // =================================================
-    // COMMIT EVERYTHING TOGETHER
-    // =================================================
-
-    await connection.commit();
-
-    // =================================================
-    // SUCCESS RESPONSE
-    // =================================================
-
-    return res.status(200).json({
-      success: true,
-
-      message:
-        "INC completion grade change was successfully posted to the official academic record.",
-
-      request: {
+    if (request.request_type === "INC_COMPLETION") {
+      // -----------------------------------------------
+      // OFFICIAL GRADE MUST STILL BE APPROVED INC
+      // -----------------------------------------------
+
+      if (
+        request.current_grade_status !== "Approved" ||
+        currentOutcome !== "INCOMPLETE" ||
+        currentRemarks !== "Incomplete" ||
+        currentRating !== 4
+      ) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message: "The official grade is no longer an approved INC record.",
+        });
+      }
+
+      // -----------------------------------------------
+      // SUBJECT MUST STILL BE INCOMPLETE
+      // -----------------------------------------------
+
+      if (request.enrollment_subject_status !== "Incomplete") {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message: `INC completion cannot be processed because the enrollment subject status is '${request.enrollment_subject_status}'.`,
+        });
+      }
+
+      // -----------------------------------------------
+      // AUTHORIZE APPROVED INC UPDATE
+      // -----------------------------------------------
+
+      await connection.execute("SET @allow_approved_inc_grade_change = 1");
+
+      // -----------------------------------------------
+      // UPDATE OFFICIAL GRADE
+      // -----------------------------------------------
+
+      const [gradeUpdateResult] = await connection.execute(
+        `
+            UPDATE grades
+
+            SET
+                midterm_grade = ?,
+                final_grade = ?,
+                overall_percentage = ?,
+                final_rating = ?,
+
+                grading_policy =
+                    'TWO_TERM_50_50',
+
+                grading_outcome =
+                    'NUMERIC',
+
+                outcome_reason = NULL,
+
+                remarks = ?,
+
+                grade_status =
+                    'Approved'
+
+            WHERE grade_id = ?
+
+              AND grade_status =
+                  'Approved'
+          `,
+        [
+          newMidterm,
+          newFinal,
+          newOverall,
+          newRating,
+          newRemarks,
+          request.grade_id,
+        ],
+      );
+
+      // -----------------------------------------------
+      // REMOVE INC AUTHORIZATION
+      // -----------------------------------------------
+
+      await connection.execute("SET @allow_approved_inc_grade_change = NULL");
+
+      if (gradeUpdateResult.affectedRows !== 1) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message:
+            "Official INC grade could not be updated. Refresh and try again.",
+        });
+      }
+
+      // -----------------------------------------------
+      // UPDATE SUBJECT STATUS
+      // -----------------------------------------------
+
+      const newEnrollmentSubjectStatus =
+        newRemarks === "Passed" ? "Completed" : "Failed";
+
+      const [subjectUpdateResult] = await connection.execute(
+        `
+            UPDATE enrollment_subjects
+
+            SET status = ?
+
+            WHERE enrollment_subject_id = ?
+
+              AND status = 'Incomplete'
+          `,
+        [newEnrollmentSubjectStatus, request.enrollment_subject_id],
+      );
+
+      if (subjectUpdateResult.affectedRows !== 1) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message: "Enrollment subject status could not be updated.",
+        });
+      }
+
+      // -----------------------------------------------
+      // COMPLETE REQUEST
+      // -----------------------------------------------
+
+      const [requestUpdateResult] = await connection.execute(
+        `
+            UPDATE grade_change_requests
+
+            SET
+                status = 'Completed',
+                processed_by = ?,
+                processed_at = NOW(),
+                registrar_remarks = ?
+
+            WHERE grade_change_request_id = ?
+
+              AND status =
+                  'For Registrar Processing'
+          `,
+        [registrar.user_id, registrarRemarks || null, requestId],
+      );
+
+      if (requestUpdateResult.affectedRows !== 1) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message: "Grade change request could not be completed.",
+        });
+      }
+
+      // -----------------------------------------------
+      // AUDIT
+      // -----------------------------------------------
+
+      const auditDescription = JSON.stringify({
         grade_change_request_id: requestId,
-
-        grade_id: Number(request.grade_id),
-
         request_type: "INC_COMPLETION",
 
-        status: "Completed",
-
-        processed_by: registrar.user_id,
-
-        processed_by_username: registrar.username,
-
-        registrar_remarks: registrarRemarks || null,
-      },
-
-      student: {
-        student_id: Number(request.student_id),
-
-        student_number: request.student_number,
-
-        full_name: [request.first_name, request.middle_name, request.last_name]
-          .filter(Boolean)
-          .join(" "),
-      },
-
-      class: {
-        offering_id:
-          request.offering_id !== null ? Number(request.offering_id) : null,
+        student: {
+          student_id: Number(request.student_id),
+          student_number: request.student_number,
+          full_name: [
+            request.first_name,
+            request.middle_name,
+            request.last_name,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
 
         subject: {
           subject_id:
             request.subject_id !== null ? Number(request.subject_id) : null,
 
           subject_code: request.subject_code,
-
           subject_name: request.subject_name,
         },
 
-        section: {
-          section_id:
-            request.section_id !== null ? Number(request.section_id) : null,
-
-          section_name: request.section_name,
+        old_grade: {
+          midterm_grade: currentMidterm,
+          final_grade: currentFinal,
+          overall_percentage: currentOverall,
+          final_rating: currentRating,
+          grading_policy: currentPolicy,
+          grading_outcome: currentOutcome,
+          outcome_reason: request.current_outcome_reason,
+          remarks: currentRemarks,
+          grade_status: request.current_grade_status,
         },
-      },
 
-      official_grade: {
+        new_grade: {
+          midterm_grade: newMidterm,
+          final_grade: newFinal,
+          overall_percentage: newOverall,
+          final_rating: newRating,
+          grading_policy: "TWO_TERM_50_50",
+          grading_outcome: "NUMERIC",
+          outcome_reason: null,
+          remarks: newRemarks,
+          grade_status: "Approved",
+        },
+
+        registrar: {
+          user_id: registrar.user_id,
+          username: registrar.username,
+          remarks: registrarRemarks || null,
+        },
+      });
+
+      await connection.execute(
+        `
+          INSERT INTO audit_logs
+          (
+              user_id,
+              action,
+              table_name,
+              record_id,
+              description,
+              created_at
+          )
+
+          VALUES
+          (
+              ?,
+              ?,
+              ?,
+              ?,
+              ?,
+              NOW()
+          )
+        `,
+        [
+          registrar.user_id,
+          "INC COMPLETION PROCESSED",
+          "grades",
+          request.grade_id,
+          auditDescription,
+        ],
+      );
+
+      // -----------------------------------------------
+      // STRUCTURED AUDIT TRAIL
+      // -----------------------------------------------
+
+      const oldValues = JSON.stringify({
+        midterm_grade: currentMidterm,
+        final_grade: currentFinal,
+        overall_percentage: currentOverall,
+        final_rating: currentRating,
+        grading_policy: currentPolicy,
+        grading_outcome: currentOutcome,
+        outcome_reason: request.current_outcome_reason,
+        remarks: currentRemarks,
+        grade_status: request.current_grade_status,
+      });
+
+      const newValues = JSON.stringify({
         midterm_grade: newMidterm,
-
         final_grade: newFinal,
-
         overall_percentage: newOverall,
-
         final_rating: newRating,
-
         grading_policy: "TWO_TERM_50_50",
-
         grading_outcome: "NUMERIC",
-
         outcome_reason: null,
-
         remarks: newRemarks,
-
         grade_status: "Approved",
-      },
+        grade_change_request_id: requestId,
+      });
 
-      enrollment_subject: {
-        enrollment_subject_id: Number(request.enrollment_subject_id),
+      await connection.execute(
+        `
+          INSERT INTO audit_trail
+          (
+              user_id,
+              table_name,
+              record_id,
+              action,
+              old_values,
+              new_values,
+              created_at
+          )
 
-        status: newEnrollmentSubjectStatus,
-      },
+          VALUES
+          (
+              ?,
+              'grades',
+              ?,
+              'UPDATE',
+              ?,
+              ?,
+              NOW()
+          )
+        `,
+        [registrar.user_id, request.grade_id, oldValues, newValues],
+      );
+
+      await connection.commit();
+
+      return res.status(200).json({
+        success: true,
+        message:
+          "INC completion grade change was successfully posted to the official academic record.",
+
+        request: {
+          grade_change_request_id: requestId,
+          grade_id: Number(request.grade_id),
+          request_type: "INC_COMPLETION",
+          status: "Completed",
+          processed_by: registrar.user_id,
+          processed_by_username: registrar.username,
+          registrar_remarks: registrarRemarks || null,
+        },
+
+        student: {
+          student_id: Number(request.student_id),
+          student_number: request.student_number,
+          full_name: [
+            request.first_name,
+            request.middle_name,
+            request.last_name,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
+
+        class: {
+          offering_id:
+            request.offering_id !== null ? Number(request.offering_id) : null,
+
+          subject: {
+            subject_id:
+              request.subject_id !== null ? Number(request.subject_id) : null,
+
+            subject_code: request.subject_code,
+            subject_name: request.subject_name,
+          },
+
+          section: {
+            section_id:
+              request.section_id !== null ? Number(request.section_id) : null,
+
+            section_name: request.section_name,
+          },
+        },
+
+        official_grade: {
+          midterm_grade: newMidterm,
+          final_grade: newFinal,
+          overall_percentage: newOverall,
+          final_rating: newRating,
+          grading_policy: "TWO_TERM_50_50",
+          grading_outcome: "NUMERIC",
+          outcome_reason: null,
+          remarks: newRemarks,
+          grade_status: "Approved",
+        },
+
+        enrollment_subject: {
+          enrollment_subject_id: Number(request.enrollment_subject_id),
+
+          status: newRemarks === "Passed" ? "Completed" : "Failed",
+        },
+      });
+    }
+
+    // =================================================
+    // REQUEST TYPE: GRADE CORRECTION
+    // =================================================
+
+    if (request.request_type === "GRADE_CORRECTION") {
+      // -----------------------------------------------
+      // OFFICIAL GRADE MUST STILL BE APPROVED NUMERIC
+      // -----------------------------------------------
+
+      if (
+        request.current_grade_status !== "Approved" ||
+        currentOutcome !== "NUMERIC" ||
+        currentPolicy !== "TWO_TERM_50_50"
+      ) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message:
+            "The official grade is no longer an approved numeric grade that can be corrected.",
+        });
+      }
+
+      // -----------------------------------------------
+      // VERIFY ORIGINAL SNAPSHOT
+      //
+      // IMPORTANT:
+      // grade_change_requests does NOT contain
+      // old_grading_policy/new_grading_policy.
+      // -----------------------------------------------
+
+      const snapshotMatches =
+        Number(request.old_midterm_grade) === currentMidterm &&
+        Number(request.old_final_grade) === currentFinal &&
+        Number(request.old_overall_percentage) === currentOverall &&
+        Number(request.old_final_rating) === currentRating &&
+        String(request.old_grading_outcome || "").trim() === currentOutcome &&
+        String(request.old_remarks || "").trim() === currentRemarks &&
+        request.old_outcome_reason === request.current_outcome_reason;
+
+      if (!snapshotMatches) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message:
+            "The official grade has changed since this correction request was submitted. The request must be reviewed again.",
+        });
+      }
+
+      // -----------------------------------------------
+      // VALIDATE ORIGINAL VALUES
+      // -----------------------------------------------
+
+      if (
+        currentMidterm === null ||
+        currentFinal === null ||
+        currentOverall === null ||
+        currentRating === null
+      ) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message:
+            "The current official grade is incomplete and cannot be processed as a numeric correction.",
+        });
+      }
+
+      // -----------------------------------------------
+      // AUTHORIZE CONTROLLED NUMERIC CORRECTION
+      // -----------------------------------------------
+
+      await connection.execute("SET @allow_approved_grade_correction = 1");
+
+      // -----------------------------------------------
+      // UPDATE OFFICIAL GRADE
+      // -----------------------------------------------
+
+      const [gradeUpdateResult] = await connection.execute(
+        `
+            UPDATE grades
+
+            SET
+                midterm_grade = ?,
+                final_grade = ?,
+                overall_percentage = ?,
+                final_rating = ?,
+
+                grading_policy =
+                    'TWO_TERM_50_50',
+
+                grading_outcome =
+                    'NUMERIC',
+
+                outcome_reason = NULL,
+
+                remarks = ?,
+
+                grade_status =
+                    'Approved'
+
+            WHERE grade_id = ?
+
+              AND grade_status =
+                  'Approved'
+          `,
+        [
+          newMidterm,
+          newFinal,
+          newOverall,
+          newRating,
+          newRemarks,
+          request.grade_id,
+        ],
+      );
+
+      // -----------------------------------------------
+      // REMOVE AUTHORIZATION IMMEDIATELY
+      // -----------------------------------------------
+
+      await connection.execute("SET @allow_approved_grade_correction = NULL");
+
+      if (gradeUpdateResult.affectedRows !== 1) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message:
+            "Official numeric grade could not be updated. Refresh and try again.",
+        });
+      }
+
+      // -----------------------------------------------
+      // DO NOT CHANGE enrollment_subjects.status
+      //
+      // A normal numeric grade correction does not change
+      // the student's enrollment subject status.
+      // -----------------------------------------------
+
+      // -----------------------------------------------
+      // COMPLETE REQUEST
+      // -----------------------------------------------
+
+      const [requestUpdateResult] = await connection.execute(
+        `
+            UPDATE grade_change_requests
+
+            SET
+                status = 'Completed',
+                processed_by = ?,
+                processed_at = NOW(),
+                registrar_remarks = ?
+
+            WHERE grade_change_request_id = ?
+
+              AND status =
+                  'For Registrar Processing'
+          `,
+        [registrar.user_id, registrarRemarks || null, requestId],
+      );
+
+      if (requestUpdateResult.affectedRows !== 1) {
+        await connection.rollback();
+
+        return res.status(409).json({
+          success: false,
+          message: "Grade correction request could not be completed.",
+        });
+      }
+
+      // -----------------------------------------------
+      // AUDIT LOG
+      // -----------------------------------------------
+
+      const auditDescription = JSON.stringify({
+        grade_change_request_id: requestId,
+        request_type: "GRADE_CORRECTION",
+
+        student: {
+          student_id: Number(request.student_id),
+          student_number: request.student_number,
+          full_name: [
+            request.first_name,
+            request.middle_name,
+            request.last_name,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
+
+        subject: {
+          subject_id:
+            request.subject_id !== null ? Number(request.subject_id) : null,
+
+          subject_code: request.subject_code,
+          subject_name: request.subject_name,
+        },
+
+        old_grade: {
+          midterm_grade: currentMidterm,
+          final_grade: currentFinal,
+          overall_percentage: currentOverall,
+          final_rating: currentRating,
+          grading_policy: currentPolicy,
+          grading_outcome: currentOutcome,
+          outcome_reason: request.current_outcome_reason,
+          remarks: currentRemarks,
+          grade_status: request.current_grade_status,
+        },
+
+        corrected_grade: {
+          midterm_grade: newMidterm,
+          final_grade: newFinal,
+          overall_percentage: newOverall,
+          final_rating: newRating,
+          grading_policy: "TWO_TERM_50_50",
+          grading_outcome: "NUMERIC",
+          outcome_reason: null,
+          remarks: newRemarks,
+          grade_status: "Approved",
+        },
+
+        registrar: {
+          user_id: registrar.user_id,
+          username: registrar.username,
+          remarks: registrarRemarks || null,
+        },
+      });
+
+      await connection.execute(
+        `
+          INSERT INTO audit_logs
+          (
+              user_id,
+              action,
+              table_name,
+              record_id,
+              description,
+              created_at
+          )
+
+          VALUES
+          (
+              ?,
+              ?,
+              ?,
+              ?,
+              ?,
+              NOW()
+          )
+        `,
+        [
+          registrar.user_id,
+          "GRADE CORRECTION PROCESSED",
+          "grades",
+          request.grade_id,
+          auditDescription,
+        ],
+      );
+
+      // -----------------------------------------------
+      // STRUCTURED AUDIT TRAIL
+      // -----------------------------------------------
+
+      const oldValues = JSON.stringify({
+        midterm_grade: currentMidterm,
+        final_grade: currentFinal,
+        overall_percentage: currentOverall,
+        final_rating: currentRating,
+        grading_policy: currentPolicy,
+        grading_outcome: currentOutcome,
+        outcome_reason: request.current_outcome_reason,
+        remarks: currentRemarks,
+        grade_status: request.current_grade_status,
+
+        grade_change_request_id: requestId,
+      });
+
+      const newValues = JSON.stringify({
+        midterm_grade: newMidterm,
+        final_grade: newFinal,
+        overall_percentage: newOverall,
+        final_rating: newRating,
+        grading_policy: "TWO_TERM_50_50",
+        grading_outcome: "NUMERIC",
+        outcome_reason: null,
+        remarks: newRemarks,
+        grade_status: "Approved",
+
+        grade_change_request_id: requestId,
+      });
+
+      await connection.execute(
+        `
+          INSERT INTO audit_trail
+          (
+              user_id,
+              table_name,
+              record_id,
+              action,
+              old_values,
+              new_values,
+              created_at
+          )
+
+          VALUES
+          (
+              ?,
+              'grades',
+              ?,
+              'UPDATE',
+              ?,
+              ?,
+              NOW()
+          )
+        `,
+        [registrar.user_id, request.grade_id, oldValues, newValues],
+      );
+
+      // -----------------------------------------------
+      // COMMIT EVERYTHING
+      // -----------------------------------------------
+
+      await connection.commit();
+
+      // -----------------------------------------------
+      // SUCCESS RESPONSE
+      // -----------------------------------------------
+
+      return res.status(200).json({
+        success: true,
+
+        message:
+          "Grade correction was successfully posted to the official academic record.",
+
+        request: {
+          grade_change_request_id: requestId,
+          grade_id: Number(request.grade_id),
+          request_type: "GRADE_CORRECTION",
+          status: "Completed",
+          processed_by: registrar.user_id,
+          processed_by_username: registrar.username,
+          registrar_remarks: registrarRemarks || null,
+        },
+
+        student: {
+          student_id: Number(request.student_id),
+          student_number: request.student_number,
+          full_name: [
+            request.first_name,
+            request.middle_name,
+            request.last_name,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        },
+
+        class: {
+          offering_id:
+            request.offering_id !== null ? Number(request.offering_id) : null,
+
+          subject: {
+            subject_id:
+              request.subject_id !== null ? Number(request.subject_id) : null,
+
+            subject_code: request.subject_code,
+            subject_name: request.subject_name,
+          },
+
+          section: {
+            section_id:
+              request.section_id !== null ? Number(request.section_id) : null,
+
+            section_name: request.section_name,
+          },
+        },
+
+        original_grade: {
+          midterm_grade: currentMidterm,
+          final_grade: currentFinal,
+          overall_percentage: currentOverall,
+          final_rating: currentRating,
+          grading_policy: currentPolicy,
+          grading_outcome: currentOutcome,
+          outcome_reason: request.current_outcome_reason,
+          remarks: currentRemarks,
+          grade_status: request.current_grade_status,
+        },
+
+        official_grade: {
+          midterm_grade: newMidterm,
+          final_grade: newFinal,
+          overall_percentage: newOverall,
+          final_rating: newRating,
+          grading_policy: "TWO_TERM_50_50",
+          grading_outcome: "NUMERIC",
+          outcome_reason: null,
+          remarks: newRemarks,
+          grade_status: "Approved",
+        },
+
+        enrollment_subject: {
+          enrollment_subject_id: Number(request.enrollment_subject_id),
+
+          status: request.enrollment_subject_status,
+        },
+      });
+    }
+
+    // =================================================
+    // INVALID REQUEST TYPE
+    // =================================================
+
+    await connection.rollback();
+
+    return res.status(409).json({
+      success: false,
+      message: `Unsupported grade change request type '${request.request_type}'.`,
     });
   } catch (error) {
     // =================================================
     // ERROR SAFETY RESET
-    //
-    // IMPORTANT because mysql2 pooled connections are
-    // reused.
     // =================================================
 
     if (connection) {
@@ -1331,6 +1665,15 @@ router.patch("/:requestId/process", async (req, res) => {
       } catch (flagResetError) {
         console.error(
           "FAILED TO RESET INC GRADE AUTHORIZATION FLAG:",
+          flagResetError,
+        );
+      }
+
+      try {
+        await connection.execute("SET @allow_approved_grade_correction = NULL");
+      } catch (flagResetError) {
+        console.error(
+          "FAILED TO RESET GRADE CORRECTION AUTHORIZATION FLAG:",
           flagResetError,
         );
       }
@@ -1351,7 +1694,6 @@ router.patch("/:requestId/process", async (req, res) => {
     if (error?.errno === 1644 || error?.sqlState === "45000") {
       return res.status(409).json({
         success: false,
-
         message:
           error.sqlMessage ||
           error.message ||
@@ -1365,9 +1707,7 @@ router.patch("/:requestId/process", async (req, res) => {
 
     return res.status(500).json({
       success: false,
-
-      message: "Failed to process INC completion grade change.",
-
+      message: "Failed to process grade change request.",
       error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   } finally {
@@ -1382,9 +1722,17 @@ router.patch("/:requestId/process", async (req, res) => {
         console.error("FINAL INC FLAG RESET ERROR:", flagResetError);
       }
 
+      try {
+        await connection.execute("SET @allow_approved_grade_correction = NULL");
+      } catch (flagResetError) {
+        console.error(
+          "FINAL GRADE CORRECTION FLAG RESET ERROR:",
+          flagResetError,
+        );
+      }
+
       connection.release();
     }
   }
 });
-
 export default router;
