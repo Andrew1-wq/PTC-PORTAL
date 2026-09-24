@@ -26,14 +26,13 @@ dist-ssr
 # ENVIRONMENT FILES
 # =====================================================
 
-.env
+# Ignore environment variants
 .env.*
-server/.env
+server/.env.*
 
-# Keep example environment files
-!.env.example
+# Allow shared development environment
+!server/.env
 !server/.env.example
-
 
 # =====================================================
 # UPLOADED FILES
