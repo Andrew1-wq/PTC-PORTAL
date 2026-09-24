@@ -70,12 +70,6 @@ import CreateStudent from "../pages/admin/Students/createstudent";
 import EditStudent from "../pages/admin/Students/editstudent";
 import Sprofile from "../pages/admin/Students/Sprofile";
 
-// ── Admin: Enrollment Management ──
-import ApproveEnrollment from "../pages/admin/Enrollment/ApproveEnrollment";
-import EnrollmentRequests from "../pages/admin/Enrollment/EnrollmentRequests";
-import EnrollmentHistory from "../pages/admin/Enrollment/EnrollmentHistory";
-import EnrollmentAnalytics from "../pages/admin/Enrollment/EnrollmentAnalytics";
-
 // ── Admin: Financial Management ──
 import Payment from "../pages/admin/FinancialManagement/Payments";
 import Billing from "../pages/admin/FinancialManagement/Billings";
@@ -154,6 +148,8 @@ import MyTransactions from "../pages/student/Financial/MyTransactions";
 import CreateStudentTransaction from "../pages/finance/CreateStudentTransaction";
 import FinanceTransactionTypes from "../pages/finance/FinanceTransactionTypes";
 import FinanceReports from "../pages/finance/FinanceReports";
+import GradeChangeRequests from "../pages/programhead/GradeApproval/GradeChangeRequests";
+import GradeChangeRequestsR from "../pages/registrar/StudentRecord/GradeChangeRequestsR";
 
 // ─── Role guard ───────────────────────────────────────────────
 function ProtectedRoute({
@@ -257,20 +253,9 @@ export default function AppRoutes() {
 
         <Route path="/login" element={<LoginAuth />} />
         <Route path="/otp" element={<OtpAuth />} />
-        <Route
-          path="/forgot-password"
-          element={<ForgotPassword />}
-        />
-        <Route
-          path="/forgot-password/verify"
-          element={<VerifyResetOtp />}
-        />
-        <Route
-          path="/reset-password"
-          element={<ResetPassword />}
-        />
-
-
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/forgot-password/verify" element={<VerifyResetOtp />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* ── Student: Solo links ── */}
         <Route
@@ -414,24 +399,6 @@ export default function AppRoutes() {
           element={<AdminRoute element={<Sprofile />} />}
         />
 
-        {/* ── Admin: Enrollment Management ── */}
-        <Route
-          path="/admin/enrollment/approve"
-          element={<AdminRoute element={<ApproveEnrollment />} />}
-        />
-        <Route
-          path="/admin/enrollment/request"
-          element={<AdminRoute element={<EnrollmentRequests />} />}
-        />
-        <Route
-          path="/admin/enrollment/history"
-          element={<AdminRoute element={<EnrollmentHistory />} />}
-        />
-        <Route
-          path="/admin/enrollment/analytics"
-          element={<AdminRoute element={<EnrollmentAnalytics />} />}
-        />
-
         {/* ── Admin: Financial Management ── */}
         <Route
           path="/admin/financial/payments"
@@ -550,6 +517,10 @@ export default function AppRoutes() {
         <Route
           path="/programhead/gradeapproval/pending"
           element={<ProgramHeadRoute element={<PendingGrades />} />}
+        />
+        <Route
+          path="/programhead/grade-change-requests"
+          element={<ProgramHeadRoute element={<GradeChangeRequests />} />}
         />
 
         <Route
@@ -683,6 +654,12 @@ export default function AppRoutes() {
           path="/registrar/announcement/createR"
           element={<RegistrarRoute element={<AnnouncementCreateR />} />}
         />
+        {/* ── Registrar Grade Changes ── */}
+        <Route
+          path="/registrar/grade-change-requests"
+          element={<RegistrarRoute element={<GradeChangeRequestsR />} />}
+        />
+
         {/* ── Registrar Documents── */}
         <Route
           path="/registrar/document-requests"

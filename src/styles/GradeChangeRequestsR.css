@@ -1,0 +1,959 @@
+.registrar-grade-change-page {
+  --rgc-green-950: #073b24;
+  --rgc-green-900: #0a4b2d;
+  --rgc-green-800: #0d653b;
+  --rgc-green-700: #0f7a45;
+  --rgc-green-100: #dcf5e6;
+  --rgc-green-50: #f1fbf5;
+  --rgc-text-950: #17201b;
+  --rgc-text-800: #28352d;
+  --rgc-text-700: #425047;
+  --rgc-text-600: #5e6b63;
+  --rgc-text-500: #76827b;
+  --rgc-border: #dfe8e2;
+  --rgc-border-strong: #cfdcd3;
+  --rgc-danger: #b42318;
+  width: 100%;
+  min-height: 100%;
+  padding: 28px 30px 38px;
+  box-sizing: border-box;
+  color: var(--rgc-text-950);
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(21, 148, 82, 0.06),
+      transparent 30%
+    ),
+    #f5f8f6;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+.registrar-grade-change-page *,
+.registrar-grade-change-page *::before,
+.registrar-grade-change-page *::after {
+  box-sizing: border-box;
+}
+.registrar-grade-change-page button,
+.registrar-grade-change-page input,
+.registrar-grade-change-page select,
+.registrar-grade-change-page textarea {
+  font: inherit;
+}
+.registrar-grade-change-header {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 16px;
+  padding: 25px 28px;
+  border: 1px solid rgba(15, 122, 69, 0.18);
+  border-radius: 18px;
+  background: linear-gradient(105deg, #fff 0%, #f7fdf9 66%, #e6f7ed 100%);
+  box-shadow: 0 9px 28px rgba(20, 55, 34, 0.07);
+}
+.registrar-grade-change-header::after {
+  content: "";
+  position: absolute;
+  top: -92px;
+  right: -70px;
+  width: 230px;
+  height: 230px;
+  border: 38px solid rgba(15, 122, 69, 0.055);
+  border-radius: 50%;
+  pointer-events: none;
+}
+.registrar-grade-change-header > div,
+.registrar-grade-change-refresh {
+  position: relative;
+  z-index: 1;
+}
+.registrar-grade-change-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 32px;
+  margin-bottom: 11px;
+  padding: 6px 9px;
+  border: 1px solid #d3e0d6;
+  border-radius: 8px;
+  color: var(--rgc-text-600);
+  background: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.registrar-grade-change-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 8px;
+  color: var(--rgc-green-800);
+  font-size: 10.5px;
+  font-weight: 780;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+.registrar-grade-change-eyebrow > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 9px;
+  color: var(--rgc-green-700);
+  background: var(--rgc-green-100);
+}
+.registrar-grade-change-header h1 {
+  margin: 0;
+  font-size: clamp(26px, 3vw, 34px);
+  font-weight: 780;
+  letter-spacing: -0.025em;
+}
+.registrar-grade-change-header p {
+  max-width: 790px;
+  margin: 9px 0 0;
+  color: var(--rgc-text-600);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.registrar-grade-change-refresh {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 39px;
+  padding: 8px 12px;
+  border: 1px solid var(--rgc-green-800);
+  border-radius: 9px;
+  color: #fff;
+  background: linear-gradient(
+    145deg,
+    var(--rgc-green-700),
+    var(--rgc-green-900)
+  );
+  font-size: 10.5px;
+  font-weight: 730;
+  cursor: pointer;
+  box-shadow: 0 5px 14px rgba(13, 101, 59, 0.13);
+}
+.registrar-grade-change-refresh:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.registrar-grade-change-spin {
+  animation: rgc-spin 0.8s linear infinite;
+}
+.registrar-grade-change-notice,
+.registrar-grade-change-error {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: flex-start;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 12px 13px;
+  border-radius: 11px;
+}
+.registrar-grade-change-notice.success {
+  border: 1px solid #c9e4d2;
+  color: var(--rgc-green-800);
+  background: #f3fbf6;
+}
+.registrar-grade-change-notice.error,
+.registrar-grade-change-error {
+  border: 1px solid #efc8c4;
+  color: #993c36;
+  background: #fff7f6;
+}
+.registrar-grade-change-notice strong,
+.registrar-grade-change-error strong {
+  font-size: 10.5px;
+}
+.registrar-grade-change-notice p,
+.registrar-grade-change-error p {
+  margin: 3px 0 0;
+  font-size: 9.2px;
+  line-height: 1.45;
+}
+.registrar-grade-change-error {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+.registrar-grade-change-error button {
+  min-height: 32px;
+  padding: 6px 9px;
+  border: 1px solid #e2b4b0;
+  border-radius: 8px;
+  color: #8a3731;
+  background: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.registrar-grade-change-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 11px;
+  margin-bottom: 16px;
+}
+.registrar-grade-change-summary article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 88px;
+  padding: 13px;
+  border: 1px solid var(--rgc-border);
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgba(20, 55, 34, 0.035);
+}
+.registrar-grade-change-summary article.active {
+  border-color: rgba(15, 122, 69, 0.2);
+  background: linear-gradient(120deg, #fff, #f6fcf8);
+}
+.registrar-grade-change-summary article > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid #d8eade;
+  border-radius: 10px;
+  color: var(--rgc-green-700);
+  background: var(--rgc-green-50);
+}
+.registrar-grade-change-summary small {
+  color: var(--rgc-text-500);
+  font-size: 7.8px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+.registrar-grade-change-summary strong {
+  display: block;
+  margin-top: 1px;
+  font-size: 18px;
+  font-weight: 790;
+}
+.registrar-grade-change-summary p {
+  margin: 2px 0 0;
+  color: var(--rgc-text-500);
+  font-size: 8px;
+}
+.registrar-grade-change-filters {
+  display: grid;
+  grid-template-columns: minmax(260px, 1fr) 230px auto;
+  gap: 9px;
+  margin-bottom: 16px;
+  padding: 13px;
+  border: 1px solid var(--rgc-border);
+  border-radius: 13px;
+  background: #fff;
+}
+.registrar-grade-change-search {
+  position: relative;
+}
+.registrar-grade-change-search svg {
+  position: absolute;
+  top: 50%;
+  left: 11px;
+  color: #849188;
+  transform: translateY(-50%);
+}
+.registrar-grade-change-search input,
+.registrar-grade-change-filters select {
+  width: 100%;
+  min-height: 39px;
+  border: 1px solid var(--rgc-border-strong);
+  border-radius: 9px;
+  outline: none;
+  color: var(--rgc-text-800);
+  background: #fff;
+  font-size: 10px;
+}
+.registrar-grade-change-search input {
+  padding: 8px 11px 8px 34px;
+}
+.registrar-grade-change-filters select {
+  padding: 8px 10px;
+}
+.registrar-grade-change-filters > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 39px;
+  padding: 8px 11px;
+  border: 1px solid #d3e0d6;
+  border-radius: 9px;
+  color: var(--rgc-text-600);
+  background: #fff;
+  font-size: 9.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.registrar-grade-change-filters > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.registrar-grade-change-loading,
+.registrar-grade-change-empty {
+  display: flex;
+  min-height: 190px;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+  margin-bottom: 16px;
+  padding: 25px;
+  border: 1px solid var(--rgc-border);
+  border-radius: 15px;
+  background: #fff;
+}
+.registrar-grade-change-empty {
+  flex-direction: column;
+  text-align: center;
+  color: var(--rgc-text-500);
+}
+.registrar-grade-change-empty > svg {
+  color: var(--rgc-green-700);
+}
+.registrar-grade-change-empty strong {
+  color: var(--rgc-text-800);
+  font-size: 11.5px;
+}
+.registrar-grade-change-empty p {
+  max-width: 520px;
+  margin: 0;
+  font-size: 9.5px;
+}
+.registrar-grade-change-loading > div:last-child {
+  display: grid;
+  gap: 2px;
+}
+.registrar-grade-change-loading strong {
+  font-size: 11px;
+}
+.registrar-grade-change-loading span {
+  color: var(--rgc-text-500);
+  font-size: 9px;
+}
+.registrar-grade-change-spinner {
+  width: 29px;
+  height: 29px;
+  border: 3px solid #dce9e1;
+  border-top-color: var(--rgc-green-700);
+  border-radius: 50%;
+  animation: rgc-spin 0.75s linear infinite;
+}
+.registrar-grade-change-list {
+  overflow: hidden;
+  border: 1px solid var(--rgc-border);
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 22px rgba(20, 55, 34, 0.045);
+}
+.registrar-grade-change-list > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #edf2ee;
+}
+.registrar-grade-change-list > header > div > span {
+  color: var(--rgc-green-700);
+  font-size: 8px;
+  font-weight: 780;
+  letter-spacing: 0.055em;
+  text-transform: uppercase;
+}
+.registrar-grade-change-list > header h2 {
+  margin: 2px 0 0;
+  font-size: 16px;
+}
+.registrar-grade-change-list > header p {
+  margin: 4px 0 0;
+  color: var(--rgc-text-500);
+  font-size: 9.5px;
+}
+.registrar-grade-change-list > header > strong {
+  padding: 5px 8px;
+  border: 1px solid #cfe3d6;
+  border-radius: 999px;
+  color: var(--rgc-green-800);
+  background: var(--rgc-green-50);
+  font-size: 8.5px;
+}
+.registrar-grade-change-cards {
+  display: grid;
+  gap: 12px;
+  padding: 13px;
+}
+.registrar-grade-change-card {
+  overflow: hidden;
+  border: 1px solid #e1e9e3;
+  border-radius: 13px;
+  background: #fff;
+}
+.registrar-grade-change-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 15px;
+  border-bottom: 1px solid #edf2ee;
+  background: #fcfdfc;
+}
+.registrar-grade-change-student {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+}
+.registrar-grade-change-student > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  color: var(--rgc-green-800);
+  background: var(--rgc-green-100);
+}
+.registrar-grade-change-student strong {
+  font-size: 11px;
+}
+.registrar-grade-change-student p,
+.registrar-grade-change-student small {
+  margin: 2px 0 0;
+  color: var(--rgc-text-500);
+  font-size: 8.5px;
+}
+.registrar-grade-change-status {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  min-height: 25px;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 8px;
+  font-weight: 780;
+}
+.registrar-grade-change-status.pending {
+  border-color: #c9dff8;
+  color: #225c9b;
+  background: #f1f7fd;
+}
+.registrar-grade-change-status.completed {
+  border-color: #c8e3d2;
+  color: var(--rgc-green-800);
+  background: var(--rgc-green-50);
+}
+.registrar-grade-change-context {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  border-bottom: 1px solid #edf2ee;
+}
+.registrar-grade-change-context > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 11px 14px;
+  border-right: 1px solid #edf2ee;
+}
+.registrar-grade-change-context > div:last-child {
+  border-right: none;
+}
+.registrar-grade-change-context svg {
+  color: var(--rgc-green-700);
+}
+.registrar-grade-change-context span {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+.registrar-grade-change-context small,
+.registrar-grade-change-grade-grid small,
+.registrar-grade-change-reason small,
+.registrar-grade-change-modal-summary small {
+  color: var(--rgc-text-500);
+  font-size: 7.5px;
+  font-weight: 760;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.registrar-grade-change-context strong {
+  overflow-wrap: anywhere;
+  font-size: 9.5px;
+}
+.registrar-grade-change-context p {
+  margin: 0;
+  overflow-wrap: anywhere;
+  color: var(--rgc-text-500);
+  font-size: 8px;
+}
+.registrar-grade-change-comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  padding: 13px;
+  background: #fafcfb;
+}
+.registrar-grade-change-comparison > section {
+  overflow: hidden;
+  border: 1px solid #dfe8e2;
+  border-radius: 11px;
+  background: #fff;
+}
+.registrar-grade-change-comparison > section.old {
+  border-color: #ead8a8;
+}
+.registrar-grade-change-comparison > section.new {
+  border-color: #c8e3d2;
+}
+.registrar-grade-change-comparison > section > header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 11px;
+  border-bottom: 1px solid #edf2ee;
+}
+.registrar-grade-change-comparison > section.old > header {
+  background: #fffaf0;
+}
+.registrar-grade-change-comparison > section.new > header {
+  background: #f4fbf6;
+}
+.registrar-grade-change-comparison > section > header > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+}
+.registrar-grade-change-comparison .old header > span {
+  color: #8a6414;
+  background: #fff1c7;
+}
+.registrar-grade-change-comparison .new header > span {
+  color: var(--rgc-green-800);
+  background: var(--rgc-green-100);
+}
+.registrar-grade-change-comparison header small {
+  display: block;
+  color: var(--rgc-text-500);
+  font-size: 7.5px;
+  text-transform: uppercase;
+}
+.registrar-grade-change-comparison header strong {
+  font-size: 10px;
+}
+.registrar-grade-change-grade-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.registrar-grade-change-grade-grid > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px;
+  border-right: 1px solid #edf2ee;
+  border-bottom: 1px solid #edf2ee;
+  text-align: center;
+}
+.registrar-grade-change-grade-grid > div:nth-child(3n) {
+  border-right: none;
+}
+.registrar-grade-change-grade-grid > div:nth-last-child(-n + 3) {
+  border-bottom: none;
+}
+.registrar-grade-change-grade-grid strong {
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.registrar-grade-change-reason {
+  padding: 10px 11px;
+  border-top: 1px solid #edf2ee;
+}
+.registrar-grade-change-reason p {
+  margin: 4px 0 0;
+  color: var(--rgc-text-600);
+  font-size: 8.5px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.registrar-grade-change-review-note,
+.registrar-grade-change-completed-note {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin: 0 13px 13px;
+  padding: 10px;
+  border: 1px solid #cfe3d6;
+  border-radius: 9px;
+  color: var(--rgc-green-800);
+  background: #f4fbf6;
+}
+.registrar-grade-change-review-note strong,
+.registrar-grade-change-completed-note strong {
+  font-size: 9px;
+}
+.registrar-grade-change-review-note p,
+.registrar-grade-change-completed-note p {
+  margin: 2px 0 0;
+  color: var(--rgc-text-600);
+  font-size: 8px;
+}
+.registrar-grade-change-completed-note small {
+  color: var(--rgc-text-500);
+  font-size: 7.5px;
+}
+.registrar-grade-change-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 11px 13px;
+  border-top: 1px solid #edf2ee;
+  background: #fff;
+}
+.registrar-grade-change-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 7px 10px;
+  border: 1px solid var(--rgc-green-700);
+  border-radius: 8px;
+  color: #fff;
+  background: var(--rgc-green-700);
+  font-size: 8.8px;
+  font-weight: 730;
+  cursor: pointer;
+}
+.registrar-grade-change-actions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.registrar-grade-change-actions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--rgc-green-800);
+  font-size: 8.5px;
+  font-weight: 700;
+}
+.registrar-grade-change-modal-backdrop {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgba(10, 27, 17, 0.54);
+  backdrop-filter: blur(5px);
+}
+.registrar-grade-change-modal {
+  width: min(650px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+  border: 1px solid #d8e5dc;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 25px 70px rgba(10, 43, 26, 0.24);
+  animation: rgc-modal-open 0.2s ease-out;
+}
+.registrar-grade-change-modal > header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 18px;
+  border-bottom: 1px solid #edf2ee;
+}
+.registrar-grade-change-modal > header > div {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 9px;
+}
+.registrar-grade-change-modal > header > div > span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  color: var(--rgc-green-800);
+  background: var(--rgc-green-100);
+}
+.registrar-grade-change-modal header small {
+  color: var(--rgc-text-500);
+  font-size: 7.5px;
+  text-transform: uppercase;
+}
+.registrar-grade-change-modal header h2 {
+  margin: 2px 0 0;
+  font-size: 16px;
+}
+.registrar-grade-change-modal header p {
+  margin: 4px 0 0;
+  color: var(--rgc-text-500);
+  font-size: 8.8px;
+  line-height: 1.45;
+}
+.registrar-grade-change-modal > header > button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 33px;
+  height: 33px;
+  border: 1px solid #dce6df;
+  border-radius: 8px;
+  color: var(--rgc-text-600);
+  background: #fff;
+  cursor: pointer;
+}
+.registrar-grade-change-modal-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 14px 18px 0;
+}
+.registrar-grade-change-modal-summary > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e2eae4;
+  border-radius: 9px;
+  background: #fafcfb;
+}
+.registrar-grade-change-modal-summary strong {
+  overflow-wrap: anywhere;
+  font-size: 9.5px;
+}
+.registrar-grade-change-modal-summary span {
+  color: var(--rgc-text-500);
+  font-size: 8px;
+  overflow-wrap: anywhere;
+}
+.registrar-grade-change-modal-warning {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 8px;
+  margin: 14px 18px 0;
+  padding: 10px 11px;
+  border: 1px solid #cfe3d6;
+  border-radius: 9px;
+  color: var(--rgc-green-800);
+  background: #f4fbf6;
+}
+.registrar-grade-change-modal-warning p {
+  margin: 0;
+  color: var(--rgc-text-600);
+  font-size: 8.7px;
+  line-height: 1.5;
+}
+.registrar-grade-change-modal-field {
+  padding: 15px 18px 18px;
+}
+.registrar-grade-change-modal-field > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.registrar-grade-change-modal-field label {
+  color: var(--rgc-text-700);
+  font-size: 9.5px;
+  font-weight: 740;
+}
+.registrar-grade-change-modal-field > div:first-child span {
+  color: var(--rgc-text-500);
+  font-size: 8px;
+}
+.registrar-grade-change-modal-field textarea {
+  width: 100%;
+  min-height: 115px;
+  resize: vertical;
+  padding: 10px 11px;
+  border: 1px solid var(--rgc-border-strong);
+  border-radius: 9px;
+  outline: none;
+  color: var(--rgc-text-800);
+  background: #fff;
+  font-size: 10px;
+  line-height: 1.5;
+}
+.registrar-grade-change-modal-field textarea:focus {
+  border-color: #7db894;
+  box-shadow: 0 0 0 3px rgba(21, 148, 82, 0.1);
+}
+.registrar-grade-change-modal-error {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 10px;
+  border: 1px solid #efc9c5;
+  border-radius: 8px;
+  color: #983c36;
+  background: #fff5f4;
+  font-size: 8.8px;
+  font-weight: 690;
+}
+.registrar-grade-change-modal > footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 13px 18px;
+  border-top: 1px solid #edf2ee;
+  background: #fafcfb;
+}
+.registrar-grade-change-modal > footer button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 35px;
+  padding: 7px 11px;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 720;
+  cursor: pointer;
+}
+.registrar-grade-change-modal > footer .cancel {
+  border: 1px solid #d7e1da;
+  color: var(--rgc-text-600);
+  background: #fff;
+}
+.registrar-grade-change-modal > footer .confirm {
+  border: 1px solid var(--rgc-green-700);
+  color: #fff;
+  background: var(--rgc-green-700);
+}
+.registrar-grade-change-page button:focus-visible,
+.registrar-grade-change-page input:focus-visible,
+.registrar-grade-change-page select:focus-visible,
+.registrar-grade-change-page textarea:focus-visible {
+  outline: 3px solid rgba(21, 148, 82, 0.16);
+  outline-offset: 2px;
+}
+@keyframes rgc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes rgc-modal-open {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+@media (max-width: 900px) {
+  .registrar-grade-change-page {
+    padding: 22px 20px 32px;
+  }
+  .registrar-grade-change-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .registrar-grade-change-refresh {
+    width: 100%;
+  }
+  .registrar-grade-change-summary {
+    grid-template-columns: 1fr;
+  }
+  .registrar-grade-change-filters {
+    grid-template-columns: 1fr 1fr;
+  }
+  .registrar-grade-change-filters > button {
+    grid-column: 1/-1;
+  }
+  .registrar-grade-change-context {
+    grid-template-columns: 1fr;
+  }
+  .registrar-grade-change-context > div {
+    border-right: none;
+    border-bottom: 1px solid #edf2ee;
+  }
+  .registrar-grade-change-context > div:last-child {
+    border-bottom: none;
+  }
+  .registrar-grade-change-comparison {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 620px) {
+  .registrar-grade-change-page {
+    padding: 18px 14px 28px;
+  }
+  .registrar-grade-change-header {
+    padding: 21px 19px;
+  }
+  .registrar-grade-change-filters,
+  .registrar-grade-change-modal-summary {
+    grid-template-columns: 1fr;
+  }
+  .registrar-grade-change-filters > button {
+    grid-column: auto;
+  }
+  .registrar-grade-change-card-top,
+  .registrar-grade-change-list > header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .registrar-grade-change-status {
+    width: fit-content;
+  }
+  .registrar-grade-change-grade-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .registrar-grade-change-grade-grid > div,
+  .registrar-grade-change-grade-grid > div:nth-child(3n),
+  .registrar-grade-change-grade-grid > div:nth-last-child(-n + 3) {
+    border-right: 1px solid #edf2ee;
+    border-bottom: 1px solid #edf2ee;
+  }
+  .registrar-grade-change-grade-grid > div:nth-child(2n) {
+    border-right: none;
+  }
+  .registrar-grade-change-grade-grid > div:nth-last-child(-n + 2) {
+    border-bottom: none;
+  }
+  .registrar-grade-change-modal-backdrop {
+    align-items: flex-start;
+    padding: 10px;
+  }
+  .registrar-grade-change-modal {
+    max-height: calc(100vh - 20px);
+  }
+  .registrar-grade-change-modal > footer {
+    flex-direction: column-reverse;
+  }
+  .registrar-grade-change-modal > footer button {
+    width: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .registrar-grade-change-page *,
+  .registrar-grade-change-page *::before,
+  .registrar-grade-change-page *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -20,6 +20,7 @@ import {
 import DashboardLayout from "../../../components/Layout/DashboardLayout";
 import { authService } from "../../../services/auth.service";
 import { apiUrl } from "../../../services/api";
+import { fileService } from "../../../services/file.service";
 import "../../../styles/announcementDetailR.css";
 
 // =====================================================
@@ -243,7 +244,7 @@ export default function AnnouncementDetailR() {
 
         if (err instanceof TypeError) {
           setError(
-            "Unable to connect to the announcement server. Make sure the backend is running on port 3000.",
+            "Unable to connect to the announcement server. Please make sure the backend server is running.",
           );
           return;
         }
@@ -494,32 +495,40 @@ export default function AnnouncementDetailR() {
 
                   {announcement.attachments.length > 0 ? (
                     <div className="registrar-announcement-detail__attachment-list">
-                      {announcement.attachments.map((file) => {
-                        const normalizedPath = file.file_path
-                          .replace(/\\/g, "/")
-                          .replace(/^\/+/, "");
+                      {announcement.attachments.map((file) => (
+                        <button
+                          key={file.file_id}
+                          type="button"
+                          className="registrar-announcement-detail__attachment"
+                          onClick={async () => {
+                            try {
+                              await fileService.openFile(file.file_id);
+                            } catch (fileError) {
+                              console.error(
+                                "OPEN REGISTRAR ANNOUNCEMENT ATTACHMENT ERROR:",
+                                fileError,
+                              );
 
-                        const attachmentUrl = apiUrl(normalizedPath);
+                              window.alert(
+                                fileError instanceof Error
+                                  ? fileError.message
+                                  : "Unable to open attachment.",
+                              );
+                            }
+                          }}
+                        >
+                          <span className="registrar-announcement-detail__attachment-icon">
+                            <FileText size={17} />
+                          </span>
 
-                        return (
-                          <a
-                            key={file.file_id}
-                            className="registrar-announcement-detail__attachment"
-                            href={attachmentUrl}
-                            target="_blank"
-                            rel="noreferrer"
-                          >
-                            <span className="registrar-announcement-detail__attachment-icon">
-                              <FileText size={17} />
-                            </span>
-                            <span>
-                              <strong>{file.original_name}</strong>
-                              <small>Open attachment</small>
-                            </span>
-                            <ExternalLink size={15} />
-                          </a>
-                        );
-                      })}
+                          <span>
+                            <strong>{file.original_name}</strong>
+                            <small>Open attachment</small>
+                          </span>
+
+                          <ExternalLink size={15} />
+                        </button>
+                      ))}
                     </div>
                   ) : (
                     <p className="registrar-announcement-detail__side-empty">

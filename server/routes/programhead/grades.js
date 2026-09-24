@@ -1118,4 +1118,1350 @@ router.patch("/:gradeId/approve", async (req, res) => {
   }
 });
 
+// =====================================================
+// INC COMPLETION REQUESTS
+// =====================================================
+//
+// Workflow:
+//
+// Faculty submits INC completion
+//        ↓
+// Pending Program Head
+//        ↓
+// Program Head:
+//   - Approve
+//   - Return
+//   - Reject
+//
+// IMPORTANT:
+//
+// Program Head DOES NOT modify the official grades row.
+//
+// Approve:
+// Pending Program Head
+//        ↓
+// For Registrar Processing
+//
+// Registrar will perform the official grade change later.
+// =====================================================
+
+// =====================================================
+// GET INC COMPLETION REQUESTS
+//
+// GET
+// /api/program-head/grades/grade-change-requests
+//
+// Optional:
+// ?status=Pending%20Program%20Head
+//
+// Default:
+// Pending Program Head
+// =====================================================
+
+router.get("/grade-change-requests", async (req, res) => {
+  try {
+    // =================================================
+    // AUTHENTICATED PROGRAM HEAD
+    // =================================================
+
+    const programHead = await getAuthenticatedProgramHead(req, res);
+
+    if (!programHead) {
+      return;
+    }
+
+    // =================================================
+    // STATUS FILTER
+    // =================================================
+
+    const allowedStatuses = [
+      "Pending Program Head",
+      "For Registrar Processing",
+      "Returned",
+      "Rejected",
+      "Completed",
+    ];
+
+    const requestedStatus =
+      typeof req.query.status === "string" ? req.query.status.trim() : "";
+
+    const status = requestedStatus || "Pending Program Head";
+
+    if (!allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid grade change request status.",
+        allowed_statuses: allowedStatuses,
+      });
+    }
+
+    // =================================================
+    // GET REQUESTS
+    //
+    // Department ownership is derived from:
+    //
+    // enrollment_subject
+    //      ↓
+    // section
+    //      ↓
+    // course.department_id
+    // =================================================
+
+    const [rows] = await db.execute(
+      `
+      SELECT
+          gcr.grade_change_request_id,
+          gcr.grade_id,
+          gcr.request_type,
+
+          gcr.old_midterm_grade,
+          gcr.old_final_grade,
+          gcr.old_overall_percentage,
+          gcr.old_final_rating,
+          gcr.old_remarks,
+          gcr.old_grading_outcome,
+          gcr.old_outcome_reason,
+
+          gcr.new_midterm_grade,
+          gcr.new_final_grade,
+          gcr.new_overall_percentage,
+          gcr.new_final_rating,
+          gcr.new_remarks,
+          gcr.new_grading_outcome,
+
+          gcr.completion_remarks,
+
+          gcr.requested_by,
+          gcr.requested_by_role,
+          gcr.requested_at,
+
+          requester.username
+              AS requested_by_username,
+
+          gcr.reviewed_by,
+          gcr.reviewed_at,
+          gcr.review_remarks,
+
+          gcr.processed_by,
+          gcr.processed_at,
+          gcr.registrar_remarks,
+
+          gcr.status,
+
+          gcr.created_at,
+          gcr.updated_at,
+
+          -- ===========================================
+          -- ORIGINAL GRADE
+          -- ===========================================
+
+          g.enrollment_subject_id,
+
+          g.midterm_grade
+              AS current_midterm_grade,
+
+          g.final_grade
+              AS current_final_grade,
+
+          g.overall_percentage
+              AS current_overall_percentage,
+
+          g.final_rating
+              AS current_final_rating,
+
+          g.grading_policy
+              AS current_grading_policy,
+
+          g.grading_outcome
+              AS current_grading_outcome,
+
+          g.outcome_reason
+              AS current_outcome_reason,
+
+          g.remarks
+              AS current_remarks,
+
+          g.grade_status,
+
+          -- ===========================================
+          -- STUDENT / ENROLLMENT
+          -- ===========================================
+
+          es.enrollment_id,
+
+          es.status
+              AS enrollment_subject_status,
+
+          e.student_id,
+
+          e.enrollment_status,
+
+          s.student_number,
+
+          s.first_name
+              AS student_first_name,
+
+          s.middle_name
+              AS student_middle_name,
+
+          s.last_name
+              AS student_last_name,
+
+          -- ===========================================
+          -- CLASS
+          -- ===========================================
+
+          so.offering_id,
+
+          so.status
+              AS offering_status,
+
+          sub.subject_id,
+
+          sub.subject_code,
+
+          sub.subject_name,
+
+          sub.units,
+
+          sec.section_id,
+
+          sec.section_name,
+
+          sec.year_level,
+
+          c.course_id,
+
+          c.course_code,
+
+          c.course_name,
+
+          c.department_id,
+
+          -- ===========================================
+          -- PERIOD
+          -- ===========================================
+
+          ay.academic_year_id,
+
+          ay.academic_year,
+
+          sem.semester_id,
+
+          sem.semester_name,
+
+          -- ===========================================
+          -- FACULTY
+          -- ===========================================
+
+          f.faculty_id,
+
+          f.employee_number
+              AS faculty_employee_number,
+
+          f.first_name
+              AS faculty_first_name,
+
+          f.middle_name
+              AS faculty_middle_name,
+
+          f.last_name
+              AS faculty_last_name
+
+      FROM grade_change_requests gcr
+
+      INNER JOIN grades g
+          ON g.grade_id =
+             gcr.grade_id
+
+      INNER JOIN enrollment_subjects es
+          ON es.enrollment_subject_id =
+             g.enrollment_subject_id
+
+      INNER JOIN enrollments e
+          ON e.enrollment_id =
+             es.enrollment_id
+
+      INNER JOIN students s
+          ON s.student_id =
+             e.student_id
+
+      INNER JOIN subject_offerings so
+          ON so.offering_id =
+             es.offering_id
+
+      INNER JOIN subjects sub
+          ON sub.subject_id =
+             es.subject_id
+
+      INNER JOIN sections sec
+          ON sec.section_id =
+             es.section_id
+
+      INNER JOIN courses c
+          ON c.course_id =
+             sec.course_id
+
+      INNER JOIN academic_years ay
+          ON ay.academic_year_id =
+             so.academic_year_id
+
+      INNER JOIN semesters sem
+          ON sem.semester_id =
+             so.semester_id
+
+      LEFT JOIN faculty f
+          ON f.faculty_id =
+             g.faculty_id
+
+      LEFT JOIN users requester
+          ON requester.user_id =
+             gcr.requested_by
+
+      WHERE
+          gcr.request_type =
+              'INC_COMPLETION'
+
+          AND gcr.status = ?
+
+          AND c.department_id = ?
+
+      ORDER BY
+          gcr.requested_at ASC,
+          s.last_name ASC,
+          s.first_name ASC,
+          sub.subject_code ASC
+      `,
+      [status, programHead.department_id],
+    );
+
+    // =================================================
+    // FORMAT
+    // =================================================
+
+    const requests = rows.map((row) => ({
+      grade_change_request_id: Number(row.grade_change_request_id),
+
+      grade_id: Number(row.grade_id),
+
+      request_type: row.request_type,
+
+      status: row.status,
+
+      original_grade: {
+        midterm_grade:
+          row.old_midterm_grade !== null ? Number(row.old_midterm_grade) : null,
+
+        final_grade:
+          row.old_final_grade !== null ? Number(row.old_final_grade) : null,
+
+        overall_percentage:
+          row.old_overall_percentage !== null
+            ? Number(row.old_overall_percentage)
+            : null,
+
+        final_rating:
+          row.old_final_rating !== null ? Number(row.old_final_rating) : null,
+
+        remarks: row.old_remarks,
+
+        grading_outcome: row.old_grading_outcome,
+
+        outcome_reason: row.old_outcome_reason,
+      },
+
+      proposed_grade: {
+        midterm_grade:
+          row.new_midterm_grade !== null ? Number(row.new_midterm_grade) : null,
+
+        final_grade:
+          row.new_final_grade !== null ? Number(row.new_final_grade) : null,
+
+        overall_percentage:
+          row.new_overall_percentage !== null
+            ? Number(row.new_overall_percentage)
+            : null,
+
+        final_rating:
+          row.new_final_rating !== null ? Number(row.new_final_rating) : null,
+
+        remarks: row.new_remarks,
+
+        grading_outcome: row.new_grading_outcome,
+      },
+
+      completion_remarks: row.completion_remarks,
+
+      student: {
+        student_id: Number(row.student_id),
+
+        student_number: row.student_number,
+
+        full_name: [
+          row.student_first_name,
+          row.student_middle_name,
+          row.student_last_name,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      },
+
+      faculty: {
+        faculty_id: row.faculty_id !== null ? Number(row.faculty_id) : null,
+
+        employee_number: row.faculty_employee_number,
+
+        faculty_name: [
+          row.faculty_first_name,
+          row.faculty_middle_name,
+          row.faculty_last_name,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      },
+
+      class: {
+        offering_id: Number(row.offering_id),
+
+        subject: {
+          subject_id: Number(row.subject_id),
+
+          subject_code: row.subject_code,
+
+          subject_name: row.subject_name,
+
+          units: Number(row.units || 0),
+        },
+
+        section: {
+          section_id: Number(row.section_id),
+
+          section_name: row.section_name,
+
+          year_level: Number(row.year_level),
+
+          course: {
+            course_id: Number(row.course_id),
+
+            course_code: row.course_code,
+
+            course_name: row.course_name,
+          },
+        },
+
+        academic_period: {
+          academic_year_id: Number(row.academic_year_id),
+
+          academic_year: row.academic_year,
+
+          semester_id: Number(row.semester_id),
+
+          semester_name: row.semester_name,
+        },
+      },
+
+      requested_by: {
+        user_id: Number(row.requested_by),
+
+        username: row.requested_by_username,
+
+        role: row.requested_by_role,
+      },
+
+      requested_at: row.requested_at,
+
+      reviewed_by: row.reviewed_by,
+
+      reviewed_at: row.reviewed_at,
+
+      review_remarks: row.review_remarks,
+
+      created_at: row.created_at,
+
+      updated_at: row.updated_at,
+    }));
+
+    return res.status(200).json({
+      success: true,
+
+      program_head: {
+        program_head_id: programHead.program_head_id,
+
+        user_id: programHead.user_id,
+
+        program_head_name: programHead.program_head_name,
+
+        department: {
+          department_id: programHead.department_id,
+
+          department_code: programHead.department_code,
+
+          department_name: programHead.department_name,
+        },
+      },
+
+      filters: {
+        status,
+      },
+
+      summary: {
+        total_requests: requests.length,
+      },
+
+      requests,
+    });
+  } catch (error) {
+    console.error("GET PROGRAM HEAD INC COMPLETION REQUESTS ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+
+      message: "Failed to retrieve INC completion requests.",
+
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  }
+});
+
+// =====================================================
+// APPROVE INC COMPLETION REQUEST
+//
+// PATCH
+// /api/program-head/grades/grade-change-requests/:requestId/approve
+//
+// Pending Program Head
+//        ↓
+// For Registrar Processing
+//
+// IMPORTANT:
+//
+// grades is NOT updated here.
+// =====================================================
+
+router.patch("/grade-change-requests/:requestId/approve", async (req, res) => {
+  let connection;
+
+  try {
+    const programHead = await getAuthenticatedProgramHead(req, res);
+
+    if (!programHead) {
+      return;
+    }
+
+    const requestId = Number(req.params.requestId);
+
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid grade change request ID.",
+      });
+    }
+
+    const reviewRemarks =
+      typeof req.body?.review_remarks === "string"
+        ? req.body.review_remarks.trim()
+        : "";
+
+    if (reviewRemarks.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Review remarks cannot exceed 1000 characters.",
+      });
+    }
+
+    connection = await db.getConnection();
+
+    await connection.beginTransaction();
+
+    // =================================================
+    // LOAD + LOCK REQUEST
+    // =================================================
+
+    const [rows] = await connection.execute(
+      `
+          SELECT
+              gcr.*,
+
+              g.enrollment_subject_id,
+
+              g.final_rating
+                  AS current_final_rating,
+
+              g.grading_outcome
+                  AS current_grading_outcome,
+
+              g.remarks
+                  AS current_remarks,
+
+              g.grade_status,
+
+              es.status
+                  AS enrollment_subject_status,
+
+              e.enrollment_status,
+
+              e.student_id,
+
+              s.student_number,
+
+              s.first_name
+                  AS student_first_name,
+
+              s.middle_name
+                  AS student_middle_name,
+
+              s.last_name
+                  AS student_last_name,
+
+              so.offering_id,
+
+              so.status
+                  AS offering_status,
+
+              sub.subject_id,
+
+              sub.subject_code,
+
+              sub.subject_name,
+
+              sec.section_id,
+
+              sec.section_name,
+
+              c.department_id
+
+          FROM grade_change_requests gcr
+
+          INNER JOIN grades g
+              ON g.grade_id =
+                 gcr.grade_id
+
+          INNER JOIN enrollment_subjects es
+              ON es.enrollment_subject_id =
+                 g.enrollment_subject_id
+
+          INNER JOIN enrollments e
+              ON e.enrollment_id =
+                 es.enrollment_id
+
+          INNER JOIN students s
+              ON s.student_id =
+                 e.student_id
+
+          INNER JOIN subject_offerings so
+              ON so.offering_id =
+                 es.offering_id
+
+          INNER JOIN subjects sub
+              ON sub.subject_id =
+                 es.subject_id
+
+          INNER JOIN sections sec
+              ON sec.section_id =
+                 es.section_id
+
+          INNER JOIN courses c
+              ON c.course_id =
+                 sec.course_id
+
+          WHERE
+              gcr.grade_change_request_id = ?
+
+              AND gcr.request_type =
+                  'INC_COMPLETION'
+
+              AND c.department_id = ?
+
+          LIMIT 1
+
+          FOR UPDATE
+          `,
+      [requestId, programHead.department_id],
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
+        success: false,
+
+        message:
+          "INC completion request was not found or is outside your department.",
+      });
+    }
+
+    const request = rows[0];
+
+    // =================================================
+    // STATUS
+    // =================================================
+
+    if (request.status !== "Pending Program Head") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: `Only Pending Program Head requests may be approved. Current status: ${request.status}.`,
+      });
+    }
+
+    // =================================================
+    // REQUEST MUST COME FROM FACULTY
+    // =================================================
+
+    if (request.requested_by_role !== "Faculty") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: "This request does not require Program Head approval.",
+      });
+    }
+
+    // =================================================
+    // ORIGINAL GRADE MUST STILL BE APPROVED INC
+    // =================================================
+
+    const stillIncomplete =
+      String(request.current_grading_outcome || "").toUpperCase() ===
+        "INCOMPLETE" ||
+      String(request.current_remarks || "").toLowerCase() === "incomplete" ||
+      Number(request.current_final_rating) === 4;
+
+    if (request.grade_status !== "Approved" || !stillIncomplete) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: "The original grade is no longer an approved INC record.",
+      });
+    }
+
+    if (request.enrollment_status !== "Approved") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: "The student's enrollment is no longer approved.",
+      });
+    }
+
+    // =================================================
+    // UPDATE REQUEST ONLY
+    // =================================================
+
+    const [updateResult] = await connection.execute(
+      `
+          UPDATE grade_change_requests
+
+          SET
+              status =
+                  'For Registrar Processing',
+
+              reviewed_by = ?,
+
+              reviewed_at =
+                  CURRENT_TIMESTAMP,
+
+              review_remarks = ?
+
+          WHERE
+              grade_change_request_id = ?
+
+              AND status =
+                  'Pending Program Head'
+          `,
+      [programHead.user_id, reviewRemarks || null, requestId],
+    );
+
+    if (updateResult.affectedRows !== 1) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message:
+          "The request is no longer available for approval. Refresh and try again.",
+      });
+    }
+
+    // =================================================
+    // AUDIT
+    // =================================================
+
+    await connection.execute(
+      `
+        INSERT INTO audit_trail (
+            user_id,
+            table_name,
+            record_id,
+            action,
+            old_values,
+            new_values
+        )
+
+        VALUES (
+            ?,
+            'grade_change_requests',
+            ?,
+            'UPDATE',
+            ?,
+            ?
+        )
+        `,
+      [
+        programHead.user_id,
+
+        requestId,
+
+        JSON.stringify({
+          status: request.status,
+
+          reviewed_by: request.reviewed_by,
+
+          reviewed_at: request.reviewed_at,
+        }),
+
+        JSON.stringify({
+          status: "For Registrar Processing",
+
+          reviewed_by: programHead.user_id,
+
+          review_remarks: reviewRemarks || null,
+        }),
+      ],
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+
+      message: "INC completion request approved and forwarded to Registrar.",
+
+      request: {
+        grade_change_request_id: requestId,
+
+        grade_id: Number(request.grade_id),
+
+        request_type: request.request_type,
+
+        status: "For Registrar Processing",
+
+        reviewed_by: programHead.user_id,
+
+        reviewed_by_name: programHead.program_head_name,
+
+        review_remarks: reviewRemarks || null,
+      },
+
+      student: {
+        student_id: Number(request.student_id),
+
+        student_number: request.student_number,
+
+        full_name: [
+          request.student_first_name,
+          request.student_middle_name,
+          request.student_last_name,
+        ]
+          .filter(Boolean)
+          .join(" "),
+      },
+
+      proposed_grade: {
+        midterm_grade:
+          request.new_midterm_grade !== null
+            ? Number(request.new_midterm_grade)
+            : null,
+
+        final_grade:
+          request.new_final_grade !== null
+            ? Number(request.new_final_grade)
+            : null,
+
+        overall_percentage:
+          request.new_overall_percentage !== null
+            ? Number(request.new_overall_percentage)
+            : null,
+
+        final_rating:
+          request.new_final_rating !== null
+            ? Number(request.new_final_rating)
+            : null,
+
+        remarks: request.new_remarks,
+
+        grading_outcome: request.new_grading_outcome,
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch (rollbackError) {
+        console.error("INC APPROVAL ROLLBACK ERROR:", rollbackError);
+      }
+    }
+
+    console.error("PROGRAM HEAD INC APPROVAL ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+
+      message: "Failed to approve INC completion request.",
+
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+// =====================================================
+// RETURN INC COMPLETION REQUEST
+//
+// PATCH
+// /api/program-head/grades/grade-change-requests/:requestId/return
+// =====================================================
+
+router.patch("/grade-change-requests/:requestId/return", async (req, res) => {
+  let connection;
+
+  try {
+    const programHead = await getAuthenticatedProgramHead(req, res);
+
+    if (!programHead) {
+      return;
+    }
+
+    const requestId = Number(req.params.requestId);
+
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid grade change request ID.",
+      });
+    }
+
+    const reviewRemarks =
+      typeof req.body?.review_remarks === "string"
+        ? req.body.review_remarks.trim()
+        : "";
+
+    if (!reviewRemarks) {
+      return res.status(400).json({
+        success: false,
+        message: "A return reason is required.",
+      });
+    }
+
+    if (reviewRemarks.length > 1000) {
+      return res.status(400).json({
+        success: false,
+        message: "Return reason cannot exceed 1000 characters.",
+      });
+    }
+
+    connection = await db.getConnection();
+
+    await connection.beginTransaction();
+
+    const [rows] = await connection.execute(
+      `
+          SELECT
+              gcr.grade_change_request_id,
+              gcr.grade_id,
+              gcr.status,
+
+              c.department_id
+
+          FROM grade_change_requests gcr
+
+          INNER JOIN grades g
+              ON g.grade_id =
+                 gcr.grade_id
+
+          INNER JOIN enrollment_subjects es
+              ON es.enrollment_subject_id =
+                 g.enrollment_subject_id
+
+          INNER JOIN sections sec
+              ON sec.section_id =
+                 es.section_id
+
+          INNER JOIN courses c
+              ON c.course_id =
+                 sec.course_id
+
+          WHERE
+              gcr.grade_change_request_id = ?
+
+              AND gcr.request_type =
+                  'INC_COMPLETION'
+
+              AND c.department_id = ?
+
+          LIMIT 1
+
+          FOR UPDATE
+          `,
+      [requestId, programHead.department_id],
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
+        success: false,
+
+        message:
+          "INC completion request was not found or is outside your department.",
+      });
+    }
+
+    const request = rows[0];
+
+    if (request.status !== "Pending Program Head") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: `Only Pending Program Head requests may be returned. Current status: ${request.status}.`,
+      });
+    }
+
+    const [updateResult] = await connection.execute(
+      `
+          UPDATE grade_change_requests
+
+          SET
+              status = 'Returned',
+
+              reviewed_by = ?,
+
+              reviewed_at =
+                  CURRENT_TIMESTAMP,
+
+              review_remarks = ?
+
+          WHERE
+              grade_change_request_id = ?
+
+              AND status =
+                  'Pending Program Head'
+          `,
+      [programHead.user_id, reviewRemarks, requestId],
+    );
+
+    if (updateResult.affectedRows !== 1) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: "The request is no longer available for return.",
+      });
+    }
+
+    await connection.execute(
+      `
+        INSERT INTO audit_trail (
+            user_id,
+            table_name,
+            record_id,
+            action,
+            old_values,
+            new_values
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+      [
+        programHead.user_id,
+
+        "grade_change_requests",
+
+        requestId,
+
+        "UPDATE",
+
+        JSON.stringify({
+          status: request.status,
+        }),
+
+        JSON.stringify({
+          status: "Returned",
+
+          review_remarks: reviewRemarks,
+        }),
+      ],
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+
+      message: "INC completion request returned to Faculty.",
+
+      request: {
+        grade_change_request_id: requestId,
+
+        grade_id: Number(request.grade_id),
+
+        status: "Returned",
+
+        review_remarks: reviewRemarks,
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch {}
+    }
+
+    console.error("PROGRAM HEAD RETURN INC ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+
+      message: "Failed to return INC completion request.",
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
+// =====================================================
+// REJECT INC COMPLETION REQUEST
+//
+// PATCH
+// /api/program-head/grades/grade-change-requests/:requestId/reject
+// =====================================================
+
+router.patch("/grade-change-requests/:requestId/reject", async (req, res) => {
+  let connection;
+
+  try {
+    const programHead = await getAuthenticatedProgramHead(req, res);
+
+    if (!programHead) {
+      return;
+    }
+
+    const requestId = Number(req.params.requestId);
+
+    if (!Number.isInteger(requestId) || requestId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid grade change request ID.",
+      });
+    }
+
+    const reviewRemarks =
+      typeof req.body?.review_remarks === "string"
+        ? req.body.review_remarks.trim()
+        : "";
+
+    if (!reviewRemarks) {
+      return res.status(400).json({
+        success: false,
+
+        message: "A rejection reason is required.",
+      });
+    }
+
+    if (reviewRemarks.length > 1000) {
+      return res.status(400).json({
+        success: false,
+
+        message: "Rejection reason cannot exceed 1000 characters.",
+      });
+    }
+
+    connection = await db.getConnection();
+
+    await connection.beginTransaction();
+
+    const [rows] = await connection.execute(
+      `
+          SELECT
+              gcr.grade_change_request_id,
+              gcr.grade_id,
+              gcr.status,
+
+              c.department_id
+
+          FROM grade_change_requests gcr
+
+          INNER JOIN grades g
+              ON g.grade_id =
+                 gcr.grade_id
+
+          INNER JOIN enrollment_subjects es
+              ON es.enrollment_subject_id =
+                 g.enrollment_subject_id
+
+          INNER JOIN sections sec
+              ON sec.section_id =
+                 es.section_id
+
+          INNER JOIN courses c
+              ON c.course_id =
+                 sec.course_id
+
+          WHERE
+              gcr.grade_change_request_id = ?
+
+              AND gcr.request_type =
+                  'INC_COMPLETION'
+
+              AND c.department_id = ?
+
+          LIMIT 1
+
+          FOR UPDATE
+          `,
+      [requestId, programHead.department_id],
+    );
+
+    if (rows.length === 0) {
+      await connection.rollback();
+
+      return res.status(404).json({
+        success: false,
+
+        message:
+          "INC completion request was not found or is outside your department.",
+      });
+    }
+
+    const request = rows[0];
+
+    if (request.status !== "Pending Program Head") {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: `Only Pending Program Head requests may be rejected. Current status: ${request.status}.`,
+      });
+    }
+
+    const [updateResult] = await connection.execute(
+      `
+          UPDATE grade_change_requests
+
+          SET
+              status = 'Rejected',
+
+              reviewed_by = ?,
+
+              reviewed_at =
+                  CURRENT_TIMESTAMP,
+
+              review_remarks = ?
+
+          WHERE
+              grade_change_request_id = ?
+
+              AND status =
+                  'Pending Program Head'
+          `,
+      [programHead.user_id, reviewRemarks, requestId],
+    );
+
+    if (updateResult.affectedRows !== 1) {
+      await connection.rollback();
+
+      return res.status(409).json({
+        success: false,
+
+        message: "The request is no longer available for rejection.",
+      });
+    }
+
+    await connection.execute(
+      `
+        INSERT INTO audit_trail (
+            user_id,
+            table_name,
+            record_id,
+            action,
+            old_values,
+            new_values
+        )
+
+        VALUES (?, ?, ?, ?, ?, ?)
+        `,
+      [
+        programHead.user_id,
+
+        "grade_change_requests",
+
+        requestId,
+
+        "UPDATE",
+
+        JSON.stringify({
+          status: request.status,
+        }),
+
+        JSON.stringify({
+          status: "Rejected",
+
+          review_remarks: reviewRemarks,
+        }),
+      ],
+    );
+
+    await connection.commit();
+
+    return res.status(200).json({
+      success: true,
+
+      message: "INC completion request rejected.",
+
+      request: {
+        grade_change_request_id: requestId,
+
+        grade_id: Number(request.grade_id),
+
+        status: "Rejected",
+
+        review_remarks: reviewRemarks,
+      },
+    });
+  } catch (error) {
+    if (connection) {
+      try {
+        await connection.rollback();
+      } catch {}
+    }
+
+    console.error("PROGRAM HEAD REJECT INC ERROR:", error);
+
+    return res.status(500).json({
+      success: false,
+
+      message: "Failed to reject INC completion request.",
+    });
+  } finally {
+    if (connection) {
+      connection.release();
+    }
+  }
+});
+
 export default router;
